@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import { isProxy, toRaw } from 'vue'
 import type { AppSettings, Service, Song } from '@/types'
 
 interface SanctuaryDB extends DBSchema {
@@ -20,6 +21,30 @@ interface SanctuaryDB extends DBSchema {
 
 const DB_NAME = 'sanctuary-player'
 const DB_VERSION = 1
+
+/**
+ * Recursively unwrap Vue reactive proxies and rebuild as plain objects so
+ * IndexedDB's structured-clone algorithm doesn't choke on Proxy instances
+ * (which throw DataCloneError at runtime in real browsers too). Blobs and
+ * other native types are passed through untouched.
+ */
+function deepRaw<T>(value: T): T {
+  if (value instanceof Blob || value instanceof File || value instanceof Date) {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => deepRaw(v)) as unknown as T
+  }
+  if (value && typeof value === 'object') {
+    const raw = (isProxy(value) ? toRaw(value) : value) as Record<string, unknown>
+    const out: Record<string, unknown> = {}
+    for (const key of Object.keys(raw)) {
+      out[key] = deepRaw(raw[key])
+    }
+    return out as T
+  }
+  return value
+}
 
 let dbPromise: Promise<IDBPDatabase<SanctuaryDB>> | null = null
 
@@ -48,7 +73,7 @@ export function getDB(): Promise<IDBPDatabase<SanctuaryDB>> {
 
 export async function putSong(song: Song): Promise<void> {
   const db = await getDB()
-  await db.put('songs', song)
+  await db.put('songs', deepRaw(song))
 }
 
 export async function getAllSongs(): Promise<Song[]> {
@@ -71,7 +96,7 @@ export async function deleteSong(id: string): Promise<void> {
 
 export async function putService(service: Service): Promise<void> {
   const db = await getDB()
-  await db.put('services', service)
+  await db.put('services', deepRaw(service))
 }
 
 export async function getAllServices(): Promise<Service[]> {
@@ -107,6 +132,6 @@ export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSett
   const db = await getDB()
   const current = await getSettings()
   const next: AppSettings = { ...current, ...patch, id: 'app' }
-  await db.put('settings', next)
+  await db.put('settings', deepRaw(next))
   return next
 }

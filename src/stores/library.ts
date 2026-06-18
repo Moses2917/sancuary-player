@@ -34,10 +34,17 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  function stripExt(name: string): string {
+    return name.replace(/\.[^/.]+$/, '')
+  }
+
   async function addSong(input: { title: string; piano: File; choir: File }): Promise<Song> {
+    // Derive a title from the piano filename when none is provided so every
+    // caller (component + store API) gets consistent behaviour.
+    const title = input.title.trim() || stripExt(input.piano.name) || 'Untitled'
     const song: Song = {
       id: uid('song'),
-      title: input.title.trim() || 'Untitled',
+      title,
       piano: buildTrack(input.piano),
       choir: buildTrack(input.choir),
       bundled: false,

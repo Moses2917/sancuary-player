@@ -1,0 +1,112 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { useLibraryStore } from '@/stores/library'
+import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
+import * as idb from '@/db/idb'
+
+describe('library store', () => {
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    const db = await idb.getDB()
+    await db.clear('songs')
+  })
+
+  it('starts empty and unready', () => {
+    const lib = useLibraryStore()
+    expect(lib.songs).toEqual([])
+    expect(lib.ready).toBe(false)
+  })
+
+  it('init() is idempotent', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const first = lib.ready
+    await lib.init()
+    expect(lib.ready).toBe(first)
+  })
+
+  it('adds a song with derived title and stores the blobs', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const piano = makeNoiseWavFile('amazing-grace-piano.wav', { seconds: 1 })
+    const choir = makeNoiseWavFile('amazing-grace-choir.wav', { seconds: 1 })
+
+    const song = await lib.addSong({ title: 'Amazing Grace', piano, choir })
+
+    expect(song.title).toBe('Amazing Grace')
+    expect(song.bundled).toBe(false)
+    expect(song.piano.blob).toBeInstanceOf(Blob)
+    expect(song.piano.name).toBe('amazing-grace-piano.wav')
+    expect(lib.songs.length).toBe(1)
+    expect(lib.songs[0]?.id).toBe(song.id)
+  })
+
+  it('falls back to the piano filename when title is blank', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: '   ',
+      piano: makeNoiseWavFile('Holy Holy Holy.mp3'),
+      choir: makeNoiseWavFile('choir.wav'),
+    })
+    expect(song.title).toBe('Holy Holy Holy')
+  })
+
+  it('getById finds an existing song', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const added = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    expect(lib.getById(added.id)?.title).toBe('X')
+    expect(lib.getById('missing')).toBeUndefined()
+  })
+
+  it('removes a song from the store', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const added = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    await lib.removeSong(added.id)
+    expect(lib.songs.length).toBe(0)
+    expect(lib.getById(added.id)).toBeUndefined()
+  })
+
+  it('persists across a fresh store instance (idb round-trip)', async () => {
+    const lib1 = useLibraryStore()
+    await lib1.init()
+    await lib1.addSong({
+      title: 'Persisted',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+
+    // Simulate a reload: new pinia, new store, init reads from idb.
+    setActivePinia(createPinia())
+    const lib2 = useLibraryStore()
+    await lib2.init()
+    expect(lib2.songs.length).toBe(1)
+    expect(lib2.songs[0]?.title).toBe('Persisted')
+  })
+
+  it('addBundledSongs registers url-backed songs flagged bundled', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const created = await lib.addBundledSongs([
+      {
+        title: 'Example Hymn',
+        pianoUrl: '/audio/example-piano.mp3',
+        choirUrl: '/audio/example-choir.mp3',
+      },
+    ])
+    expect(created.length).toBe(1)
+    expect(lib.songs[0]?.bundled).toBe(true)
+    expect(lib.songs[0]?.piano.url).toBe('/audio/example-piano.mp3')
+    expect(lib.songs[0]?.piano.blob).toBeUndefined()
+  })
+})

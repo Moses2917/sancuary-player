@@ -67,18 +67,13 @@ function dropChoir(e: DragEvent) {
   if (f && f.type.startsWith('audio')) choir.value = f
 }
 
-function stripExt(name: string): string {
-  return name.replace(/\.[^/.]+$/, '')
-}
-
 async function submit() {
   if (!piano.value || !choir.value) return
   saving.value = true
   error.value = ''
-  const finalTitle = title.value.trim() || stripExt(piano.value.name)
   try {
     await library.addSong({
-      title: finalTitle,
+      title: title.value,
       piano: piano.value,
       choir: choir.value,
     })

@@ -22,7 +22,20 @@ export function formatTime(seconds: number): string {
 /** Create a short, human-friendly date label. */
 export function formatDate(input?: string): string {
   if (!input) return ''
-  const parsed = new Date(input)
+  let parsed: Date
+  // Date-only ISO strings ("YYYY-MM-DD") are parsed as UTC by the spec,
+  // which shifts the calendar day in non-UTC timezones. Treat them as
+  // local instead so the displayed day matches what the user entered.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input)
+  if (dateOnly) {
+    parsed = new Date(
+      Number(dateOnly[1]),
+      Number(dateOnly[2]) - 1,
+      Number(dateOnly[3]),
+    )
+  } else {
+    parsed = new Date(input)
+  }
   if (Number.isNaN(parsed.getTime())) return input
   return parsed.toLocaleDateString(undefined, {
     month: 'short',
