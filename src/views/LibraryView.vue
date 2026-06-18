@@ -18,10 +18,8 @@ onMounted(() => {
   void library.init()
 })
 
-function submit(payload: { title: string; piano: File; choir: File }) {
-  void library.addSong(payload).then(() => {
-    importerOpen.value = false
-  })
+function onSaved() {
+  importerOpen.value = false
 }
 
 function importBundled(titles: string[]) {
@@ -114,7 +112,7 @@ function remove(song: Song) {
       </li>
     </ul>
 
-    <SongImporter :open="importerOpen" @close="importerOpen = false" @submit="submit" />
+    <SongImporter :open="importerOpen" @close="importerOpen = false" @saved="onSaved" />
     <BundledLoader :open="bundledOpen" @close="bundledOpen = false" @import="importBundled" />
   </section>
 </template>

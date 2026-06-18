@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
+import { useLibraryStore } from '@/stores/library'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', payload: { title: string; piano: File; choir: File }): void
+  (e: 'saved'): void
 }>()
+
+const library = useLibraryStore()
 
 const title = ref('')
 const piano = ref<File | null>(null)
@@ -14,40 +17,45 @@ const choir = ref<File | null>(null)
 const error = ref('')
 const saving = ref(false)
 
+// Persistent hidden file inputs attached to the DOM so the change event
+// fires reliably across browsers (detached inputs created via
+// document.createElement are flaky and can silently never fire).
+const pianoInput = ref<HTMLInputElement | null>(null)
+const choirInput = ref<HTMLInputElement | null>(null)
+
 watch(
   () => props.open,
   (open) => {
-    if (open) {
-      title.value = ''
-      piano.value = null
-      choir.value = null
-      error.value = ''
-      saving.value = false
-    }
+    if (open) reset()
   },
 )
+
+function reset() {
+  title.value = ''
+  piano.value = null
+  choir.value = null
+  error.value = ''
+  saving.value = false
+  if (pianoInput.value) pianoInput.value.value = ''
+  if (choirInput.value) choirInput.value.value = ''
+}
 
 const canSubmit = computed(() => !!piano.value && !!choir.value && !saving.value)
 
 function pickPiano() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = 'audio/*'
-  input.onchange = () => {
-    const f = input.files?.[0]
-    if (f) piano.value = f
-  }
-  input.click()
+  pianoInput.value?.click()
 }
 function pickChoir() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = 'audio/*'
-  input.onchange = () => {
-    const f = input.files?.[0]
-    if (f) choir.value = f
-  }
-  input.click()
+  choirInput.value?.click()
+}
+
+function onPianoChange(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0]
+  if (f) piano.value = f
+}
+function onChoirChange(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0]
+  if (f) choir.value = f
 }
 
 function dropPiano(e: DragEvent) {
@@ -59,28 +67,26 @@ function dropChoir(e: DragEvent) {
   if (f && f.type.startsWith('audio')) choir.value = f
 }
 
+function stripExt(name: string): string {
+  return name.replace(/\.[^/.]+$/, '')
+}
+
 async function submit() {
   if (!piano.value || !choir.value) return
   saving.value = true
   error.value = ''
-  // Auto-title from piano filename if left blank
   const finalTitle = title.value.trim() || stripExt(piano.value.name)
   try {
-    await emit('submit', {
+    await library.addSong({
       title: finalTitle,
       piano: piano.value,
       choir: choir.value,
     })
-    // Parent will close on success; if we get here without throw, assume ok
-    saving.value = false
+    emit('saved')
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Could not save song'
     saving.value = false
   }
-}
-
-function stripExt(name: string): string {
-  return name.replace(/\.[^/.]+$/, '')
 }
 </script>
 
@@ -155,11 +161,35 @@ function stripExt(name: string): string {
           </button>
         </footer>
       </div>
+
+      <!-- Hidden, DOM-attached file inputs (kept across opens so change events fire) -->
+      <input
+        ref="pianoInput"
+        type="file"
+        accept="audio/*"
+        class="hidden-input"
+        @change="onPianoChange"
+      />
+      <input
+        ref="choirInput"
+        type="file"
+        accept="audio/*"
+        class="hidden-input"
+        @change="onChoirChange"
+      />
     </div>
   </transition>
 </template>
 
 <style scoped>
+.hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
