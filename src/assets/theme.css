@@ -1,0 +1,69 @@
+/* Sanctuary Player — design tokens */
+:root {
+  /* Palette: deep navy/charcoal with warm gold accent */
+  --c-bg-0: #0b1020;
+  --c-bg-1: #121931;
+  --c-bg-2: #1a2347;
+  --c-bg-3: #243059;
+  --c-surface: rgba(26, 35, 71, 0.72);
+  --c-surface-raised: rgba(36, 48, 89, 0.82);
+  --c-surface-glass: rgba(18, 25, 49, 0.6);
+
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border-strong: rgba(255, 255, 255, 0.16);
+
+  --c-text: #eef1fb;
+  --c-text-soft: #b9c0d8;
+  --c-text-muted: #8089a8;
+
+  --c-accent: #e3b873;
+  --c-accent-soft: #f0cd95;
+  --c-accent-deep: #b4894a;
+  --c-accent-glow: rgba(227, 184, 115, 0.35);
+
+  --c-piano: #7fb3ff;
+  --c-choir: #e3b873;
+  --c-danger: #e5766f;
+  --c-success: #74d7a8;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  --font-display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, 'Times New Roman',
+    serif;
+
+  /* Spacing scale */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --sh-lg: 0 18px 50px rgba(0, 0, 0, 0.5);
+  --sh-glow: 0 0 30px var(--c-accent-glow);
+
+  /* Layout */
+  --player-h: 96px;
+  --header-h: 64px;
+  --content-max: 1180px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 400ms;
+}

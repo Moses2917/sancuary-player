@@ -1,0 +1,185 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: number
+    /** "horizontal" | "vertical" */
+    orientation?: 'horizontal' | 'vertical'
+    label?: string
+    /** Optional accent CSS var name, e.g. '--c-piano'. */
+    accent?: string
+    min?: number
+    max?: number
+    step?: number
+    disabled?: boolean
+  }>(),
+  {
+    orientation: 'horizontal',
+    accent: '--c-accent',
+    min: 0,
+    max: 1,
+    step: 0.01,
+    disabled: false,
+  },
+)
+
+const emit = defineEmits<{ (e: 'update:modelValue', v: number): void }>()
+
+const percent = computed(() => {
+  const range = props.max - props.min
+  if (range <= 0) return 0
+  return ((props.modelValue - props.min) / range) * 100
+})
+
+function onInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  emit('update:modelValue', parseFloat(target.value))
+}
+
+const styleObj = computed(() => ({
+  '--accent': `var(${props.accent})`,
+  '--pct': `${percent.value}%`,
+}))
+</script>
+
+<template>
+  <div
+    class="slider"
+    :class="[`slider--${orientation}`, { 'slider--disabled': disabled }]"
+    :style="styleObj"
+  >
+    <label v-if="label" class="slider__label">{{ label }}</label>
+    <input
+      class="slider__input"
+      type="range"
+      :min="min"
+      :max="max"
+      :step="step"
+      :value="modelValue"
+      :disabled="disabled"
+      :aria-label="label"
+      :orient="orientation === 'vertical' ? 'vertical' : undefined"
+      @input="onInput"
+    />
+  </div>
+</template>
+
+<style scoped>
+.slider {
+  display: flex;
+  --accent: var(--c-accent);
+  --pct: 50%;
+  --track: rgba(255, 255, 255, 0.12);
+}
+.slider--horizontal {
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: 100%;
+}
+.slider--vertical {
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 120px;
+}
+.slider__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.slider__input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.slider--horizontal .slider__input {
+  width: 100%;
+  height: 18px;
+}
+.slider--vertical .slider__input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 18px;
+  height: 100%;
+}
+
+/* Track */
+.slider__input::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--pct),
+    var(--track) var(--pct),
+    var(--track) 100%
+  );
+}
+.slider__input::-moz-range-track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--track);
+}
+.slider__input::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+.slider--vertical .slider__input::-webkit-slider-runnable-track {
+  width: 6px;
+  height: 100%;
+  background: linear-gradient(
+    to top,
+    var(--accent) 0%,
+    var(--accent) var(--pct),
+    var(--track) var(--pct),
+    var(--track) 100%
+  );
+}
+.slider--vertical .slider__input::-moz-range-track {
+  width: 6px;
+  height: 100%;
+}
+
+/* Thumb */
+.slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--accent);
+  margin-top: -5px;
+  box-shadow: var(--sh-sm);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.slider__input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.slider__input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: var(--sh-sm);
+}
+.slider--vertical .slider__input::-webkit-slider-thumb {
+  margin-top: 0;
+  margin-right: -5px;
+}
+
+.slider--disabled {
+  opacity: 0.4;
+}
+.slider--disabled .slider__input {
+  cursor: not-allowed;
+}
+</style>
