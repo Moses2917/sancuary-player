@@ -1,8 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as idb from '@/db/idb'
-import type { Song, TrackSource } from '@/types'
+import type { BundledSongManifestEntry, Song, TrackSource } from '@/types'
 import { uid } from '@/utils'
+
+interface FetchedManifest {
+  entries: BundledSongManifestEntry[]
+  existingTitles: Set<string>
+}
 
 export const useLibraryStore = defineStore('library', () => {
   const songs = ref<Song[]>([])
@@ -29,11 +34,7 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  async function addSong(input: {
-    title: string
-    piano: File
-    choir: File
-  }): Promise<Song> {
+  async function addSong(input: { title: string; piano: File; choir: File }): Promise<Song> {
     const song: Song = {
       id: uid('song'),
       title: input.title.trim() || 'Untitled',
@@ -72,6 +73,35 @@ export const useLibraryStore = defineStore('library', () => {
     songs.value = songs.value.filter((s) => s.id !== id)
   }
 
+  /** Fetch the manifest and report which entries aren't already imported. */
+  async function fetchBundledManifest(): Promise<FetchedManifest> {
+    const res = await fetch('/audio/manifest.json', { cache: 'no-cache' })
+    if (!res.ok) {
+      throw new Error(`Could not load manifest (HTTP ${res.status})`)
+    }
+    const entries = (await res.json()) as BundledSongManifestEntry[]
+    const existingTitles = new Set(songs.value.filter((s) => s.bundled).map((s) => s.title))
+    return { entries, existingTitles }
+  }
+
+  /** Import selected bundled entries (by title) into the library. */
+  async function importBundled(titles: string[]): Promise<Song[]> {
+    const { entries } = await fetchBundledManifest()
+    const chosen = entries.filter((e) => titles.includes(e.title))
+    if (chosen.length === 0) return []
+    const created: Song[] = chosen.map((entry) => ({
+      id: uid('song'),
+      title: entry.title,
+      piano: { name: entry.piano.split('/').pop() ?? 'piano', url: entry.piano },
+      choir: { name: entry.choir.split('/').pop() ?? 'choir', url: entry.choir },
+      bundled: true,
+      createdAt: Date.now(),
+    }))
+    for (const song of created) await idb.putSong(song)
+    songs.value = [...songs.value, ...created]
+    return created
+  }
+
   return {
     songs,
     ready,
@@ -81,5 +111,7 @@ export const useLibraryStore = defineStore('library', () => {
     addSong,
     addBundledSongs,
     removeSong,
+    fetchBundledManifest,
+    importBundled,
   }
 })

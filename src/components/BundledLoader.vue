@@ -1,51 +1,62 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { Song } from '@/types'
 import AppIcon from './AppIcon.vue'
 
-const props = defineProps<{
-  open: boolean
-  songs: Song[]
-  excludeIds?: string[]
-}>()
+const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'add', songs: Song[]): void
+  (e: 'import', titles: string[]): void
 }>()
 
-const search = ref('')
-const selected = ref<Set<string>>(new Set())
+interface Row {
+  title: string
+  alreadyImported: boolean
+  checked: boolean
+}
+
+const rows = ref<Row[]>([])
+const error = ref('')
+const loading = ref(false)
 
 watch(
   () => props.open,
-  (open) => {
-    if (open) {
-      search.value = ''
-      selected.value = new Set()
+  async (open) => {
+    if (!open) return
+    error.value = ''
+    rows.value = []
+    loading.value = true
+    try {
+      const { useLibraryStore } = await import('@/stores/library')
+      const lib = useLibraryStore()
+      const { entries, existingTitles } = await lib.fetchBundledManifest()
+      rows.value = entries.map((e) => ({
+        title: e.title,
+        alreadyImported: existingTitles.has(e.title),
+        checked: !existingTitles.has(e.title),
+      }))
+    } catch (err) {
+      error.value =
+        err instanceof Error
+          ? err.message
+          : 'Could not read bundled manifest. See public/audio/README.md.'
+    } finally {
+      loading.value = false
     }
   },
 )
 
-const filtered = computed(() => {
-  const exclude = new Set(props.excludeIds ?? [])
-  const q = search.value.trim().toLowerCase()
-  return props.songs.filter((s) => {
-    if (exclude.has(s.id)) return false
-    if (!q) return true
-    return s.title.toLowerCase().includes(q)
-  })
-})
+const selected = computed(() => rows.value.filter((r) => r.checked && !r.alreadyImported))
 
-function toggle(song: Song) {
-  const next = new Set(selected.value)
-  if (next.has(song.id)) next.delete(song.id)
-  else next.add(song.id)
-  selected.value = next
+function toggle(row: Row) {
+  if (row.alreadyImported) return
+  row.checked = !row.checked
 }
 
 function confirm() {
-  const chosen = props.songs.filter((s) => selected.value.has(s.id))
-  if (chosen.length) emit('add', chosen)
+  emit(
+    'import',
+    selected.value.map((r) => r.title),
+  )
 }
 </script>
 
@@ -54,35 +65,48 @@ function confirm() {
     <div v-if="open" class="overlay" @click.self="emit('close')">
       <div class="modal surface" role="dialog" aria-modal="true">
         <header class="modal__head">
-          <h2>Add songs</h2>
+          <div>
+            <h2>Load bundled songs</h2>
+            <p class="modal__sub">From <code>public/audio/manifest.json</code></p>
+          </div>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
             <AppIcon name="x" :size="20" />
           </button>
         </header>
+
         <div class="modal__body">
-          <input v-model="search" class="input" type="search" placeholder="Search library…" />
-          <ul v-if="filtered.length" class="picker">
-            <li v-for="song in filtered" :key="song.id">
+          <div v-if="loading" class="empty"><p>Reading manifest…</p></div>
+          <div v-else-if="error" class="empty">
+            <h3>Manifest unavailable</h3>
+            <p>{{ error }}</p>
+          </div>
+          <div v-else-if="rows.length === 0" class="empty">
+            <p>No bundled songs declared.</p>
+          </div>
+          <ul v-else class="rows">
+            <li v-for="row in rows" :key="row.title">
               <button
-                class="pick"
-                :class="{ 'pick--on': selected.has(song.id) }"
-                @click="toggle(song)"
+                class="row"
+                :class="{ 'row--on': row.checked, 'row--dim': row.alreadyImported }"
+                :disabled="row.alreadyImported"
+                @click="toggle(row)"
               >
-                <span class="pick__check" :class="{ 'pick__check--on': selected.has(song.id) }">
-                  <AppIcon v-if="selected.has(song.id)" name="check" :size="12" :stroke-width="3" />
+                <span class="check" :class="{ 'check--on': row.checked || row.alreadyImported }">
+                  <AppIcon name="check" :size="12" :stroke-width="3" />
                 </span>
-                <span class="pick__title">{{ song.title }}</span>
+                <span class="title">{{ row.title }}</span>
+                <span v-if="row.alreadyImported" class="badge">imported</span>
               </button>
             </li>
           </ul>
-          <div v-else class="empty"><p>No songs match.</p></div>
         </div>
+
         <footer class="modal__foot">
-          <span class="count">{{ selected.size }} selected</span>
+          <span class="count">{{ selected.length }} selected</span>
           <div class="actions">
             <button class="btn btn--ghost" @click="emit('close')">Cancel</button>
-            <button class="btn btn--primary" :disabled="selected.size === 0" @click="confirm">
-              Add {{ selected.size > 0 ? selected.size : '' }}
+            <button class="btn btn--primary" :disabled="selected.length === 0" @click="confirm">
+              Import {{ selected.length > 0 ? selected.length : '' }}
             </button>
           </div>
         </footer>
@@ -106,7 +130,7 @@ function confirm() {
 }
 .modal {
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -114,29 +138,38 @@ function confirm() {
 }
 .modal__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
   font-size: 1.4rem;
 }
+.modal__sub {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+}
+.modal__sub code {
+  background: var(--c-bg-3);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  font-size: 0.74rem;
+}
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-3);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  overflow: hidden;
 }
-.picker {
+.rows {
   overflow-y: auto;
   max-height: 50vh;
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  padding-right: 4px;
 }
-.pick {
+.row {
   width: 100%;
   display: flex;
   align-items: center;
@@ -151,15 +184,19 @@ function confirm() {
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
 }
-.pick:hover {
+.row:hover:not(:disabled) {
   background: var(--c-bg-2);
 }
-.pick--on {
+.row--on {
   background: var(--c-bg-3);
   border-color: var(--c-accent);
   color: var(--c-text);
 }
-.pick__check {
+.row--dim {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.check {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -168,20 +205,33 @@ function confirm() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1a1208;
+  color: transparent;
   transition:
     background var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
-.pick__check--on {
+.check--on {
   background: var(--c-accent);
   border-color: var(--c-accent);
+  color: #1a1208;
 }
-.pick__title {
+.title {
+  flex: 1;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.badge {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-muted);
+  background: var(--c-bg-2);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
 }
 .modal__foot {
   display: flex;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import Icon from './Icon.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{ open: boolean; defaultDate?: string }>()
 const emit = defineEmits<{
@@ -34,7 +34,7 @@ function submit() {
         <header class="modal__head">
           <h2>New service</h2>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <Icon name="x" :size="20" />
+            <AppIcon name="x" :size="20" />
           </button>
         </header>
         <div class="modal__body">
@@ -58,19 +58,12 @@ function submit() {
               placeholder="e.g. June 22, or pick a date below"
               @keydown.enter="submit"
             />
-            <input
-              v-model="date"
-              class="input"
-              type="date"
-              style="margin-top: 8px"
-            />
+            <input v-model="date" class="input" type="date" style="margin-top: 8px" />
           </div>
         </div>
         <footer class="modal__foot">
           <button class="btn btn--ghost" @click="emit('close')">Cancel</button>
-          <button class="btn btn--primary" :disabled="!name.trim()" @click="submit">
-            Create
-          </button>
+          <button class="btn btn--primary" :disabled="!name.trim()" @click="submit">Create</button>
         </footer>
       </div>
     </div>

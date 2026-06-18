@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
-import Icon from '@/components/Icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import SongPicker from '@/components/SongPicker.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
 import { formatDate } from '@/utils'
@@ -48,22 +48,17 @@ const items = computed(() => current.value?.items ?? [])
 const resolved = computed(() =>
   items.value
     .map((item) => ({ item, song: library.getById(item.songId) }))
-    .filter((r): r is { item: (typeof r)['item']; song: NonNullable<(typeof r)['song']> } => !!r.song),
+    .filter(
+      (r): r is { item: (typeof r)['item']; song: NonNullable<(typeof r)['song']> } => !!r.song,
+    ),
 )
 
-const isThisServiceLoaded = computed(
-  () => player.service?.id === props.id,
-)
+const isThisServiceLoaded = computed(() => player.service?.id === props.id)
 const currentItem = computed(() => (isThisServiceLoaded.value ? player.current?.item : null))
 
 function playAll(startIndex = 0) {
   if (!current.value || resolved.value.length === 0) return
-  void player.load(
-    current.value,
-    library.songs,
-    startIndex,
-    true,
-  )
+  void player.load(current.value, library.songs, startIndex, true)
 }
 
 function playFrom(index: number) {
@@ -99,9 +94,11 @@ function removeItem(itemId: string) {
 
 function saveMeta() {
   if (!current.value) return
-  void services.rename(current.value.id, { name: metaName.value, date: metaDate.value }).then(() => {
-    editingMeta.value = false
-  })
+  void services
+    .rename(current.value.id, { name: metaName.value, date: metaDate.value })
+    .then(() => {
+      editingMeta.value = false
+    })
 }
 
 /* drag-and-drop */
@@ -126,9 +123,7 @@ function resetDrag() {
   dragOverIndex.value = null
 }
 
-const serviceNotFound = computed(
-  () => services.ready && !current.value,
-)
+const serviceNotFound = computed(() => services.ready && !current.value)
 </script>
 
 <template>
@@ -142,7 +137,7 @@ const serviceNotFound = computed(
 
   <section v-else-if="current">
     <button class="back" @click="router.push({ name: 'services' })">
-      <Icon name="arrow-left" :size="16" /> All services
+      <AppIcon name="arrow-left" :size="16" /> All services
     </button>
 
     <header class="head">
@@ -150,11 +145,11 @@ const serviceNotFound = computed(
         <template v-if="!editingMeta">
           <div class="head__meta">
             <span class="head__date">
-              <Icon name="calendar" :size="14" />
+              <AppIcon name="calendar" :size="14" />
               {{ formatDate(current.date) || 'No date set' }}
             </span>
             <button class="head__edit" title="Edit" @click="editingMeta = true">
-              <Icon name="edit" :size="14" />
+              <AppIcon name="edit" :size="14" />
             </button>
           </div>
           <h1 class="head__title">{{ current.name }}</h1>
@@ -163,32 +158,33 @@ const serviceNotFound = computed(
           <input v-model="metaName" class="input" placeholder="Service name" />
           <input v-model="metaDate" class="input" placeholder="Date (free-form)" />
           <div class="head__edit-actions">
-            <button class="btn btn--ghost btn--sm" @click="syncMetaFields(), (editingMeta = false)">Cancel</button>
+            <button
+              class="btn btn--ghost btn--sm"
+              @click="(syncMetaFields(), (editingMeta = false))"
+            >
+              Cancel
+            </button>
             <button class="btn btn--primary btn--sm" @click="saveMeta">Save</button>
           </div>
         </div>
       </div>
       <div class="head__actions">
-        <button
-          class="btn btn--primary"
-          :disabled="resolved.length === 0"
-          @click="playAll(0)"
-        >
-          <Icon name="play" :size="16" />
+        <button class="btn btn--primary" :disabled="resolved.length === 0" @click="playAll(0)">
+          <AppIcon name="play" :size="16" />
           {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
         </button>
         <button class="btn" @click="pickerOpen = true">
-          <Icon name="plus" :size="16" /> Add songs
+          <AppIcon name="plus" :size="16" /> Add songs
         </button>
       </div>
     </header>
 
     <div v-if="resolved.length === 0" class="empty surface">
-      <div class="empty__art"><Icon name="music" :size="36" /></div>
+      <div class="empty__art"><AppIcon name="music" :size="36" /></div>
       <h3>Empty playlist</h3>
       <p>Add songs from your library to build this service's set list.</p>
       <button class="btn btn--primary" @click="pickerOpen = true">
-        <Icon name="plus" :size="16" /> Add songs
+        <AppIcon name="plus" :size="16" /> Add songs
       </button>
     </div>
 

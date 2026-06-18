@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
-import Icon from './Icon.vue'
+import AppIcon from './AppIcon.vue'
 import VolumeSlider from './VolumeSlider.vue'
 
 const router = useRouter()
@@ -28,7 +28,7 @@ function gotoService() {
       <!-- now playing -->
       <div class="np">
         <div class="np__art" :class="{ 'np__art--playing': player.isPlaying }">
-          <Icon name="music" :size="22" />
+          <AppIcon name="music" :size="22" />
         </div>
         <div class="np__meta" @click="gotoService">
           <div class="np__title" :title="player.currentSong?.title">
@@ -49,7 +49,7 @@ function gotoService() {
             title="Previous"
             @click="player.prev()"
           >
-            <Icon name="prev" :size="20" />
+            <AppIcon name="prev" :size="20" />
           </button>
           <button
             v-if="!player.isPlaying"
@@ -58,7 +58,7 @@ function gotoService() {
             title="Play"
             @click="player.play()"
           >
-            <Icon name="play" :size="22" />
+            <AppIcon name="play" :size="22" />
           </button>
           <button
             v-else
@@ -66,15 +66,10 @@ function gotoService() {
             title="Pause"
             @click="player.pause()"
           >
-            <Icon name="pause" :size="22" />
+            <AppIcon name="pause" :size="22" />
           </button>
-          <button
-            class="icon-btn"
-            :disabled="!player.hasNext"
-            title="Next"
-            @click="player.next()"
-          >
-            <Icon name="next" :size="20" />
+          <button class="icon-btn" :disabled="!player.hasNext" title="Next" @click="player.next()">
+            <AppIcon name="next" :size="20" />
           </button>
         </div>
         <div class="seek">
@@ -132,7 +127,7 @@ function gotoService() {
           />
         </div>
         <div class="master">
-          <Icon name="volume" :size="18" />
+          <AppIcon name="volume" :size="18" />
           <VolumeSlider
             class="master__slider"
             :model-value="player.masterVolume"
@@ -151,11 +146,7 @@ function gotoService() {
   right: 0;
   bottom: 0;
   z-index: 40;
-  background: linear-gradient(
-    180deg,
-    rgba(11, 16, 32, 0.7),
-    rgba(11, 16, 32, 0.96)
-  );
+  background: linear-gradient(180deg, rgba(11, 16, 32, 0.7), rgba(11, 16, 32, 0.96));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--c-border);

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useServicesStore } from '@/stores/services'
 import ServiceCard from '@/components/ServiceCard.vue'
 import ServiceEditor from '@/components/ServiceEditor.vue'
-import Icon from '@/components/Icon.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
 const services = useServicesStore()
 const router = useRouter()
@@ -29,7 +29,7 @@ function submit(payload: { name: string; date: string }) {
       <h1>Services</h1>
       <div class="section-title__actions">
         <button class="btn btn--primary" @click="editorOpen = true">
-          <Icon name="plus" :size="16" /> New service
+          <AppIcon name="plus" :size="16" /> New service
         </button>
       </div>
     </div>
@@ -37,20 +37,19 @@ function submit(payload: { name: string; date: string }) {
     <div v-if="services.loading" class="empty"><p>Loading…</p></div>
 
     <div v-else-if="services.services.length === 0" class="empty surface">
-      <div class="empty__art"><Icon name="calendar" :size="36" /></div>
+      <div class="empty__art"><AppIcon name="calendar" :size="36" /></div>
       <h3>No services yet</h3>
-      <p>Create a service for each worship occasion — Sunday morning, Wednesday prayer, Easter, and so on — and arrange songs into a playlist.</p>
+      <p>
+        Create a service for each worship occasion — Sunday morning, Wednesday prayer, Easter, and
+        so on — and arrange songs into a playlist.
+      </p>
       <button class="btn btn--primary" @click="editorOpen = true">
-        <Icon name="plus" :size="16" /> Create your first service
+        <AppIcon name="plus" :size="16" /> Create your first service
       </button>
     </div>
 
     <div v-else class="grid">
-      <ServiceCard
-        v-for="svc in services.services"
-        :key="svc.id"
-        :service="svc"
-      />
+      <ServiceCard v-for="svc in services.services" :key="svc.id" :service="svc" />
     </div>
 
     <ServiceEditor :open="editorOpen" @close="editorOpen = false" @submit="submit" />

@@ -64,8 +64,8 @@ export const usePlayerStore = defineStore('player', () => {
   const isLoading = ref(false)
 
   /* ---------- derived ---------- */
-  const current = computed<ActiveItem | null>(
-    () => (index.value >= 0 ? queue.value[index.value] ?? null : null),
+  const current = computed<ActiveItem | null>(() =>
+    index.value >= 0 ? (queue.value[index.value] ?? null) : null,
   )
   const currentSong = computed<Song | null>(() => current.value?.song ?? null)
   const hasNext = computed(() => index.value < queue.value.length - 1)
@@ -152,10 +152,7 @@ export const usePlayerStore = defineStore('player', () => {
   function syncMetadata() {
     const pd = pianoEl?.duration ?? 0
     const cd = choirEl?.duration ?? 0
-    const d = Math.max(
-      Number.isFinite(pd) ? pd : 0,
-      Number.isFinite(cd) ? cd : 0,
-    )
+    const d = Math.max(Number.isFinite(pd) ? pd : 0, Number.isFinite(cd) ? cd : 0)
     if (d > 0) duration.value = d
     ready.value = d > 0
   }
@@ -258,12 +255,7 @@ export const usePlayerStore = defineStore('player', () => {
    * Load a service playlist and (optionally) start playing from `startIndex`.
    * Resolves songs from the provided map (caller has already fetched them).
    */
-  async function load(
-    svc: Service,
-    songs: Song[],
-    startIndex = 0,
-    autoplay = true,
-  ) {
+  async function load(svc: Service, songs: Song[], startIndex = 0, autoplay = true) {
     ensureElements()
     const map = new Map(songs.map((s) => [s.id, s]))
     const items: ActiveItem[] = svc.items

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import Icon from './Icon.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
@@ -91,7 +91,7 @@ function stripExt(name: string): string {
         <header class="modal__head">
           <h2>Add Song</h2>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <Icon name="x" :size="20" />
+            <AppIcon name="x" :size="20" />
           </button>
         </header>
 
@@ -115,7 +115,7 @@ function stripExt(name: string): string {
               @dragover.prevent
               @drop.prevent="dropPiano"
             >
-              <Icon name="upload" :size="22" />
+              <AppIcon name="upload" :size="22" />
               <div class="drop__label">
                 <span class="drop__tag">Piano track</span>
                 <span class="drop__name" :title="piano?.name">
@@ -132,7 +132,7 @@ function stripExt(name: string): string {
               @dragover.prevent
               @drop.prevent="dropChoir"
             >
-              <Icon name="upload" :size="22" />
+              <AppIcon name="upload" :size="22" />
               <div class="drop__label">
                 <span class="drop__tag">Choir track</span>
                 <span class="drop__name" :title="choir?.name">
@@ -144,8 +144,7 @@ function stripExt(name: string): string {
 
           <p v-if="error" class="error">{{ error }}</p>
           <p class="hint">
-            Files are stored locally in your browser (IndexedDB). They never leave this
-            device.
+            Files are stored locally in your browser (IndexedDB). They never leave this device.
           </p>
         </div>
 

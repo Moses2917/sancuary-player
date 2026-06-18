@@ -13,9 +13,7 @@ const props = withDefaults(
   },
 )
 
-const sizeStr = computed(() =>
-  typeof props.size === 'number' ? `${props.size}` : props.size,
-)
+const sizeStr = computed(() => (typeof props.size === 'number' ? `${props.size}` : props.size))
 </script>
 
 <template>

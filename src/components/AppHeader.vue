@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import Icon from './Icon.vue'
+import AppIcon from './AppIcon.vue'
 </script>
 
 <template>
@@ -8,7 +8,7 @@ import Icon from './Icon.vue'
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
         <span class="brand__mark">
-          <Icon name="cross" :size="18" :stroke-width="0" />
+          <AppIcon name="cross" :size="18" :stroke-width="0" />
         </span>
         <span class="brand__text">
           <span class="brand__title">Sanctuary</span>
@@ -17,11 +17,11 @@ import Icon from './Icon.vue'
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <Icon name="calendar" :size="18" />
+          <AppIcon name="calendar" :size="18" />
           <span>Services</span>
         </RouterLink>
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <Icon name="music" :size="18" />
+          <AppIcon name="music" :size="18" />
           <span>Library</span>
         </RouterLink>
       </nav>
@@ -34,11 +34,7 @@ import Icon from './Icon.vue'
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(
-    180deg,
-    rgba(11, 16, 32, 0.92),
-    rgba(11, 16, 32, 0.6)
-  );
+  background: linear-gradient(180deg, rgba(11, 16, 32, 0.92), rgba(11, 16, 32, 0.6));
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--c-border);

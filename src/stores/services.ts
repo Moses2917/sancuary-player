@@ -21,10 +21,7 @@ export const useServicesStore = defineStore('services', () => {
     return services.value.find((s) => s.id === id)
   }
 
-  async function create(input: {
-    name: string
-    date?: string
-  }): Promise<Service> {
+  async function create(input: { name: string; date?: string }): Promise<Service> {
     const svc: Service = {
       id: uid('svc'),
       name: input.name.trim() || 'Untitled service',
@@ -42,8 +39,7 @@ export const useServicesStore = defineStore('services', () => {
     if (!svc) return
     const next: Service = { ...svc }
     if (patch.name !== undefined) next.name = patch.name.trim() || svc.name
-    if (patch.date !== undefined)
-      next.date = patch.date.trim() || undefined
+    if (patch.date !== undefined) next.date = patch.date.trim() || undefined
     await idb.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
@@ -70,12 +66,12 @@ export const useServicesStore = defineStore('services', () => {
   async function reorder(id: string, from: number, to: number) {
     const svc = getById(id)
     if (!svc) return
-  const items = [...svc.items]
-  if (from < 0 || from >= items.length || to < 0 || to >= items.length) return
-  const removed = items.splice(from, 1)
-  const moved = removed[0]
-  if (!moved) return
-  items.splice(to, 0, moved)
+    const items = [...svc.items]
+    if (from < 0 || from >= items.length || to < 0 || to >= items.length) return
+    const removed = items.splice(from, 1)
+    const moved = removed[0]
+    if (!moved) return
+    items.splice(to, 0, moved)
     const next: Service = { ...svc, items }
     await idb.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
@@ -88,9 +84,7 @@ export const useServicesStore = defineStore('services', () => {
   ) {
     const svc = getById(id)
     if (!svc) return
-    const items = svc.items.map((it) =>
-      it.id === itemId ? { ...it, ...patch } : it,
-    )
+    const items = svc.items.map((it) => (it.id === itemId ? { ...it, ...patch } : it))
     const next: Service = { ...svc, items }
     await idb.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))

@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import PlayerBar from '@/components/PlayerBar.vue'
+import { useSettingsStore } from '@/stores/settings'
+import { usePlayerStore } from '@/stores/player'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+
+const settings = useSettingsStore()
+const player = usePlayerStore()
+
+onMounted(async () => {
+  await settings.init()
+  settings.watchPlayer(player)
+})
+
+useKeyboardShortcuts()
 </script>
 
 <template>

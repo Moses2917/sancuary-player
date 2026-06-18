@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import type { Service } from '@/types'
 import { formatDate } from '@/utils'
-import Icon from './Icon.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{ service: Service }>()
 
@@ -17,14 +17,14 @@ function open() {
   <article class="card surface" tabindex="0" @click="open" @keydown.enter="open">
     <div class="card__head">
       <span class="card__date">
-        <Icon name="calendar" :size="14" />
+        <AppIcon name="calendar" :size="14" />
         {{ formatDate(service.date) || 'No date' }}
       </span>
       <span class="card__count">{{ service.items.length }} songs</span>
     </div>
     <h3 class="card__title" :title="service.name">{{ service.name }}</h3>
     <div class="card__foot">
-      <span class="card__cta">Open playlist <Icon name="chevron-right" :size="14" /></span>
+      <span class="card__cta">Open playlist <AppIcon name="chevron-right" :size="14" /></span>
     </div>
   </article>
 </template>
