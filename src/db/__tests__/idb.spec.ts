@@ -29,11 +29,7 @@ describe('idb — songs', () => {
   beforeEach(async () => {
     // Wipe the fake DB between tests for isolation.
     const db = await idb.getDB()
-    await Promise.all([
-      db.clear('songs'),
-      db.clear('services'),
-      db.clear('settings'),
-    ])
+    await Promise.all([db.clear('songs'), db.clear('services'), db.clear('settings')])
   })
 
   it('round-trips a song through the store', async () => {

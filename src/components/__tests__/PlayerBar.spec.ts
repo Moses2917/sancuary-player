@@ -51,7 +51,12 @@ describe('PlayerBar', () => {
     const wrapper = await mountBar()
     const player = usePlayerStore()
     const a = makeSong()
-    await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+    await player.load(
+      makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+      [a],
+      0,
+      false,
+    )
     await flushPromises()
     expect(wrapper.text()).toContain('Amazing Grace')
     expect(wrapper.text()).toContain('Sunday Morning')
@@ -62,7 +67,12 @@ describe('PlayerBar', () => {
     const wrapper = await mountBar()
     const player = usePlayerStore()
     const a = makeSong()
-    await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+    await player.load(
+      makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+      [a],
+      0,
+      false,
+    )
     await flushPromises()
 
     await wrapper.get('.icon-btn--lg').trigger('click')
@@ -77,7 +87,12 @@ describe('PlayerBar', () => {
     const wrapper = await mountBar()
     const player = usePlayerStore()
     const a = makeSong()
-    await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+    await player.load(
+      makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+      [a],
+      0,
+      true,
+    )
     await flushPromises()
 
     const pianoMuteBtn = wrapper.findAll('.mix__tag')[0]!
@@ -90,7 +105,12 @@ describe('PlayerBar', () => {
     const wrapper = await mountBar()
     const player = usePlayerStore()
     const a = makeSong()
-    await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+    await player.load(
+      makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+      [a],
+      0,
+      false,
+    )
     await flushPromises()
 
     const buttons = wrapper.findAll('.transport__controls .icon-btn')

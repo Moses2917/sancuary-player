@@ -76,9 +76,7 @@ describe('player store', () => {
     it('sets the per-item volumes onto the player on load', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      const svc = makeService([
-        { id: 'i1', songId: 's1', pianoVolume: 0.4, choirVolume: 0.7 },
-      ])
+      const svc = makeService([{ id: 'i1', songId: 's1', pianoVolume: 0.4, choirVolume: 0.7 }])
       await player.load(svc, [a], 0, false)
       expect(player.pianoVolume).toBe(0.4)
       expect(player.choirVolume).toBe(0.7)
@@ -89,9 +87,7 @@ describe('player store', () => {
     it('play() drives both audio elements and sets isPlaying', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      const svc = makeService([
-        { id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 },
-      ])
+      const svc = makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }])
       await player.load(svc, [a], 0, true)
       const { piano, choir } = grabElements()
       expect(piano.paused).toBe(false)
@@ -102,7 +98,12 @@ describe('player store', () => {
     it('pause() stops both elements', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       player.pause()
       const { piano, choir } = grabElements()
       expect(piano.paused).toBe(true)
@@ -113,7 +114,12 @@ describe('player store', () => {
     it('toggle() flips between play and pause', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
       expect(player.isPlaying).toBe(false)
       player.toggle()
       await Promise.resolve()
@@ -125,7 +131,12 @@ describe('player store', () => {
     it('stop() pauses and rewinds to zero', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       piano.currentTime = 12
       choir.currentTime = 12
@@ -157,7 +168,12 @@ describe('player store', () => {
     it('next() does nothing at the end of the queue', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
       await player.next()
       expect(player.currentSong?.id).toBe('s1')
     })
@@ -185,7 +201,12 @@ describe('player store', () => {
     it('seek() sets currentTime on both elements', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, false)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
       const { piano, choir } = grabElements()
       await player.seek(42)
       expect(piano.currentTime).toBe(42)
@@ -196,7 +217,12 @@ describe('player store', () => {
     it('timeupdate on piano updates the exposed currentTime', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano } = grabElements()
       piano.currentTime = 8.5
       piano.__dispatch('timeupdate')
@@ -206,7 +232,12 @@ describe('player store', () => {
     it('drift correction nudges choir back into sync with piano', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       piano.currentTime = 10
       choir.currentTime = 10.3 // 0.3s drift, above the 0.08s threshold
@@ -221,7 +252,12 @@ describe('player store', () => {
     it('setMaster scales both tracks', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 0.8, choirVolume: 0.5 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 0.8, choirVolume: 0.5 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       player.setMaster(0.5)
       // effective = trackVol * master
@@ -232,7 +268,12 @@ describe('player store', () => {
     it('setPiano only changes the piano element volume', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       player.setPiano(0.3)
       expect(piano.volume).toBeCloseTo(0.3 * player.masterVolume, 5)
@@ -242,7 +283,12 @@ describe('player store', () => {
     it('togglePianoMute silences the piano track only', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       player.togglePianoMute()
       expect(player.pianoMuted).toBe(true)
@@ -255,7 +301,12 @@ describe('player store', () => {
     it('togglePianoSolo silences the choir track', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
-      await player.load(makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]), [a], 0, true)
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
       const { piano, choir } = grabElements()
       player.togglePianoSolo()
       expect(player.pianoSolo).toBe(true)

@@ -28,11 +28,7 @@ export function formatDate(input?: string): string {
   // local instead so the displayed day matches what the user entered.
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input)
   if (dateOnly) {
-    parsed = new Date(
-      Number(dateOnly[1]),
-      Number(dateOnly[2]) - 1,
-      Number(dateOnly[3]),
-    )
+    parsed = new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
   } else {
     parsed = new Date(input)
   }

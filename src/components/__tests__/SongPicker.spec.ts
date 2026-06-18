@@ -15,7 +15,11 @@ function makeSong(id: string, title: string): Song {
   }
 }
 
-const songs = [makeSong('s1', 'Amazing Grace'), makeSong('s2', 'How Great Thou Art'), makeSong('s3', 'Holy Holy Holy')]
+const songs = [
+  makeSong('s1', 'Amazing Grace'),
+  makeSong('s2', 'How Great Thou Art'),
+  makeSong('s3', 'Holy Holy Holy'),
+]
 
 describe('SongPicker', () => {
   function mountPicker(excludeIds: string[] = []) {

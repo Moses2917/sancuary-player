@@ -45,7 +45,7 @@ describe('VolumeSlider', () => {
     const wrapper = mount(VolumeSlider, {
       props: { modelValue: 0.25, min: 0, max: 1 },
     })
-    const style = (wrapper.find('.slider').attributes('style') ?? '')
+    const style = wrapper.find('.slider').attributes('style') ?? ''
     // 0.25 of full range → 25%
     expect(style).toMatch(/--pct:\s*25%/)
   })
