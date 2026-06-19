@@ -6,6 +6,7 @@ import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
 import AppIcon from '@/components/AppIcon.vue'
 import SongPicker from '@/components/SongPicker.vue'
+import SongImporter from '@/components/SongImporter.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
 import { formatDate } from '@/utils'
 import type { Song } from '@/types'
@@ -18,6 +19,7 @@ const library = useLibraryStore()
 const player = usePlayerStore()
 
 const pickerOpen = ref(false)
+const creatorOpen = ref(false)
 const editingMeta = ref(false)
 const metaName = ref('')
 const metaDate = ref('')
@@ -74,6 +76,18 @@ function addSongs(songs: Song[]) {
   void services.addItems(current.value.id, songs).then(() => {
     pickerOpen.value = false
   })
+}
+
+/**
+ * After a brand-new song is created from within the service editor, resolve
+ * it through the library (so the store has it) and append it to this setlist.
+ */
+function onSongCreated(payload: { id: string }) {
+  if (!current.value) return
+  creatorOpen.value = false
+  const song = library.getById(payload.id)
+  if (!song) return
+  void services.addItems(current.value.id, [song])
 }
 
 function setPiano(itemId: string, value: number) {
@@ -176,6 +190,9 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         <button class="btn" @click="pickerOpen = true">
           <AppIcon name="plus" :size="16" /> Add songs
         </button>
+        <button class="btn" @click="creatorOpen = true">
+          <AppIcon name="upload" :size="16" /> Create song
+        </button>
       </div>
     </header>
 
@@ -183,9 +200,14 @@ const serviceNotFound = computed(() => services.ready && !current.value)
       <div class="empty__art"><AppIcon name="music" :size="36" /></div>
       <h3>Empty playlist</h3>
       <p>Add songs from your library to build this service's set list.</p>
-      <button class="btn btn--primary" @click="pickerOpen = true">
-        <AppIcon name="plus" :size="16" /> Add songs
-      </button>
+      <div class="empty__actions">
+        <button class="btn btn--primary" @click="pickerOpen = true">
+          <AppIcon name="plus" :size="16" /> Add songs
+        </button>
+        <button class="btn" @click="creatorOpen = true">
+          <AppIcon name="upload" :size="16" /> Create new
+        </button>
+      </div>
     </div>
 
     <ul v-else class="list">
@@ -216,6 +238,11 @@ const serviceNotFound = computed(() => services.ready && !current.value)
       :exclude-ids="items.map((i) => i.songId)"
       @close="pickerOpen = false"
       @add="addSongs"
+    />
+    <SongImporter
+      :open="creatorOpen"
+      @close="creatorOpen = false"
+      @saved-song="onSongCreated"
     />
   </section>
 </template>
@@ -317,6 +344,12 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   padding: var(--sp-1) var(--sp-3);
   font-size: 0.8rem;
   align-self: flex-start;
+}
+.empty__actions {
+  display: inline-flex;
+  gap: var(--sp-3);
+  justify-content: center;
+  margin-top: var(--sp-2);
 }
 
 @media (max-width: 600px) {
