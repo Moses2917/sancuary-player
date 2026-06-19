@@ -10,14 +10,15 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
-  <g fill="none" stroke="url(#gold)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
-    <!-- church silhouette: roof + cross on top + body -->
-    <path d="M256 96 L256 168"/>
-    <path d="M232 130 L280 130"/>
-    <path d="M150 230 L256 168 L362 230"/>
-    <path d="M170 230 L170 396"/>
-    <path d="M342 230 L342 396"/>
-    <path d="M170 396 L342 396"/>
-    <path d="M232 396 L232 312 L280 312 L280 396"/>
+  <!-- Lucide "church" icon, scaled up and stroked with the gold gradient -->
+  <g fill="none" stroke="url(#gold)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" transform="translate(96 70) scale(13.3)">
+    <path d="M10 9h4"/>
+    <path d="M12 7v5"/>
+    <path d="M14 22v-4a2 2 0 0 0-4 0v4"/>
+    <path d="M18 22V5l-6-3-6 3v17"/>
+    <path d="M18 11l-1.5-1.5"/>
+    <path d="M18 16l-1.5-1.5"/>
+    <path d="M6 11l1.5-1.5"/>
+    <path d="M6 16l1.5-1.5"/>
   </g>
 </svg>
