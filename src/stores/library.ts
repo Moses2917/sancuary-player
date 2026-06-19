@@ -22,6 +22,11 @@ export const useLibraryStore = defineStore('library', () => {
     loading.value = false
   }
 
+  /** Force a re-read from idb — used after restoring a backup. */
+  async function reload() {
+    songs.value = await idb.getAllSongs()
+  }
+
   function getById(id: string): Song | undefined {
     return songs.value.find((s) => s.id === id)
   }
@@ -150,6 +155,7 @@ export const useLibraryStore = defineStore('library', () => {
     ready,
     loading,
     init,
+    reload,
     getById,
     addSong,
     addBundledSongs,

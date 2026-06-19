@@ -17,6 +17,11 @@ export const useServicesStore = defineStore('services', () => {
     loading.value = false
   }
 
+  /** Force a re-read from idb — used after restoring a backup. */
+  async function reload() {
+    services.value = await idb.getAllServices()
+  }
+
   function getById(id: string): Service | undefined {
     return services.value.find((s) => s.id === id)
   }
@@ -104,6 +109,7 @@ export const useServicesStore = defineStore('services', () => {
     ready,
     loading,
     init,
+    reload,
     getById,
     create,
     rename,

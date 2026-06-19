@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Music, Pause, Play, Plus, Search, Trash2, Upload } from '@lucide/vue'
+import { Database, Download, Music, Pause, Play, Plus, Search, Trash2, Upload } from '@lucide/vue'
 import { useLibraryStore } from '@/stores/library'
+import { useServicesStore } from '@/stores/services'
 import { usePlayerStore } from '@/stores/player'
 import type { Song, SongTag } from '@/types'
+import {
+  buildBackup,
+  downloadBackup,
+  parseBackup,
+  pickBackupFile,
+  restoreBackup,
+} from '@/utils/backup'
 import SongImporter from '@/components/SongImporter.vue'
 import BundledLoader from '@/components/BundledLoader.vue'
 
 const library = useLibraryStore()
+const services = useServicesStore()
 const player = usePlayerStore()
 
 const importerOpen = ref(false)
@@ -15,6 +24,8 @@ const bundledOpen = ref(false)
 const confirmingId = ref<string | null>(null)
 const query = ref('')
 const tagFilter = ref<SongTag | 'all'>('all')
+const backupBusy = ref(false)
+const backupMessage = ref('')
 
 onMounted(() => {
   void library.init()
@@ -38,6 +49,46 @@ function remove(song: Song) {
   void library.removeSong(song.id).then(() => {
     confirmingId.value = null
   })
+}
+
+async function exportBackup() {
+  if (backupBusy.value) return
+  backupBusy.value = true
+  backupMessage.value = ''
+  try {
+    const backup = await buildBackup()
+    downloadBackup(backup)
+    backupMessage.value = `Exported ${backup.songs.length} songs and ${backup.services.length} services.`
+  } catch (err) {
+    backupMessage.value = err instanceof Error ? err.message : 'Export failed.'
+  } finally {
+    backupBusy.value = false
+  }
+}
+
+async function importBackup() {
+  if (backupBusy.value) return
+  const file = await pickBackupFile()
+  if (!file) return
+  backupBusy.value = true
+  backupMessage.value = ''
+  try {
+    const text = await file.text()
+    const backup = parseBackup(text)
+    const mode = window.confirm(
+      `Replace your entire library with this backup?\n\n` +
+        `OK = Replace everything\nCancel = Merge (incoming wins on conflicts)`,
+    )
+      ? 'replace'
+      : 'merge'
+    const result = await restoreBackup(backup, mode)
+    await Promise.all([library.reload(), services.reload()])
+    backupMessage.value = `Imported ${result.songs} songs and ${result.services} services (${mode}).`
+  } catch (err) {
+    backupMessage.value = err instanceof Error ? err.message : 'Import failed.'
+  } finally {
+    backupBusy.value = false
+  }
 }
 
 const filtered = computed<Song[]>(() => {
@@ -65,14 +116,22 @@ const counts = computed(() => {
     <div class="section-title">
       <h1>Library</h1>
       <div class="section-title__actions">
+        <button class="btn" :disabled="backupBusy" @click="exportBackup" title="Download a backup">
+          <Download :size="16" /> <span class="hide-sm">Export</span>
+        </button>
+        <button class="btn" :disabled="backupBusy" @click="importBackup" title="Restore a backup">
+          <Database :size="16" /> <span class="hide-sm">Restore</span>
+        </button>
         <button class="btn" @click="bundledOpen = true">
-          <Upload :size="16" /> Load bundled
+          <Upload :size="16" /> <span class="hide-sm">Bundled</span>
         </button>
         <button class="btn btn--primary" @click="importerOpen = true">
           <Plus :size="16" /> Add song
         </button>
       </div>
     </div>
+
+    <p v-if="backupMessage" class="backup-msg">{{ backupMessage }}</p>
 
     <div v-if="!library.loading && library.songs.length > 0" class="filters">
       <div class="search">
@@ -409,5 +468,22 @@ const counts = computed(() => {
 .tag-badge--old {
   color: var(--c-piano);
   background: color-mix(in srgb, var(--c-piano) 18%, transparent);
+}
+.backup-msg {
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+  background: var(--c-bg-1);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.hide-sm {
+  /* visible by default; media query below collapses on small screens */
+}
+@media (max-width: 720px) {
+  .hide-sm {
+    display: none;
+  }
 }
 </style>

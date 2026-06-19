@@ -135,3 +135,57 @@ export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSett
   await db.put('settings', deepRaw(next))
   return next
 }
+
+/* ---------------- Bulk backup ---------------- */
+
+/** Snapshot every object store into a plain array form (songs, services, settings). */
+export async function dumpAll(): Promise<{
+  songs: Song[]
+  services: Service[]
+  settings: AppSettings
+}> {
+  const db = await getDB()
+  const [songs, services, settings] = await Promise.all([
+    db.getAll('songs'),
+    db.getAll('services'),
+    db.get('settings', 'app'),
+  ])
+  return {
+    songs: songs as Song[],
+    services: services as Service[],
+    settings: settings ?? DEFAULT_SETTINGS,
+  }
+}
+
+/** Replace every object store with the provided snapshot. */
+export async function restoreAll(input: {
+  songs: Song[]
+  services: Service[]
+  settings?: AppSettings
+}): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['songs', 'services', 'settings'], 'readwrite')
+  await Promise.all([
+    tx.objectStore('songs').clear(),
+    tx.objectStore('services').clear(),
+    tx.objectStore('settings').clear(),
+  ])
+  for (const song of input.songs) await tx.objectStore('songs').put(deepRaw(song))
+  for (const svc of input.services) await tx.objectStore('services').put(deepRaw(svc))
+  if (input.settings) await tx.objectStore('settings').put(deepRaw(input.settings))
+  await tx.done
+}
+
+/** Merge records by id (incoming wins on conflict) without wiping the rest. */
+export async function mergeAll(input: {
+  songs?: Song[]
+  services?: Service[]
+  settings?: AppSettings
+}): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['songs', 'services', 'settings'], 'readwrite')
+  if (input.songs) for (const s of input.songs) await tx.objectStore('songs').put(deepRaw(s))
+  if (input.services) for (const s of input.services) await tx.objectStore('services').put(deepRaw(s))
+  if (input.settings) await tx.objectStore('settings').put(deepRaw(input.settings))
+  await tx.done
+}
