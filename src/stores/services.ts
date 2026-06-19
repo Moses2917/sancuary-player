@@ -61,7 +61,9 @@ export const useServicesStore = defineStore('services', () => {
       id: uid('item'),
       songId: song.id,
       pianoVolume: 1,
-      choirVolume: 1,
+      // Choir default is intentionally quieter so the piano carries the
+      // congregation while the choir track supports underneath.
+      choirVolume: 0.5,
     }))
     const next: Service = { ...svc, items: [...svc.items, ...newItems] }
     await idb.putService(next)

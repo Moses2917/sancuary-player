@@ -49,4 +49,23 @@ describe('VolumeSlider', () => {
     // 0.25 of full range → 25%
     expect(style).toMatch(/--pct:\s*25%/)
   })
+
+  it('renders a percentage readout when showValue is true', () => {
+    const wrapper = mount(VolumeSlider, {
+      props: { modelValue: 0.65, showValue: true },
+    })
+    expect(wrapper.find('.slider__value').text()).toBe('65%')
+  })
+
+  it('hides the readout by default', () => {
+    const wrapper = mount(VolumeSlider, { props: { modelValue: 0.5 } })
+    expect(wrapper.find('.slider__value').exists()).toBe(false)
+  })
+
+  it('scales the percentage across a non-default range', () => {
+    const wrapper = mount(VolumeSlider, {
+      props: { modelValue: 50, min: 0, max: 100, showValue: true },
+    })
+    expect(wrapper.find('.slider__value').text()).toBe('50%')
+  })
 })

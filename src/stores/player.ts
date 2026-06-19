@@ -55,7 +55,8 @@ export const usePlayerStore = defineStore('player', () => {
 
   const masterVolume = ref(0.9)
   const pianoVolume = ref(1)
-  const choirVolume = ref(1)
+  // Choir default is half — supports the piano rather than matching it.
+  const choirVolume = ref(0.5)
   const pianoMuted = ref(false)
   const choirMuted = ref(false)
   const pianoSolo = ref(false)

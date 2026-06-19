@@ -201,6 +201,7 @@ function openNowPlaying() {
             :model-value="player.pianoVolume"
             accent="--c-piano"
             :disabled="player.pianoMuted"
+            show-value
             @update:model-value="player.setPiano"
           />
         </div>
@@ -219,6 +220,7 @@ function openNowPlaying() {
             :model-value="player.choirVolume"
             accent="--c-choir"
             :disabled="player.choirMuted"
+            show-value
             @update:model-value="player.setChoir"
           />
         </div>
@@ -227,6 +229,7 @@ function openNowPlaying() {
           <VolumeSlider
             class="master__slider"
             :model-value="player.masterVolume"
+            show-value
             @update:model-value="player.setMaster"
           />
         </div>

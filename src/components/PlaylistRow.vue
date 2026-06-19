@@ -69,6 +69,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
           class="mix__slider"
           :model-value="item.pianoVolume"
           accent="--c-piano"
+          show-value
           @update:model-value="emit('update:piano', $event)"
         />
       </div>
@@ -78,6 +79,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
           class="mix__slider"
           :model-value="item.choirVolume"
           accent="--c-choir"
+          show-value
           @update:model-value="emit('update:choir', $event)"
         />
       </div>

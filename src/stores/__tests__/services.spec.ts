@@ -76,7 +76,8 @@ describe('services store', () => {
     expect(items.length).toBe(2)
     expect(items[0]?.songId).toBe(a.id)
     expect(items[0]?.pianoVolume).toBe(1)
-    expect(items[0]?.choirVolume).toBe(1)
+    // Choir default is intentionally quieter than piano.
+    expect(items[0]?.choirVolume).toBe(0.5)
     expect(items[0]?.id).not.toBe(items[1]?.id)
   })
 

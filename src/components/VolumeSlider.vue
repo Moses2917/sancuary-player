@@ -13,6 +13,10 @@ const props = withDefaults(
     max?: number
     step?: number
     disabled?: boolean
+    /** When true, render a "NN%" readout next to the slider. */
+    showValue?: boolean
+    /** Render the value as-is (0..1 -> 0..100) instead of min/max scaled. */
+    unit?: 'percent' | 'raw'
   }>(),
   {
     orientation: 'horizontal',
@@ -21,6 +25,8 @@ const props = withDefaults(
     max: 1,
     step: 0.01,
     disabled: false,
+    showValue: false,
+    unit: 'percent',
   },
 )
 
@@ -30,6 +36,11 @@ const percent = computed(() => {
   const range = props.max - props.min
   if (range <= 0) return 0
   return ((props.modelValue - props.min) / range) * 100
+})
+
+const valueLabel = computed(() => {
+  if (props.unit === 'raw') return props.modelValue.toFixed(2)
+  return `${Math.round(percent.value)}%`
 })
 
 function onInput(e: Event) {
@@ -50,18 +61,21 @@ const styleObj = computed(() => ({
     :style="styleObj"
   >
     <label v-if="label" class="slider__label">{{ label }}</label>
-    <input
-      class="slider__input"
-      type="range"
-      :min="min"
-      :max="max"
-      :step="step"
-      :value="modelValue"
-      :disabled="disabled"
-      :aria-label="label"
-      :orient="orientation === 'vertical' ? 'vertical' : undefined"
-      @input="onInput"
-    />
+    <div class="slider__row">
+      <input
+        class="slider__input"
+        type="range"
+        :min="min"
+        :max="max"
+        :step="step"
+        :value="modelValue"
+        :disabled="disabled"
+        :aria-label="label"
+        :orient="orientation === 'vertical' ? 'vertical' : undefined"
+        @input="onInput"
+      />
+      <span v-if="showValue" class="slider__value" :aria-hidden="true">{{ valueLabel }}</span>
+    </div>
   </div>
 </template>
 
@@ -83,6 +97,15 @@ const styleObj = computed(() => ({
   gap: var(--sp-3);
   height: 120px;
 }
+.slider__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+.slider--vertical .slider__row {
+  flex-direction: column;
+}
 .slider__label {
   font-size: 0.7rem;
   font-weight: 600;
@@ -90,6 +113,15 @@ const styleObj = computed(() => ({
   text-transform: uppercase;
   color: var(--c-text-muted);
   white-space: nowrap;
+}
+.slider__value {
+  flex-shrink: 0;
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-text-soft);
 }
 
 .slider__input {
