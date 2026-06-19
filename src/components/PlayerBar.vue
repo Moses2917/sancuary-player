@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Flag, Music, Pause, Play, Repeat, SkipBack, SkipForward, Volume2 } from '@lucide/vue'
+import { Expand, Flag, Music, Pause, Play, Repeat, SkipBack, SkipForward, Volume2 } from '@lucide/vue'
 import { usePlayerStore } from '@/stores/player'
 import { computePeaks } from '@/utils/waveform'
 import { formatTime } from '@/utils'
@@ -60,6 +60,10 @@ function gotoService() {
     router.push({ name: 'service-detail', params: { id: svc.id } })
   }
 }
+
+function openNowPlaying() {
+  router.push({ name: 'now-playing' })
+}
 </script>
 
 <template>
@@ -78,6 +82,14 @@ function gotoService() {
             {{ player.service?.name ?? 'Select a song to begin' }}
           </div>
         </div>
+        <button
+          v-if="hasSong"
+          class="icon-btn np__expand"
+          title="Open full-screen Now Playing"
+          @click="openNowPlaying"
+        >
+          <Expand :size="16" />
+        </button>
       </div>
 
       <!-- transport + seek -->
@@ -300,6 +312,15 @@ function gotoService() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.np__expand {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+}
+.np__expand:hover {
+  opacity: 1;
 }
 
 /* transport */

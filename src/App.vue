@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import PlayerBar from '@/components/PlayerBar.vue'
 import { useSettingsStore } from '@/stores/settings'
@@ -9,6 +9,10 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 
 const settings = useSettingsStore()
 const player = usePlayerStore()
+const route = useRoute()
+
+// "Bare" routes (e.g. the Now Playing projection view) hide app chrome.
+const isBare = computed(() => !!route.meta.bare)
 
 onMounted(async () => {
   await settings.init()
@@ -19,7 +23,7 @@ useKeyboardShortcuts()
 </script>
 
 <template>
-  <AppHeader />
+  <AppHeader v-if="!isBare" />
   <main class="app-main">
     <RouterView v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -27,7 +31,7 @@ useKeyboardShortcuts()
       </transition>
     </RouterView>
   </main>
-  <PlayerBar />
+  <PlayerBar v-if="!isBare" />
 </template>
 
 <style scoped>
