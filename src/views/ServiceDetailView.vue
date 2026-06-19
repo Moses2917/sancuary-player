@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
-import { ArrowLeft, Calendar, Music, Pencil, Play, Plus, Upload } from '@lucide/vue'
+import { ArrowLeft, Calendar, Music, Pencil, Play, Plus, Printer, Upload } from '@lucide/vue'
 import SongPicker from '@/components/SongPicker.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
@@ -115,6 +115,22 @@ function saveMeta() {
     })
 }
 
+/** Open the browser print dialog with a clean numbered setlist layout. */
+function printSetlist() {
+  const svc = current.value
+  if (!svc) return
+  const prevFlag = document.body.getAttribute('data-print')
+  document.body.setAttribute('data-print', 'setlist')
+  // Restore the flag after the print dialog closes regardless of outcome.
+  const cleanup = () => {
+    if (prevFlag === null) document.body.removeAttribute('data-print')
+    else document.body.setAttribute('data-print', prevFlag)
+    window.removeEventListener('afterprint', cleanup)
+  }
+  window.addEventListener('afterprint', cleanup)
+  window.print()
+}
+
 /* drag-and-drop */
 function onDragStart(index: number) {
   dragFromIndex.value = index
@@ -183,6 +199,14 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         </div>
       </div>
       <div class="head__actions">
+        <button
+          class="btn"
+          :disabled="resolved.length === 0"
+          title="Print or save as PDF"
+          @click="printSetlist"
+        >
+          <Printer :size="16" /> <span class="hide-sm">Print</span>
+        </button>
         <button class="btn btn--primary" :disabled="resolved.length === 0" @click="playAll(0)">
           <Play :size="16" />
           {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
@@ -244,6 +268,33 @@ const serviceNotFound = computed(() => services.ready && !current.value)
       @close="creatorOpen = false"
       @saved-song="onSongCreated"
     />
+
+    <!-- Hidden on screen; revealed only when body[data-print="setlist"]. -->
+    <div class="print-region" aria-hidden="true">
+      <div class="print-setlist">
+        <h1 class="print-setlist__title">{{ current.name }}</h1>
+        <div class="print-setlist__date">{{ formatDate(current.date) || 'No date set' }}</div>
+        <div class="print-setlist__count">{{ resolved.length }} songs</div>
+        <ol class="print-setlist__rows">
+          <li
+            v-for="(entry, idx) in resolved"
+            :key="entry.item.id"
+            class="print-setlist__row"
+          >
+            <span class="print-setlist__num">{{ idx + 1 }}.</span>
+            <span class="print-setlist__title-cell">{{ entry.song.title }}</span>
+            <span
+              v-if="entry.song.tag"
+              class="print-setlist__tag"
+              :class="`print-setlist__tag--${entry.song.tag}`"
+            >
+              {{ entry.song.tag }}
+            </span>
+            <span class="print-setlist__notes" />
+          </li>
+        </ol>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -350,6 +401,19 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   gap: var(--sp-3);
   justify-content: center;
   margin-top: var(--sp-2);
+}
+.hide-sm {
+  /* visible by default */
+}
+@media (max-width: 720px) {
+  .hide-sm {
+    display: none;
+  }
+}
+
+/* Print region is hidden on screen; only shown by the print stylesheet. */
+.print-region {
+  display: none;
 }
 
 @media (max-width: 600px) {

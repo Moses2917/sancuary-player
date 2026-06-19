@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -24,6 +24,9 @@ describe('ServiceDetailView', () => {
     resetFakeAudioInstances()
     const db = await idb.getDB()
     await Promise.all([db.clear('services'), db.clear('songs'), db.clear('settings')])
+    // jsdom doesn't implement window.print — stub it so handlers don't throw.
+    window.print = vi.fn(() => {})
+    document.body.removeAttribute('data-print')
   })
 
   async function mountView(id: string) {
@@ -95,5 +98,29 @@ describe('ServiceDetailView', () => {
 
     expect(player.currentSong?.id).toBe(a.id)
     expect(player.queue.length).toBe(1)
+  })
+
+  it('Print button flags the body and triggers window.print', async () => {
+    const services = useServicesStore()
+    const lib = useLibraryStore()
+    await Promise.all([services.init(), lib.init()])
+    const svc = await services.create({ name: 'Sunday Print', date: '2026-06-22' })
+    const song = await seedSong(lib, 'Amazing Grace')
+    await services.addItems(svc.id, [song])
+
+    const { wrapper } = await mountView(svc.id)
+
+    // Find the Print button by its icon — it's the first non-primary .btn in the head actions.
+    const buttons = wrapper.findAll('.head__actions .btn')
+    const printBtn = buttons.find((b) => b.attributes('title') === 'Print or save as PDF')
+    expect(printBtn).toBeTruthy()
+
+    await printBtn!.trigger('click')
+    expect(document.body.getAttribute('data-print')).toBe('setlist')
+    expect(window.print).toHaveBeenCalled()
+
+    // The cleanup listener restores the flag once afterprint fires.
+    window.dispatchEvent(new Event('afterprint'))
+    expect(document.body.getAttribute('data-print')).toBeNull()
   })
 })

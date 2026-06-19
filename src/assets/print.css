@@ -1,0 +1,104 @@
+/**
+ * Print stylesheet for setlists.
+ *
+ * Activated by adding `data-print="setlist"` to <body> before calling
+ * window.print(), and removed afterwards. Everything outside the marked
+ * print region is hidden so the output is a clean numbered setlist.
+ */
+
+@media print {
+  /* When the body is flagged for setlist printing, hide the app chrome
+     and promote the marked region to a full-page document. */
+  body[data-print='setlist'] {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  body[data-print='setlist'] .app-header,
+  body[data-print='setlist'] .player-bar,
+  body[data-print='setlist'] .no-print {
+    display: none !important;
+  }
+  body[data-print='setlist'] .app-main {
+    display: block !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Promote the setlist region out of the hidden main view. */
+  body[data-print='setlist'] .print-region {
+    display: block !important;
+  }
+
+  /* Plain black-on-white typography for the printed setlist. */
+  body[data-print='setlist'] .print-setlist {
+    color: #000;
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 0 0.5in;
+  }
+  body[data-print='setlist'] .print-setlist__title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 28pt;
+    font-weight: 700;
+    margin: 0 0 4pt;
+  }
+  body[data-print='setlist'] .print-setlist__date {
+    font-size: 11pt;
+    color: #444;
+    margin-bottom: 18pt;
+  }
+  body[data-print='setlist'] .print-setlist__count {
+    font-size: 9pt;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14pt;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6pt;
+  }
+  body[data-print='setlist'] .print-setlist__row {
+    display: flex;
+    align-items: baseline;
+    gap: 12pt;
+    padding: 8pt 0;
+    border-bottom: 1px solid #eee;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body[data-print='setlist'] .print-setlist__num {
+    flex-shrink: 0;
+    width: 18pt;
+    font-weight: 700;
+    color: #444;
+  }
+  body[data-print='setlist'] .print-setlist__title-cell {
+    flex: 1;
+    font-size: 14pt;
+    font-weight: 600;
+  }
+  body[data-print='setlist'] .print-setlist__tag {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 1pt 6pt;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+  }
+  body[data-print='setlist'] .print-setlist__tag--new {
+    color: #2e7d57;
+  }
+  body[data-print='setlist'] .print-setlist__tag--old {
+    color: #2a5a8a;
+  }
+  body[data-print='setlist'] .print-setlist__notes {
+    flex-shrink: 0;
+    width: 28%;
+    min-height: 18pt;
+    border-bottom: 1px dotted #bbb;
+  }
+
+  /* Page margins handled via @page. */
+  @page {
+    margin: 0.6in 0.4in;
+  }
+}
