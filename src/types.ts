@@ -23,6 +23,21 @@ export interface SectionMarker {
   label?: string
 }
 
+/**
+ * A fade-out region on a song's timeline. While playback is inside the
+ * region, every track's effective volume is scaled linearly from its
+ * normal value (at `start`) down to `toVolume` (at `end`).
+ */
+export interface FadeRegion {
+  id: string
+  /** Seconds from the start of the track. */
+  start: number
+  /** Seconds from the start of the track; must be > start. */
+  end: number
+  /** Target volume multiplier at `end`. Default 0 = full fade-out. */
+  toVolume?: number
+}
+
 export interface Song {
   id: string
   title: string
@@ -34,6 +49,8 @@ export interface Song {
   tag?: SongTag
   /** Saved cue points for this song, shown on the waveform. */
   markers?: SectionMarker[]
+  /** Saved fade regions for this song, applied during playback. */
+  fades?: FadeRegion[]
   createdAt: number
 }
 

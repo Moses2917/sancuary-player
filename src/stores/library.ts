@@ -1,7 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as idb from '@/db/idb'
-import type { BundledSongManifestEntry, SectionMarker, Song, SongTag, TrackSource } from '@/types'
+import type {
+  BundledSongManifestEntry,
+  FadeRegion,
+  SectionMarker,
+  Song,
+  SongTag,
+  TrackSource,
+} from '@/types'
 import { uid } from '@/utils'
 
 interface FetchedManifest {
@@ -95,7 +102,10 @@ export const useLibraryStore = defineStore('library', () => {
    * Patch a song's mutable metadata (tag, markers, etc.) and persist it.
    * Returns the updated song, or undefined if the song was not found.
    */
-  async function updateSong(id: string, patch: Partial<Pick<Song, 'tag' | 'markers' | 'title'>>) {
+  async function updateSong(
+    id: string,
+    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'title'>>,
+  ) {
     const song = getById(id)
     if (!song) return undefined
     const next: Song = { ...song, ...patch }
@@ -119,6 +129,33 @@ export const useLibraryStore = defineStore('library', () => {
     if (!song || !song.markers) return undefined
     const markers = song.markers.filter((m) => m.id !== markerId)
     return updateSong(id, { markers })
+  }
+
+  /** Add a fade region to a song. */
+  async function addFade(id: string, fade: Omit<FadeRegion, 'id'>) {
+    const song = getById(id)
+    if (!song) return undefined
+    const region: FadeRegion = { id: uid('fade'), ...fade }
+    const fades = [...(song.fades ?? []), region].sort((a, b) => a.start - b.start)
+    const updated = await updateSong(id, { fades })
+    return updated ? region : undefined
+  }
+
+  /** Remove a fade region by id. */
+  async function removeFade(id: string, fadeId: string) {
+    const song = getById(id)
+    if (!song || !song.fades) return undefined
+    const fades = song.fades.filter((f) => f.id !== fadeId)
+    return updateSong(id, { fades })
+  }
+
+  /** Patch a fade region's start/end/toVolume. */
+  async function updateFade(id: string, fadeId: string, patch: Partial<FadeRegion>) {
+    const song = getById(id)
+    if (!song || !song.fades) return undefined
+    let nextFades = song.fades.map((f) => (f.id === fadeId ? { ...f, ...patch } : f))
+    nextFades = [...nextFades].sort((a, b) => a.start - b.start)
+    return updateSong(id, { fades: nextFades })
   }
 
   /** Fetch the manifest and report which entries aren't already imported. */
@@ -163,6 +200,9 @@ export const useLibraryStore = defineStore('library', () => {
     updateSong,
     addMarker,
     removeMarker,
+    addFade,
+    removeFade,
+    updateFade,
     fetchBundledManifest,
     importBundled,
   }

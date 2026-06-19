@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { FadeRegion } from '@/types'
 
 /**
  * Marker / loop / fade overlays drawn on top of the waveform.
@@ -11,12 +12,6 @@ export interface WaveformMarker {
   label?: string
 }
 
-export interface WaveformFade {
-  id?: string
-  start: number
-  end: number
-}
-
 const props = withDefaults(
   defineProps<{
     peaks: number[]
@@ -25,7 +20,7 @@ const props = withDefaults(
     isPlaying?: boolean
     markers?: WaveformMarker[]
     loop?: { start: number; end: number } | null
-    fades?: WaveformFade[]
+    fades?: FadeRegion[]
     height?: number
     accent?: string
     disabled?: boolean
@@ -53,6 +48,8 @@ const emit = defineEmits<{
   (e: 'marker-seek', marker: WaveformMarker): void
   (e: 'add-cue', time: number): void
   (e: 'add-cue-at', time: number): void
+  (e: 'update-fade', id: string, patch: Partial<FadeRegion>): void
+  (e: 'remove-fade', id: string): void
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -185,25 +182,8 @@ function draw() {
     props.duration > 0 ? clamp(playhead.value / props.duration, 0, 1) : 0
   const playedX = playedRatio * w
 
-  // Fade regions: gray translucent boxes
-  if (props.fades.length && props.duration > 0) {
-    for (const f of props.fades) {
-      const fx = (f.start / props.duration) * w
-      const ex = (f.end / props.duration) * w
-      ctx.fillStyle = 'rgba(180, 180, 180, 0.18)'
-      ctx.fillRect(fx, 0, Math.max(2, ex - fx), h)
-      ctx.strokeStyle = 'rgba(220, 220, 220, 0.5)'
-      ctx.setLineDash([4, 3])
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(fx, 0)
-      ctx.lineTo(fx, h)
-      ctx.moveTo(ex, 0)
-      ctx.lineTo(ex, h)
-      ctx.stroke()
-      ctx.setLineDash([])
-    }
-  }
+  // Fade regions are rendered as draggable HTML overlays (see template),
+  // so the canvas only draws the loop region + bars + markers + playhead.
 
   // Loop region highlight
   if (props.loop && props.duration > 0) {
@@ -309,6 +289,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopRaf()
   onDragEnd() // removes any lingering window listeners
+  onFadeDragEnd()
   ro?.disconnect()
   window.removeEventListener('devicepixelratiochange', resize)
 })
@@ -341,6 +322,63 @@ watch(
   },
 )
 
+/* ---------- fade region dragging ---------- */
+const MIN_FADE_LEN = 0.5 // seconds; prevents zero-length regions
+type DragMode = 'move' | 'start' | 'end'
+let fadeDrag: {
+  id: string
+  mode: DragMode
+  startClientX: number
+  origStart: number
+  origEnd: number
+  rectWidth: number
+} | null = null
+
+function startFadeDrag(e: PointerEvent, fade: FadeRegion, mode: DragMode) {
+  if (props.disabled || props.duration <= 0) return
+  e.stopPropagation()
+  e.preventDefault()
+  const rect = canvas.value?.getBoundingClientRect()
+  const rectWidth = rect?.width ?? 0
+  fadeDrag = {
+    id: fade.id,
+    mode,
+    startClientX: e.clientX,
+    origStart: fade.start,
+    origEnd: fade.end,
+    rectWidth,
+  }
+  window.addEventListener('pointermove', onFadeDragMove)
+  window.addEventListener('pointerup', onFadeDragEnd)
+  window.addEventListener('pointercancel', onFadeDragEnd)
+}
+
+function onFadeDragMove(e: PointerEvent) {
+  const drag = fadeDrag
+  if (!drag || drag.rectWidth <= 0) return
+  const dxSeconds = ((e.clientX - drag.startClientX) / drag.rectWidth) * props.duration
+  const { origStart, origEnd, mode } = drag
+  let nextStart = origStart
+  let nextEnd = origEnd
+  if (mode === 'move') {
+    const len = origEnd - origStart
+    nextStart = clamp(origStart + dxSeconds, 0, props.duration - len)
+    nextEnd = nextStart + len
+  } else if (mode === 'start') {
+    nextStart = clamp(origStart + dxSeconds, 0, origEnd - MIN_FADE_LEN)
+  } else if (mode === 'end') {
+    nextEnd = clamp(origEnd + dxSeconds, origStart + MIN_FADE_LEN, props.duration)
+  }
+  emit('update-fade', drag.id, { start: nextStart, end: nextEnd })
+}
+
+function onFadeDragEnd() {
+  fadeDrag = null
+  window.removeEventListener('pointermove', onFadeDragMove)
+  window.removeEventListener('pointerup', onFadeDragEnd)
+  window.removeEventListener('pointercancel', onFadeDragEnd)
+}
+
 defineExpose({ redraw: draw })
 </script>
 
@@ -366,6 +404,40 @@ defineExpose({ redraw: draw })
     >
       <span class="waveform__marker-dot" />
     </button>
+
+    <!-- Draggable fade regions: gray translucent boxes with resize handles. -->
+    <div
+      v-for="fade in fades"
+      :key="fade.id"
+      class="fade"
+      :style="{
+        left: duration > 0 ? `${(fade.start / duration) * 100}%` : '0%',
+        width:
+          duration > 0 ? `${((fade.end - fade.start) / duration) * 100}%` : '0%',
+      }"
+    >
+      <div
+        class="fade__handle fade__handle--start"
+        @pointerdown="startFadeDrag($event, fade, 'start')"
+      />
+      <div
+        class="fade__body"
+        title="Drag to move the fade region"
+        @pointerdown="startFadeDrag($event, fade, 'move')"
+      />
+      <div
+        class="fade__handle fade__handle--end"
+        @pointerdown="startFadeDrag($event, fade, 'end')"
+      />
+      <button
+        class="fade__close"
+        title="Remove fade"
+        @click.stop="emit('remove-fade', fade.id)"
+        @pointerdown.stop
+      >
+        ×
+      </button>
+    </div>
   </div>
 </template>
 
@@ -422,5 +494,63 @@ export { formatMarkerTime }
   background: var(--c-accent);
   box-shadow: 0 0 8px var(--c-accent-glow);
   border: 2px solid var(--c-bg-0);
+}
+
+/* Fade regions: gray translucent boxes with resize handles. */
+.fade {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(180, 180, 180, 0.18);
+  border-left: 1px dashed rgba(220, 220, 220, 0.6);
+  border-right: 1px dashed rgba(220, 220, 220, 0.6);
+  border-radius: 3px;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+}
+.fade:active {
+  cursor: grabbing;
+}
+.fade__body {
+  position: absolute;
+  inset: 0;
+}
+.fade__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 1;
+}
+.fade__handle--start {
+  left: -4px;
+}
+.fade__handle--end {
+  right: -4px;
+}
+.fade__close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--c-text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  padding: 0;
+}
+.fade__close:hover {
+  background: var(--c-danger);
+  color: #fff;
 }
 </style>

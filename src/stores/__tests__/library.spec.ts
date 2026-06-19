@@ -178,4 +178,26 @@ describe('library store', () => {
     expect(next?.tag).toBe('old')
     expect(lib.getById(song.id)?.title).toBe('New')
   })
+
+  it('addFade stores a fade region and removeFade drops it', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    const fade = await lib.addFade(song.id, { start: 10, end: 20, toVolume: 0 })
+    expect(fade?.id).toBeTruthy()
+    expect(lib.getById(song.id)?.fades?.length).toBe(1)
+    expect(lib.getById(song.id)?.fades?.[0]?.start).toBe(10)
+
+    // Update the region bounds
+    await lib.updateFade(song.id, fade!.id, { start: 12 })
+    expect(lib.getById(song.id)?.fades?.[0]?.start).toBe(12)
+
+    // Remove it
+    await lib.removeFade(song.id, fade!.id)
+    expect(lib.getById(song.id)?.fades ?? []).toEqual([])
+  })
 })

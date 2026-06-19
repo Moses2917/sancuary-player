@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import type { PlaylistItem, SectionMarker, Service, Song } from '@/types'
+import type { FadeRegion, PlaylistItem, SectionMarker, Service, Song } from '@/types'
 import { formatTime } from '@/utils'
 import { useLibraryStore } from './library'
 
@@ -65,6 +65,14 @@ export const usePlayerStore = defineStore('player', () => {
   /** Active A↔B loop region in seconds, or null when disabled. */
   const loop = ref<{ start: number; end: number } | null>(null)
 
+  /**
+   * Current fade multiplier in 0..1, recomputed on every timeupdate. When
+   * playback is inside a fade region, this scales every track's effective
+   * volume linearly from 1 at the region start to the region's toVolume
+   * (default 0) at its end.
+   */
+  const fadeMultiplier = ref(1)
+
   const ready = ref(false)
   const isLoading = ref(false)
 
@@ -75,6 +83,8 @@ export const usePlayerStore = defineStore('player', () => {
   const currentSong = computed<Song | null>(() => current.value?.song ?? null)
   /** Markers for the currently playing song, surfaced to the waveform UI. */
   const currentMarkers = computed<SectionMarker[]>(() => currentSong.value?.markers ?? [])
+  /** Fades for the currently playing song, surfaced to the waveform UI. */
+  const currentFades = computed<FadeRegion[]>(() => currentSong.value?.fades ?? [])
   const hasNext = computed(() => index.value < queue.value.length - 1)
   const hasPrev = computed(() => index.value > 0)
   const progress = computed(() =>
@@ -84,10 +94,11 @@ export const usePlayerStore = defineStore('player', () => {
   /* ---------- volume application ---------- */
   function applyVolumes() {
     if (!pianoEl || !choirEl) return
+    const m = fadeMultiplier.value
     const effPiano =
-      pianoMuted.value || choirSolo.value ? 0 : pianoVolume.value * masterVolume.value
+      pianoMuted.value || choirSolo.value ? 0 : pianoVolume.value * masterVolume.value * m
     const effChoir =
-      choirMuted.value || pianoSolo.value ? 0 : choirVolume.value * masterVolume.value
+      choirMuted.value || pianoSolo.value ? 0 : choirVolume.value * masterVolume.value * m
     pianoEl.volume = SAFE_VOLUME(effPiano)
     choirEl.volume = SAFE_VOLUME(effChoir)
   }
@@ -169,6 +180,9 @@ export const usePlayerStore = defineStore('player', () => {
     const t = pianoEl.currentTime
     currentTime.value = t
 
+    // Recompute the fade multiplier whenever playback crosses a fade region.
+    updateFadeMultiplier(t)
+
     // A↔B loop: if we've stepped past the loop end, jump back to the start.
     const lp = loop.value
     if (lp && isPlaying.value && t >= lp.end && lp.end > lp.start) {
@@ -187,6 +201,32 @@ export const usePlayerStore = defineStore('player', () => {
         }
         requestAnimationFrame(() => (driftGuard = false))
       }
+    }
+  }
+
+  /** Compute the current fade multiplier (1 outside any fade region). */
+  function updateFadeMultiplier(t: number) {
+    const fades = currentFades.value
+    if (!fades || fades.length === 0) {
+      if (fadeMultiplier.value !== 1) {
+        fadeMultiplier.value = 1
+        applyVolumes()
+      }
+      return
+    }
+    let mult = 1
+    for (const f of fades) {
+      if (t >= f.start && t <= f.end && f.end > f.start) {
+        const progress = (t - f.start) / (f.end - f.start)
+        const target = f.toVolume ?? 0
+        // Linear from 1 at start → target at end.
+        const scale = 1 + (target - 1) * progress
+        if (scale < mult) mult = scale
+      }
+    }
+    if (mult !== fadeMultiplier.value) {
+      fadeMultiplier.value = mult
+      applyVolumes()
     }
   }
 
@@ -406,6 +446,32 @@ export const usePlayerStore = defineStore('player', () => {
     refreshActiveSong()
   }
 
+  /* ---------- fade regions ---------- */
+  /** Drop a fade region starting at the playhead with the given duration (s). */
+  async function addFadeHere(durationSeconds = 8) {
+    const song = currentSong.value
+    if (!song) return
+    const start = currentTime.value
+    const end = Math.min(start + durationSeconds, duration.value || start + durationSeconds)
+    const library = useLibraryStore()
+    await library.addFade(song.id, { start, end, toVolume: 0 })
+    refreshActiveSong()
+  }
+  async function updateFade(fadeId: string, patch: Partial<FadeRegion>) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.updateFade(song.id, fadeId, patch)
+    refreshActiveSong()
+  }
+  async function removeFade(fadeId: string) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.removeFade(song.id, fadeId)
+    refreshActiveSong()
+  }
+
   const currentTimeFormatted = computed(() => formatTime(currentTime.value))
   const durationFormatted = computed(() => formatTime(duration.value))
 
@@ -427,10 +493,12 @@ export const usePlayerStore = defineStore('player', () => {
     pianoSolo,
     choirSolo,
     loop,
+    fadeMultiplier,
     /* derived */
     current,
     currentSong,
     currentMarkers,
+    currentFades,
     hasNext,
     hasPrev,
     progress,
@@ -453,6 +521,10 @@ export const usePlayerStore = defineStore('player', () => {
     addMarkerHere,
     addMarkerAt,
     removeMarker,
+    /* fades */
+    addFadeHere,
+    updateFade,
+    removeFade,
     /* playlist */
     load,
     clear,

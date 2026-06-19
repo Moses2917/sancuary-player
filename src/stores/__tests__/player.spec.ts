@@ -488,4 +488,59 @@ describe('player store', () => {
       expect(player.currentMarkers[0]?.label).toBe('Outro')
     })
   })
+
+  describe('fade regions', () => {
+    it('addFadeHere creates a fade starting at the playhead', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Faded',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 0.5 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      player.duration = 100
+      piano.currentTime = 80
+      piano.__dispatch('timeupdate')
+      await player.addFadeHere(8)
+      expect(player.currentFades.length).toBe(1)
+      expect(player.currentFades[0]?.start).toBe(80)
+      expect(player.currentFades[0]?.end).toBe(88)
+    })
+
+    it('fade multiplier scales the effective volume as playback crosses the region', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Faded',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 0.5 }]),
+        [library.getById(song.id)!],
+        0,
+        true,
+      )
+      const { piano } = grabElements()
+      player.duration = 100
+      piano.currentTime = 90
+      piano.__dispatch('timeupdate') // outside fade → multiplier 1
+      // Add a fade 90→100, then move inside it.
+      await player.addFadeHere(10)
+      expect(player.currentFades[0]).toMatchObject({ start: 90, end: 100 })
+      piano.currentTime = 95
+      piano.__dispatch('timeupdate') // halfway through fade → ~0.5 multiplier
+      // The actual element volume = pianoVol(1) * master(0.9) * fade(0.5) = 0.45
+      expect(piano.volume).toBeCloseTo(0.45, 2)
+    })
+  })
 })

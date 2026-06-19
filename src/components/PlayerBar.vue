@@ -8,6 +8,7 @@ import {
   Pause,
   Play,
   Repeat,
+  ScissorsLineDashed,
   SkipBack,
   SkipForward,
   Volume2,
@@ -71,6 +72,16 @@ async function addMarkerAt(time: number) {
 
 function togglePlaceCueMode() {
   placeCueMode.value = !placeCueMode.value
+}
+
+function onFadeUpdate(id: string, patch: { start?: number; end?: number }) {
+  void player.updateFade(id, patch)
+}
+function onFadeRemove(id: string) {
+  void player.removeFade(id)
+}
+function addFadeHere() {
+  void player.addFadeHere(8)
 }
 
 function gotoService() {
@@ -162,6 +173,7 @@ const loopLabel = computed(() => {
           :is-playing="player.isPlaying"
           :markers="player.currentMarkers"
           :loop="player.loop"
+          :fades="player.currentFades"
           :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
           :height="72"
@@ -170,6 +182,8 @@ const loopLabel = computed(() => {
           @marker-seek="onMarkerSeek"
           @add-cue="addMarkerHere"
           @add-cue-at="addMarkerAt"
+          @update-fade="onFadeUpdate"
+          @remove-fade="onFadeRemove"
         />
         <div v-if="peaksLoading" class="pod__hint">Analysing audio…</div>
         <div class="pod__times">
@@ -220,6 +234,14 @@ const loopLabel = computed(() => {
         @click="togglePlaceCueMode"
       >
         <Flag :size="14" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
+      </button>
+      <button
+        class="tool"
+        :disabled="!hasSong || player.duration <= 0"
+        title="Drop a fade-out region at the playhead (drag the gray box to reposition)"
+        @click="addFadeHere"
+      >
+        <ScissorsLineDashed :size="14" /> <span>Fade</span>
       </button>
     </div>
 
