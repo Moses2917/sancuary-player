@@ -6,6 +6,7 @@ import PlayerBar from '@/components/PlayerBar.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { usePlayerStore } from '@/stores/player'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useMediaSession } from '@/composables/useMediaSession'
 
 const settings = useSettingsStore()
 const player = usePlayerStore()
@@ -20,6 +21,7 @@ onMounted(async () => {
 })
 
 useKeyboardShortcuts()
+useMediaSession()
 </script>
 
 <template>
