@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
-import type { Song } from '@/types'
+import type { Song, SongTag } from '@/types'
 import AppIcon from '@/components/AppIcon.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import BundledLoader from '@/components/BundledLoader.vue'
@@ -13,6 +13,8 @@ const player = usePlayerStore()
 const importerOpen = ref(false)
 const bundledOpen = ref(false)
 const confirmingId = ref<string | null>(null)
+const query = ref('')
+const tagFilter = ref<SongTag | 'all'>('all')
 
 onMounted(() => {
   void library.init()
@@ -37,6 +39,25 @@ function remove(song: Song) {
     confirmingId.value = null
   })
 }
+
+const filtered = computed<Song[]>(() => {
+  const q = query.value.trim().toLowerCase()
+  return library.songs.filter((s) => {
+    if (tagFilter.value !== 'all' && s.tag !== tagFilter.value) return false
+    if (!q) return true
+    return s.title.toLowerCase().includes(q)
+  })
+})
+
+const counts = computed(() => {
+  let n = 0
+  let o = 0
+  for (const s of library.songs) {
+    if (s.tag === 'new') n++
+    else if (s.tag === 'old') o++
+  }
+  return { new: n, old: o }
+})
 </script>
 
 <template>
@@ -49,6 +70,52 @@ function remove(song: Song) {
         </button>
         <button class="btn btn--primary" @click="importerOpen = true">
           <AppIcon name="plus" :size="16" /> Add song
+        </button>
+      </div>
+    </div>
+
+    <div v-if="!library.loading && library.songs.length > 0" class="filters">
+      <div class="search">
+        <AppIcon name="search" :size="16" />
+        <input
+          v-model="query"
+          type="search"
+          class="search__input"
+          placeholder="Search songs…"
+          aria-label="Search songs"
+        />
+      </div>
+      <div class="tags" role="tablist" aria-label="Filter by tag">
+        <button
+          class="chip"
+          :class="{ 'chip--on': tagFilter === 'all' }"
+          role="tab"
+          :aria-selected="tagFilter === 'all'"
+          @click="tagFilter = 'all'"
+        >
+          All
+        </button>
+        <button
+          v-if="counts.new > 0"
+          class="chip chip--new"
+          :class="{ 'chip--on': tagFilter === 'new' }"
+          role="tab"
+          :aria-selected="tagFilter === 'new'"
+          @click="tagFilter = 'new'"
+        >
+          <span class="chip__dot" style="--c: var(--c-success)"></span> New
+          <span class="chip__count">{{ counts.new }}</span>
+        </button>
+        <button
+          v-if="counts.old > 0"
+          class="chip chip--old"
+          :class="{ 'chip--on': tagFilter === 'old' }"
+          role="tab"
+          :aria-selected="tagFilter === 'old'"
+          @click="tagFilter = 'old'"
+        >
+          <span class="chip__dot" style="--c: var(--c-piano)"></span> Old
+          <span class="chip__count">{{ counts.old }}</span>
         </button>
       </div>
     </div>
@@ -67,8 +134,15 @@ function remove(song: Song) {
       </button>
     </div>
 
+    <div v-else-if="filtered.length === 0" class="empty">
+      <p>No songs match your filter.</p>
+      <button class="btn btn--ghost btn--sm" @click="(query = ''), (tagFilter = 'all')">
+        Clear filters
+      </button>
+    </div>
+
     <ul v-else class="songs">
-      <li v-for="song in library.songs" :key="song.id" class="song surface">
+      <li v-for="song in filtered" :key="song.id" class="song surface">
         <button class="song__art" :title="`Play ${song.title}`" @click="preview(song)">
           <AppIcon name="music" :size="22" />
           <span class="song__play"><AppIcon name="play" :size="20" /></span>
@@ -83,6 +157,14 @@ function remove(song: Song) {
               <AppIcon name="music" :size="11" /> Choir
             </span>
             <span v-if="song.bundled" class="song__bundled">bundled</span>
+            <span
+              v-if="song.tag"
+              class="tag-badge"
+              :class="`tag-badge--${song.tag}`"
+              :title="`Tagged ${song.tag}`"
+            >
+              {{ song.tag }}
+            </span>
           </div>
         </div>
         <div class="song__actions">
@@ -219,5 +301,111 @@ function remove(song: Song) {
 .btn--sm {
   padding: var(--sp-1) var(--sp-3);
   font-size: 0.8rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  background: var(--c-bg-1);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  color: var(--c-text-muted);
+  min-width: 220px;
+  flex: 1;
+  max-width: 360px;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.search:focus-within {
+  border-color: var(--c-accent);
+}
+.search__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-text);
+  padding: var(--sp-3) 0;
+}
+.search__input::placeholder {
+  color: var(--c-text-muted);
+}
+
+.tags {
+  display: inline-flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-text-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.chip:hover {
+  border-color: var(--c-border-strong);
+  color: var(--c-text);
+}
+.chip--on {
+  background: var(--c-bg-3);
+  border-color: var(--c-text-soft);
+  color: var(--c-text);
+}
+.chip--new.chip--on {
+  background: color-mix(in srgb, var(--c-success) 18%, transparent);
+  border-color: var(--c-success);
+  color: var(--c-success);
+}
+.chip--old.chip--on {
+  background: color-mix(in srgb, var(--c-piano) 18%, transparent);
+  border-color: var(--c-piano);
+  color: var(--c-piano);
+}
+.chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
+}
+.chip__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.tag-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.tag-badge--new {
+  color: var(--c-success);
+  background: color-mix(in srgb, var(--c-success) 18%, transparent);
+}
+.tag-badge--old {
+  color: var(--c-piano);
+  background: color-mix(in srgb, var(--c-piano) 18%, transparent);
 }
 </style>

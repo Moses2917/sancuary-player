@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as idb from '@/db/idb'
-import type { BundledSongManifestEntry, Song, TrackSource } from '@/types'
+import type { BundledSongManifestEntry, Song, SongTag, TrackSource } from '@/types'
 import { uid } from '@/utils'
 
 interface FetchedManifest {
@@ -38,7 +38,12 @@ export const useLibraryStore = defineStore('library', () => {
     return name.replace(/\.[^/.]+$/, '')
   }
 
-  async function addSong(input: { title: string; piano: File; choir: File }): Promise<Song> {
+  async function addSong(input: {
+    title: string
+    piano: File
+    choir: File
+    tag?: SongTag
+  }): Promise<Song> {
     // Derive a title from the piano filename when none is provided so every
     // caller (component + store API) gets consistent behaviour.
     const title = input.title.trim() || stripExt(input.piano.name) || 'Untitled'
@@ -48,6 +53,7 @@ export const useLibraryStore = defineStore('library', () => {
       piano: buildTrack(input.piano),
       choir: buildTrack(input.choir),
       bundled: false,
+      tag: input.tag,
       createdAt: Date.now(),
     }
     await idb.putSong(song)

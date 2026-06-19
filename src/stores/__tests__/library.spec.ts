@@ -109,4 +109,28 @@ describe('library store', () => {
     expect(lib.songs[0]?.piano.url).toBe('/audio/example-piano.mp3')
     expect(lib.songs[0]?.piano.blob).toBeUndefined()
   })
+
+  it('stores the optional tag when provided', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'Brand New Hymn',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+      tag: 'new',
+    })
+    expect(song.tag).toBe('new')
+    expect(lib.songs[0]?.tag).toBe('new')
+  })
+
+  it('omits tag when not provided so old library entries keep working', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'Untitled',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    expect(song.tag).toBeUndefined()
+  })
 })

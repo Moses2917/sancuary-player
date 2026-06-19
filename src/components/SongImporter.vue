@@ -2,16 +2,19 @@
 import { computed, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
 import { useLibraryStore } from '@/stores/library'
+import type { SongTag } from '@/types'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'saved'): void
+  (e: 'saved-song', song: { id: string }): void
 }>()
 
 const library = useLibraryStore()
 
 const title = ref('')
+const tag = ref<SongTag | ''>('')
 const piano = ref<File | null>(null)
 const choir = ref<File | null>(null)
 const error = ref('')
@@ -32,6 +35,7 @@ watch(
 
 function reset() {
   title.value = ''
+  tag.value = ''
   piano.value = null
   choir.value = null
   error.value = ''
@@ -72,11 +76,13 @@ async function submit() {
   saving.value = true
   error.value = ''
   try {
-    await library.addSong({
+    const song = await library.addSong({
       title: title.value,
       piano: piano.value,
       choir: choir.value,
+      tag: tag.value || undefined,
     })
+    emit('saved-song', { id: song.id })
     emit('saved')
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Could not save song'
@@ -105,6 +111,36 @@ async function submit() {
               type="text"
               placeholder="e.g. Amazing Grace (optional — derived from file)"
             />
+          </div>
+
+          <div class="field">
+            <span class="field__label">Tag (optional)</span>
+            <div class="tag-pick" role="radiogroup" aria-label="Song tag">
+              <button
+                type="button"
+                class="tag-pick__opt"
+                :class="{ 'tag-pick__opt--on': tag === '' }"
+                @click="tag = ''"
+              >
+                None
+              </button>
+              <button
+                type="button"
+                class="tag-pick__opt tag-pick__opt--new"
+                :class="{ 'tag-pick__opt--on': tag === 'new' }"
+                @click="tag = 'new'"
+              >
+                New
+              </button>
+              <button
+                type="button"
+                class="tag-pick__opt tag-pick__opt--old"
+                :class="{ 'tag-pick__opt--on': tag === 'old' }"
+                @click="tag = 'old'"
+              >
+                Old
+              </button>
+            </div>
           </div>
 
           <div class="drops">
@@ -281,6 +317,41 @@ async function submit() {
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-5) var(--sp-5);
   border-top: 1px solid var(--c-border);
+}
+
+.tag-pick {
+  display: inline-flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.tag-pick__opt {
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--c-border-strong);
+  background: transparent;
+  color: var(--c-text-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.tag-pick__opt--new.tag-pick__opt--on {
+  background: color-mix(in srgb, var(--c-success) 22%, transparent);
+  border-color: var(--c-success);
+  color: var(--c-success);
+}
+.tag-pick__opt--old.tag-pick__opt--on {
+  background: color-mix(in srgb, var(--c-piano) 22%, transparent);
+  border-color: var(--c-piano);
+  color: var(--c-piano);
+}
+.tag-pick__opt--on:not(.tag-pick__opt--new):not(.tag-pick__opt--old) {
+  background: var(--c-bg-3);
+  border-color: var(--c-text-soft);
+  color: var(--c-text);
 }
 
 .modal-enter-active,

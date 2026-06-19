@@ -9,6 +9,12 @@ export interface TrackSource {
   type?: string
 }
 
+/**
+ * Free-form, neutral "New / Old" label. Treated purely as a coloured badge
+ * and a filter facet — no semantic meaning is enforced.
+ */
+export type SongTag = 'new' | 'old'
+
 export interface Song {
   id: string
   title: string
@@ -16,6 +22,8 @@ export interface Song {
   choir: TrackSource
   /** True when audio is served from public/audio rather than a stored blob. */
   bundled: boolean
+  /** Optional neutral tag rendered as a badge and used as a filter facet. */
+  tag?: SongTag
   createdAt: number
 }
 
