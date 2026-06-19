@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import type { PlaylistItem, Service, Song } from '@/types'
+import type { PlaylistItem, SectionMarker, Service, Song } from '@/types'
 import { formatTime } from '@/utils'
+import { useLibraryStore } from './library'
 
 interface ActiveItem {
   item: PlaylistItem
@@ -60,6 +61,9 @@ export const usePlayerStore = defineStore('player', () => {
   const pianoSolo = ref(false)
   const choirSolo = ref(false)
 
+  /** Active A↔B loop region in seconds, or null when disabled. */
+  const loop = ref<{ start: number; end: number } | null>(null)
+
   const ready = ref(false)
   const isLoading = ref(false)
 
@@ -68,6 +72,8 @@ export const usePlayerStore = defineStore('player', () => {
     index.value >= 0 ? (queue.value[index.value] ?? null) : null,
   )
   const currentSong = computed<Song | null>(() => current.value?.song ?? null)
+  /** Markers for the currently playing song, surfaced to the waveform UI. */
+  const currentMarkers = computed<SectionMarker[]>(() => currentSong.value?.markers ?? [])
   const hasNext = computed(() => index.value < queue.value.length - 1)
   const hasPrev = computed(() => index.value > 0)
   const progress = computed(() =>
@@ -161,6 +167,13 @@ export const usePlayerStore = defineStore('player', () => {
     if (!pianoEl) return
     const t = pianoEl.currentTime
     currentTime.value = t
+
+    // A↔B loop: if we've stepped past the loop end, jump back to the start.
+    const lp = loop.value
+    if (lp && isPlaying.value && t >= lp.end && lp.end > lp.start) {
+      seek(lp.start)
+      return
+    }
 
     if (!driftGuard && isPlaying.value && choirEl && choirEl.src) {
       const drift = Math.abs(choirEl.currentTime - t)
@@ -268,6 +281,7 @@ export const usePlayerStore = defineStore('player', () => {
     service.value = svc
     queue.value = items
     index.value = items.length ? Math.max(0, Math.min(startIndex, items.length - 1)) : -1
+    loop.value = null
     await loadActive()
     if (autoplay && current.value) await play()
   }
@@ -277,6 +291,7 @@ export const usePlayerStore = defineStore('player', () => {
     queue.value = []
     index.value = -1
     service.value = null
+    loop.value = null
     void loadActive()
   }
 
@@ -328,6 +343,45 @@ export const usePlayerStore = defineStore('player', () => {
     applyVolumes()
   }
 
+  /* ---------- A↔B loop ---------- */
+  /** Anchor the loop start (A) to the current playhead. */
+  function setLoopStart() {
+    const t = currentTime.value
+    const fallbackEnd = Number.isFinite(duration.value) ? duration.value : t + 1
+    loop.value = { start: t, end: loop.value?.end ?? Math.max(t + 1, fallbackEnd) }
+  }
+  /** Anchor the loop end (B) to the current playhead. */
+  function setLoopEnd() {
+    if (!loop.value) {
+      loop.value = { start: 0, end: currentTime.value }
+      return
+    }
+    const end = currentTime.value
+    loop.value = { start: Math.min(loop.value.start, end), end }
+  }
+  function toggleLoop() {
+    if (loop.value) loop.value = null
+    else if (duration.value > 0) loop.value = { start: 0, end: duration.value }
+  }
+  function clearLoop() {
+    loop.value = null
+  }
+
+  /* ---------- cue markers ---------- */
+  /** Drop a named cue on the current song at the playhead. Persists to idb. */
+  async function addMarkerHere(label?: string) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.addMarker(song.id, currentTime.value, label)
+  }
+  async function removeMarker(markerId: string) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.removeMarker(song.id, markerId)
+  }
+
   const currentTimeFormatted = computed(() => formatTime(currentTime.value))
   const durationFormatted = computed(() => formatTime(duration.value))
 
@@ -348,9 +402,11 @@ export const usePlayerStore = defineStore('player', () => {
     choirMuted,
     pianoSolo,
     choirSolo,
+    loop,
     /* derived */
     current,
     currentSong,
+    currentMarkers,
     hasNext,
     hasPrev,
     progress,
@@ -364,6 +420,14 @@ export const usePlayerStore = defineStore('player', () => {
     seek,
     next,
     prev,
+    /* loop */
+    setLoopStart,
+    setLoopEnd,
+    toggleLoop,
+    clearLoop,
+    /* markers */
+    addMarkerHere,
+    removeMarker,
     /* playlist */
     load,
     clear,

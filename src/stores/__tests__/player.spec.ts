@@ -361,4 +361,81 @@ describe('player store', () => {
       expect(player.currentSong?.id).toBe('s2')
     })
   })
+
+  describe('A↔B loop', () => {
+    it('is null until set', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      expect(player.loop).toBeNull()
+    })
+
+    it('setLoopStart/setLoopEnd anchor A and B to the playhead', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      piano.currentTime = 5
+      piano.__dispatch('timeupdate')
+      player.setLoopStart()
+      expect(player.loop?.start).toBe(5)
+
+      piano.currentTime = 12
+      piano.__dispatch('timeupdate')
+      player.setLoopEnd()
+      expect(player.loop).toEqual({ start: 5, end: 12 })
+    })
+
+    it('toggleLoop flips between enabled and disabled', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      player.duration = 30
+      player.toggleLoop()
+      expect(player.loop).not.toBeNull()
+      player.toggleLoop()
+      expect(player.loop).toBeNull()
+    })
+
+    it('timeupdate past the loop end seeks back to the loop start', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
+      const { piano, choir } = grabElements()
+
+      // Build the loop directly on the exposed currentTime so onTimeUpdate's
+      // enforcement doesn't fire mid-setup.
+      player.setLoopStart() // A=0
+      player.currentTime = 4
+      player.setLoopEnd() // B=4
+      expect(player.loop).toEqual({ start: 0, end: 4 })
+
+      // Step past B: the store should rewind both elements to the loop start.
+      piano.currentTime = 4.5
+      choir.currentTime = 4.5
+      piano.__dispatch('timeupdate')
+      expect(piano.currentTime).toBeCloseTo(player.loop!.start, 5)
+      expect(choir.currentTime).toBeCloseTo(player.loop!.start, 5)
+    })
+  })
 })

@@ -133,4 +133,49 @@ describe('library store', () => {
     })
     expect(song.tag).toBeUndefined()
   })
+
+  it('addMarker stores a sorted marker list on the song', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    await lib.addMarker(song.id, 20, 'Verse')
+    await lib.addMarker(song.id, 5, 'Intro')
+    const stored = lib.getById(song.id)
+    expect(stored?.markers?.length).toBe(2)
+    expect(stored?.markers?.[0]?.label).toBe('Intro')
+    expect(stored?.markers?.[1]?.label).toBe('Verse')
+  })
+
+  it('removeMarker drops the matching entry', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    const updated = await lib.addMarker(song.id, 5, 'Intro')
+    const markerId = updated?.markers?.[0]?.id
+    expect(markerId).toBeTruthy()
+    await lib.removeMarker(song.id, markerId!)
+    expect(lib.getById(song.id)?.markers ?? []).toEqual([])
+  })
+
+  it('updateSong patches title/tag/markers and persists', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'Old',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    const next = await lib.updateSong(song.id, { title: 'New', tag: 'old' })
+    expect(next?.title).toBe('New')
+    expect(next?.tag).toBe('old')
+    expect(lib.getById(song.id)?.title).toBe('New')
+  })
 })

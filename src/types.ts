@@ -15,6 +15,14 @@ export interface TrackSource {
  */
 export type SongTag = 'new' | 'old'
 
+/** A named cue point on a song's timeline, e.g. "Intro" or "Verse 1". */
+export interface SectionMarker {
+  id: string
+  /** Seconds from the start of the track. */
+  time: number
+  label?: string
+}
+
 export interface Song {
   id: string
   title: string
@@ -24,6 +32,8 @@ export interface Song {
   bundled: boolean
   /** Optional neutral tag rendered as a badge and used as a filter facet. */
   tag?: SongTag
+  /** Saved cue points for this song, shown on the waveform. */
+  markers?: SectionMarker[]
   createdAt: number
 }
 

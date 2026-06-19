@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as idb from '@/db/idb'
-import type { BundledSongManifestEntry, Song, SongTag, TrackSource } from '@/types'
+import type { BundledSongManifestEntry, SectionMarker, Song, SongTag, TrackSource } from '@/types'
 import { uid } from '@/utils'
 
 interface FetchedManifest {
@@ -86,6 +86,36 @@ export const useLibraryStore = defineStore('library', () => {
     songs.value = songs.value.filter((s) => s.id !== id)
   }
 
+  /**
+   * Patch a song's mutable metadata (tag, markers, etc.) and persist it.
+   * Returns the updated song, or undefined if the song was not found.
+   */
+  async function updateSong(id: string, patch: Partial<Pick<Song, 'tag' | 'markers' | 'title'>>) {
+    const song = getById(id)
+    if (!song) return undefined
+    const next: Song = { ...song, ...patch }
+    await idb.putSong(next)
+    songs.value = songs.value.map((s) => (s.id === id ? next : s))
+    return next
+  }
+
+  /** Convenience: add a cue marker to a song at `time`. */
+  async function addMarker(id: string, time: number, label?: string) {
+    const song = getById(id)
+    if (!song) return undefined
+    const marker: SectionMarker = { id: uid('m'), time, label: label?.trim() || undefined }
+    const markers = [...(song.markers ?? []), marker].sort((a, b) => a.time - b.time)
+    return updateSong(id, { markers })
+  }
+
+  /** Convenience: remove a cue marker by id. */
+  async function removeMarker(id: string, markerId: string) {
+    const song = getById(id)
+    if (!song || !song.markers) return undefined
+    const markers = song.markers.filter((m) => m.id !== markerId)
+    return updateSong(id, { markers })
+  }
+
   /** Fetch the manifest and report which entries aren't already imported. */
   async function fetchBundledManifest(): Promise<FetchedManifest> {
     const res = await fetch('/audio/manifest.json', { cache: 'no-cache' })
@@ -124,6 +154,9 @@ export const useLibraryStore = defineStore('library', () => {
     addSong,
     addBundledSongs,
     removeSong,
+    updateSong,
+    addMarker,
+    removeMarker,
     fetchBundledManifest,
     importBundled,
   }

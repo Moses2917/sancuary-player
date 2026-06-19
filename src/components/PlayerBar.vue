@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import { computePeaks } from '@/utils/waveform'
+import { formatTime } from '@/utils'
 import AppIcon from './AppIcon.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import Waveform from './Waveform.vue'
@@ -36,6 +37,22 @@ watch(() => player.currentSong?.id, refreshPeaks, { immediate: true })
 function onSeek(v: number) {
   if (Number.isFinite(player.duration)) player.seek(v)
 }
+
+function onMarkerSeek(m: { time: number }) {
+  onSeek(m.time)
+}
+
+async function addMarkerHere() {
+  if (!player.currentSong) return
+  const label = window.prompt('Marker label (optional)', '') ?? ''
+  await player.addMarkerHere(label)
+}
+
+const loopLabel = computed(() => {
+  if (!player.loop) return 'Loop off'
+  const { start, end } = player.loop
+  return `Loop ${formatTime(start)} → ${formatTime(end)}`
+})
 
 function gotoService() {
   const svc = player.service
@@ -102,12 +119,52 @@ function gotoService() {
               :peaks="peaks"
               :duration="player.duration || 0"
               :current="player.currentTime"
+              :markers="player.currentMarkers"
+              :loop="player.loop"
               :disabled="!hasSong"
               :height="36"
               accent="var(--c-accent)"
               @seek="onSeek"
+              @marker-seek="onMarkerSeek"
             />
             <div v-if="peaksLoading" class="seek__hint">Analysing audio…</div>
+          </div>
+          <div class="seek__tools">
+            <button
+              class="tool"
+              :class="{ 'tool--on': !!player.loop }"
+              :disabled="!hasSong"
+              :title="loopLabel"
+              @click="player.toggleLoop()"
+            >
+              <AppIcon name="repeat" :size="14" />
+            </button>
+            <button
+              class="tool"
+              :class="{ 'tool--on': !!player.loop }"
+              :disabled="!hasSong || player.duration <= 0"
+              title="Set loop start (A) at playhead"
+              @click="player.setLoopStart()"
+            >
+              A
+            </button>
+            <button
+              class="tool"
+              :class="{ 'tool--on': !!player.loop }"
+              :disabled="!hasSong || player.duration <= 0"
+              title="Set loop end (B) at playhead"
+              @click="player.setLoopEnd()"
+            >
+              B
+            </button>
+            <button
+              class="tool"
+              :disabled="!hasSong || player.currentTime <= 0"
+              title="Drop a marker at the playhead"
+              @click="addMarkerHere"
+            >
+              <AppIcon name="flag" :size="14" />
+            </button>
           </div>
           <span class="seek__time">{{ player.durationFormatted }}</span>
         </div>
@@ -260,7 +317,7 @@ function gotoService() {
 .seek {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 .seek__time {
   font-variant-numeric: tabular-nums;
@@ -268,6 +325,43 @@ function gotoService() {
   color: var(--c-text-muted);
   min-width: 38px;
   text-align: center;
+}
+.seek__tools {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--c-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.tool:hover:not(:disabled) {
+  background: var(--c-bg-3);
+  color: var(--c-text);
+}
+.tool--on {
+  background: color-mix(in srgb, var(--c-success) 22%, transparent);
+  border-color: var(--c-success);
+  color: var(--c-success);
+}
+.tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .seek__bar {
   flex: 1;
