@@ -25,7 +25,7 @@ describe('ServiceDetailView', () => {
     const db = await idb.getDB()
     await Promise.all([db.clear('services'), db.clear('songs'), db.clear('settings')])
     // jsdom doesn't implement window.print — stub it so handlers don't throw.
-    window.print = vi.fn(() => {})
+    window.print = vi.fn<() => void>(() => {})
     document.body.removeAttribute('data-print')
   })
 
