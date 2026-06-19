@@ -131,13 +131,15 @@ function openNowPlaying() {
               :peaks="peaks"
               :duration="player.duration || 0"
               :current="player.currentTime"
+              :is-playing="player.isPlaying"
               :markers="player.currentMarkers"
               :loop="player.loop"
               :disabled="!hasSong"
-              :height="36"
+              :height="56"
               accent="var(--c-accent)"
               @seek="onSeek"
               @marker-seek="onMarkerSeek"
+              @add-cue="addMarkerHere"
             />
             <div v-if="peaksLoading" class="seek__hint">Analysing audio…</div>
           </div>

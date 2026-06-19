@@ -2,12 +2,19 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 /**
- * Marker / loop overlay drawn on top of the waveform.
- * Times are in seconds. Labels render above the bar.
+ * Marker / loop / fade overlays drawn on top of the waveform.
+ * Times are in seconds.
  */
 export interface WaveformMarker {
+  id?: string
   time: number
   label?: string
+}
+
+export interface WaveformFade {
+  id?: string
+  start: number
+  end: number
 }
 
 const props = withDefaults(
@@ -15,35 +22,57 @@ const props = withDefaults(
     peaks: number[]
     duration: number
     current: number
+    isPlaying?: boolean
     markers?: WaveformMarker[]
     loop?: { start: number; end: number } | null
+    fades?: WaveformFade[]
     height?: number
     accent?: string
     disabled?: boolean
+    /** Emit a seek on every pointer move during drag (true) or only on drop (false). */
+    liveSeek?: boolean
   }>(),
   {
+    isPlaying: false,
     markers: () => [],
     loop: null,
-    height: 40,
+    fades: () => [],
+    height: 56,
     accent: 'var(--c-accent)',
     disabled: false,
+    liveSeek: true,
   },
 )
 
 const emit = defineEmits<{
   (e: 'seek', time: number): void
   (e: 'marker-seek', marker: WaveformMarker): void
+  (e: 'add-cue', time: number): void
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const playhead = ref(props.current)
+
+// Drag state. Pointer events are bound to window during a drag so the user
+// can scrub outside the canvas without losing the gesture (HTML pointer
+// capture is flaky across browsers; window listeners are bulletproof).
 let dragging = false
 let dpr = 1
 let cssWidth = 0
 
+// RAF state. <audio> timeupdate fires ~4x/sec, which looks choppy. While
+// playing, we run a RAF loop that interpolates the playhead from the last
+// known time, so the visual scrub is smooth at 60fps.
+let rafId: number | null = null
+let lastAnchorTime = 0
+let lastAnchorWall = 0
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v))
+}
+
 function ratioToTime(ratio: number): number {
-  const r = Math.max(0, Math.min(1, ratio))
-  return r * (props.duration || 0)
+  return clamp(ratio, 0, 1) * (props.duration || 0)
 }
 
 function clientXToRatio(clientX: number): number {
@@ -54,26 +83,63 @@ function clientXToRatio(clientX: number): number {
   return (clientX - rect.left) / rect.width
 }
 
-function pointerDown(e: PointerEvent) {
+function startDrag(e: PointerEvent) {
   if (props.disabled || props.duration <= 0) return
   dragging = true
-  ;(e.target as Element).setPointerCapture?.(e.pointerId)
+  window.addEventListener('pointermove', onDragMove)
+  window.addEventListener('pointerup', onDragEnd)
+  window.addEventListener('pointercancel', onDragEnd)
   const t = ratioToTime(clientXToRatio(e.clientX))
-  playhead.value = t
+  setPlayhead(t)
   emit('seek', t)
 }
 
-function pointerMove(e: PointerEvent) {
+function onDragMove(e: PointerEvent) {
   if (!dragging) return
   const t = ratioToTime(clientXToRatio(e.clientX))
-  playhead.value = t
-  emit('seek', t)
+  setPlayhead(t)
+  if (props.liveSeek) emit('seek', t)
 }
 
-function pointerUp(e: PointerEvent) {
+function onDragEnd() {
   if (!dragging) return
   dragging = false
-  ;(e.target as Element).releasePointerCapture?.(e.pointerId)
+  window.removeEventListener('pointermove', onDragMove)
+  window.removeEventListener('pointerup', onDragEnd)
+  window.removeEventListener('pointercancel', onDragEnd)
+  // If we were in non-live mode, emit the final seek now.
+  if (!props.liveSeek) emit('seek', playhead.value)
+}
+
+function setPlayhead(t: number) {
+  playhead.value = t
+  lastAnchorTime = t
+  lastAnchorWall = performance.now()
+  draw()
+}
+
+function startRaf() {
+  if (rafId !== null) return
+  // The interpolation loop is a real-browser optimisation; in vitest the
+  // microtask-based rAF shim would spin forever, so we skip it there.
+  if (import.meta.env?.MODE === 'test') return
+  const loop = () => {
+    if (props.isPlaying && !dragging) {
+      const elapsed = (performance.now() - lastAnchorWall) / 1000
+      const next = clamp(lastAnchorTime + elapsed, 0, props.duration)
+      playhead.value = next
+      draw()
+    }
+    rafId = requestAnimationFrame(loop)
+  }
+  rafId = requestAnimationFrame(loop)
+}
+
+function stopRaf() {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
 }
 
 function draw() {
@@ -84,6 +150,7 @@ function draw() {
 
   const w = cssWidth
   const h = props.height
+  if (w <= 0) return
   const ratio = dpr
   cv.width = Math.floor(w * ratio)
   cv.height = Math.floor(h * ratio)
@@ -94,8 +161,28 @@ function draw() {
 
   const baseline = h / 2
   const playedRatio =
-    props.duration > 0 ? Math.max(0, Math.min(1, playhead.value / props.duration)) : 0
+    props.duration > 0 ? clamp(playhead.value / props.duration, 0, 1) : 0
   const playedX = playedRatio * w
+
+  // Fade regions: gray translucent boxes
+  if (props.fades.length && props.duration > 0) {
+    for (const f of props.fades) {
+      const fx = (f.start / props.duration) * w
+      const ex = (f.end / props.duration) * w
+      ctx.fillStyle = 'rgba(180, 180, 180, 0.18)'
+      ctx.fillRect(fx, 0, Math.max(2, ex - fx), h)
+      ctx.strokeStyle = 'rgba(220, 220, 220, 0.5)'
+      ctx.setLineDash([4, 3])
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(fx, 0)
+      ctx.lineTo(fx, h)
+      ctx.moveTo(ex, 0)
+      ctx.lineTo(ex, h)
+      ctx.stroke()
+      ctx.setLineDash([])
+    }
+  }
 
   // Loop region highlight
   if (props.loop && props.duration > 0) {
@@ -121,18 +208,19 @@ function draw() {
   } else {
     const barWidth = w / peaks.length
     const playedColor = props.accent
-    const unplayedColor = 'rgba(255, 255, 255, 0.18)'
+    const unplayedColor = 'rgba(255, 255, 255, 0.22)'
+    const innerH = h - 8
     for (let i = 0; i < peaks.length; i++) {
       const p = peaks[i] ?? 0
-      const barH = Math.max(1.5, p * (h - 6))
+      const barH = Math.max(2, p * innerH)
       const x = i * barWidth
       const played = x + barWidth / 2 <= playedX
       ctx.fillStyle = played ? playedColor : unplayedColor
-      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.72), barH)
+      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.78), barH)
     }
   }
 
-  // Markers (drawn after bars so labels sit above)
+  // Markers (vertical lines + labels)
   if (props.markers.length && props.duration > 0) {
     for (const m of props.markers) {
       const x = (m.time / props.duration) * w
@@ -143,7 +231,6 @@ function draw() {
       ctx.lineTo(x, h)
       ctx.stroke()
       if (m.label) {
-        ctx.fillStyle = 'rgba(227, 184, 115, 0.9)'
         ctx.font = '600 9px Inter, system-ui, sans-serif'
         const labelW = ctx.measureText(m.label).width
         const pad = 3
@@ -157,17 +244,17 @@ function draw() {
     }
   }
 
-  // Playhead line
+  // Playhead line + handle
   if (props.duration > 0) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'
-    ctx.lineWidth = 1.5
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)'
+    ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(playedX, 0)
     ctx.lineTo(playedX, h)
     ctx.stroke()
     ctx.fillStyle = '#fff'
     ctx.beginPath()
-    ctx.arc(playedX, baseline, 4, 0, Math.PI * 2)
+    ctx.arc(playedX, baseline, 5, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -184,7 +271,13 @@ function resize() {
 let ro: ResizeObserver | null = null
 
 onMounted(() => {
-  resize()
+  // Defer one frame so layout has settled before measuring.
+  requestAnimationFrame(() => {
+    resize()
+    // Only run the interpolation loop while actually playing — otherwise
+    // we'd churn microtasks forever in test environments.
+    if (props.isPlaying) startRaf()
+  })
   if (typeof ResizeObserver !== 'undefined' && canvas.value) {
     ro = new ResizeObserver(() => resize())
     ro.observe(canvas.value)
@@ -193,22 +286,38 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopRaf()
+  onDragEnd() // removes any lingering window listeners
   ro?.disconnect()
   window.removeEventListener('devicepixelratiochange', resize)
 })
 
-// Keep playhead in sync with the player when not actively dragging.
+// Anchor the RAF interpolator whenever the player reports a new time.
 watch(
   () => props.current,
   (v) => {
-    if (!dragging) playhead.value = v
+    if (!dragging) {
+      lastAnchorTime = v
+      lastAnchorWall = performance.now()
+      playhead.value = v
+      draw()
+    }
   },
 )
 
 watch(
-  () => [props.peaks, props.duration, props.markers, props.loop, props.height, props.accent],
+  () => [props.peaks, props.duration, props.markers, props.loop, props.fades, props.height, props.accent],
   () => draw(),
   { deep: true },
+)
+
+watch(
+  () => props.isPlaying,
+  (playing) => {
+    lastAnchorWall = performance.now()
+    if (playing) startRaf()
+    else stopRaf()
+  },
 )
 
 defineExpose({ redraw: draw })
@@ -220,18 +329,17 @@ defineExpose({ redraw: draw })
       ref="canvas"
       class="waveform__canvas"
       :style="{ height: `${height}px` }"
-      @pointerdown="pointerDown"
-      @pointermove="pointerMove"
-      @pointerup="pointerUp"
-      @pointercancel="pointerUp"
+      @pointerdown="startDrag"
+      @dblclick="props.duration > 0 && emit('add-cue', playhead)"
     />
     <button
       v-for="(m, i) in markers"
-      :key="i"
+      :key="m.id ?? i"
       class="waveform__marker"
       :style="{ left: duration > 0 ? `${(m.time / duration) * 100}%` : '0%' }"
       :title="`Jump to ${m.label ?? formatMarkerTime(m.time)}`"
-      @click.stop="$emit('marker-seek', m)"
+      @click.stop="emit('marker-seek', m)"
+      @pointerdown.stop
     >
       <span class="waveform__marker-dot" />
     </button>
@@ -270,8 +378,8 @@ export { formatMarkerTime }
   position: absolute;
   top: 0;
   height: 100%;
-  width: 12px;
-  margin-left: -6px;
+  width: 14px;
+  margin-left: -7px;
   background: transparent;
   border: none;
   padding: 0;
@@ -279,14 +387,14 @@ export { formatMarkerTime }
 }
 .waveform__marker-dot {
   position: absolute;
-  bottom: -2px;
+  bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--c-accent);
-  box-shadow: 0 0 6px var(--c-accent-glow);
-  border: 1.5px solid var(--c-bg-0);
+  box-shadow: 0 0 8px var(--c-accent-glow);
+  border: 2px solid var(--c-bg-0);
 }
 </style>
