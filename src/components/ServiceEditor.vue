@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import AppIcon from './AppIcon.vue'
+import { X } from '@lucide/vue'
 
 const props = defineProps<{ open: boolean; defaultDate?: string }>()
 const emit = defineEmits<{
@@ -34,7 +34,7 @@ function submit() {
         <header class="modal__head">
           <h2>New service</h2>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <AppIcon name="x" :size="20" />
+            <X :size="20" />
           </button>
         </header>
         <div class="modal__body">

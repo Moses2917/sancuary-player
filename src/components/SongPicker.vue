@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { Check, X } from '@lucide/vue'
 import type { Song } from '@/types'
-import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{
   open: boolean
@@ -56,7 +56,7 @@ function confirm() {
         <header class="modal__head">
           <h2>Add songs</h2>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <AppIcon name="x" :size="20" />
+            <X :size="20" />
           </button>
         </header>
         <div class="modal__body">
@@ -69,7 +69,7 @@ function confirm() {
                 @click="toggle(song)"
               >
                 <span class="pick__check" :class="{ 'pick__check--on': selected.has(song.id) }">
-                  <AppIcon v-if="selected.has(song.id)" name="check" :size="12" :stroke-width="3" />
+                  <Check v-if="selected.has(song.id)" :size="12" :stroke-width="3" />
                 </span>
                 <span class="pick__title">{{ song.title }}</span>
               </button>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Music, Pause, Play, Plus, Search, Trash2, Upload } from '@lucide/vue'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
 import type { Song, SongTag } from '@/types'
-import AppIcon from '@/components/AppIcon.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import BundledLoader from '@/components/BundledLoader.vue'
 
@@ -66,17 +66,17 @@ const counts = computed(() => {
       <h1>Library</h1>
       <div class="section-title__actions">
         <button class="btn" @click="bundledOpen = true">
-          <AppIcon name="upload" :size="16" /> Load bundled
+          <Upload :size="16" /> Load bundled
         </button>
         <button class="btn btn--primary" @click="importerOpen = true">
-          <AppIcon name="plus" :size="16" /> Add song
+          <Plus :size="16" /> Add song
         </button>
       </div>
     </div>
 
     <div v-if="!library.loading && library.songs.length > 0" class="filters">
       <div class="search">
-        <AppIcon name="search" :size="16" />
+        <Search :size="16" />
         <input
           v-model="query"
           type="search"
@@ -123,14 +123,14 @@ const counts = computed(() => {
     <div v-if="library.loading" class="empty"><p>Loading library…</p></div>
 
     <div v-else-if="library.songs.length === 0" class="empty surface">
-      <div class="empty__art"><AppIcon name="music" :size="36" /></div>
+      <div class="empty__art"><Music :size="36" /></div>
       <h3>No songs yet</h3>
       <p>
         Add your first song by selecting a piano track and a choir track. They'll be stored locally
         in your browser.
       </p>
       <button class="btn btn--primary" @click="importerOpen = true">
-        <AppIcon name="plus" :size="16" /> Add your first song
+        <Plus :size="16" /> Add your first song
       </button>
     </div>
 
@@ -144,17 +144,17 @@ const counts = computed(() => {
     <ul v-else class="songs">
       <li v-for="song in filtered" :key="song.id" class="song surface">
         <button class="song__art" :title="`Play ${song.title}`" @click="preview(song)">
-          <AppIcon name="music" :size="22" />
-          <span class="song__play"><AppIcon name="play" :size="20" /></span>
+          <Music :size="22" />
+          <span class="song__play"><Play :size="20" /></span>
         </button>
         <div class="song__meta">
           <div class="song__title" :title="song.title">{{ song.title }}</div>
           <div class="song__tracks">
             <span class="track-tag" style="--c: var(--c-piano)">
-              <AppIcon name="music" :size="11" /> Piano
+              <Music :size="11" /> Piano
             </span>
             <span class="track-tag" style="--c: var(--c-choir)">
-              <AppIcon name="music" :size="11" /> Choir
+              <Music :size="11" /> Choir
             </span>
             <span v-if="song.bundled" class="song__bundled">bundled</span>
             <span
@@ -173,8 +173,10 @@ const counts = computed(() => {
             :title="player.currentSong?.id === song.id ? 'Now playing' : 'Preview'"
             @click="preview(song)"
           >
-            <AppIcon
-              :name="player.currentSong?.id === song.id && player.isPlaying ? 'pause' : 'play'"
+            <component
+              :is="
+                player.currentSong?.id === song.id && player.isPlaying ? Pause : Play
+              "
               :size="18"
             />
           </button>
@@ -184,7 +186,7 @@ const counts = computed(() => {
             title="Remove"
             @click="confirmingId = song.id"
           >
-            <AppIcon name="trash" :size="18" />
+            <Trash2 :size="18" />
           </button>
           <template v-else>
             <button class="btn btn--danger btn--sm" @click="remove(song)">Delete</button>

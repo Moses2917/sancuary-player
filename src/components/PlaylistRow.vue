@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { GripVertical, Pause, Play, Trash2 } from '@lucide/vue'
 import type { PlaylistItem, Song } from '@/types'
-import AppIcon from './AppIcon.vue'
 import VolumeSlider from './VolumeSlider.vue'
 
 const props = defineProps<{
@@ -46,7 +46,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
       @dragstart="emit('dragstart')"
       @dragend="emit('dragend')"
     >
-      <AppIcon name="grip" :size="18" />
+      <GripVertical :size="18" />
     </button>
 
     <span class="row__index">{{ index + 1 }}</span>
@@ -57,7 +57,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
       :title="isCurrentPlaying ? 'Pause' : 'Play from here'"
       @click="emit('play')"
     >
-      <AppIcon :name="isCurrentPlaying ? 'pause' : 'play'" :size="16" />
+      <component :is="isCurrentPlaying ? Pause : Play" :size="16" />
     </button>
 
     <div class="row__title" :title="song.title">{{ song.title }}</div>
@@ -84,7 +84,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
     </div>
 
     <button class="icon-btn icon-btn--danger" title="Remove from service" @click="emit('remove')">
-      <AppIcon name="trash" :size="16" />
+      <Trash2 :size="16" />
     </button>
   </li>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import AppIcon from './AppIcon.vue'
+import { Calendar, Church, Music } from '@lucide/vue'
 </script>
 
 <template>
@@ -8,7 +8,7 @@ import AppIcon from './AppIcon.vue'
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
         <span class="brand__mark">
-          <AppIcon name="cross" :size="18" :stroke-width="0" />
+          <Church :size="20" :stroke-width="1.75" />
         </span>
         <span class="brand__text">
           <span class="brand__title">Sanctuary</span>
@@ -17,11 +17,11 @@ import AppIcon from './AppIcon.vue'
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <AppIcon name="calendar" :size="18" />
+          <Calendar :size="18" />
           <span>Services</span>
         </RouterLink>
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <AppIcon name="music" :size="18" />
+          <Music :size="18" />
           <span>Library</span>
         </RouterLink>
       </nav>
@@ -53,6 +53,7 @@ import AppIcon from './AppIcon.vue'
   align-items: center;
   gap: var(--sp-3);
   color: var(--c-text);
+  position: relative;
 }
 .brand:hover {
   color: var(--c-text);
@@ -67,6 +68,13 @@ import AppIcon from './AppIcon.vue'
   background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
   color: #1a1208;
   box-shadow: var(--sh-glow);
+  transition:
+    transform var(--dur) var(--ease-spring),
+    box-shadow var(--dur) var(--ease);
+}
+.brand:hover .brand__mark {
+  transform: rotate(-4deg) scale(1.06);
+  box-shadow: 0 0 38px var(--c-accent-glow);
 }
 .brand__text {
   display: flex;
@@ -91,6 +99,7 @@ import AppIcon from './AppIcon.vue'
   gap: var(--sp-2);
 }
 .nav__link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
@@ -99,17 +108,36 @@ import AppIcon from './AppIcon.vue'
   color: var(--c-text-soft);
   font-weight: 500;
   font-size: 0.92rem;
+  overflow: hidden;
   transition:
     background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease-out);
+}
+.nav__link::after {
+  content: '';
+  position: absolute;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  bottom: 4px;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--c-accent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur) var(--ease-spring);
 }
 .nav__link:hover {
   color: var(--c-text);
   background: var(--c-bg-3);
+  transform: translateY(-1px);
 }
 .nav__link--active {
   color: var(--c-accent);
   background: rgba(227, 184, 115, 0.1);
+}
+.nav__link--active::after {
+  transform: scaleX(1);
 }
 
 @media (max-width: 560px) {

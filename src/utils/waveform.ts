@@ -47,7 +47,7 @@ export async function computePeaks(
     const channel = audio.getChannelData(0)
     const { length } = channel
     const blockSize = Math.max(1, Math.floor(length / buckets))
-    const peaks: number[] = new Array(buckets)
+    const peaks: number[] = Array.from({ length: buckets })
     let top = 0.0001
     for (let i = 0; i < buckets; i++) {
       const start = i * blockSize

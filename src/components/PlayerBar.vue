@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Flag, Music, Pause, Play, Repeat, SkipBack, SkipForward, Volume2 } from '@lucide/vue'
 import { usePlayerStore } from '@/stores/player'
 import { computePeaks } from '@/utils/waveform'
 import { formatTime } from '@/utils'
-import AppIcon from './AppIcon.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import Waveform from './Waveform.vue'
 
@@ -68,7 +68,7 @@ function gotoService() {
       <!-- now playing -->
       <div class="np">
         <div class="np__art" :class="{ 'np__art--playing': player.isPlaying }">
-          <AppIcon name="music" :size="22" />
+          <Music :size="22" />
         </div>
         <div class="np__meta" @click="gotoService">
           <div class="np__title" :title="player.currentSong?.title">
@@ -89,7 +89,7 @@ function gotoService() {
             title="Previous"
             @click="player.prev()"
           >
-            <AppIcon name="prev" :size="20" />
+            <SkipBack :size="20" />
           </button>
           <button
             v-if="!player.isPlaying"
@@ -98,7 +98,7 @@ function gotoService() {
             title="Play"
             @click="player.play()"
           >
-            <AppIcon name="play" :size="22" />
+            <Play :size="22" />
           </button>
           <button
             v-else
@@ -106,10 +106,10 @@ function gotoService() {
             title="Pause"
             @click="player.pause()"
           >
-            <AppIcon name="pause" :size="22" />
+            <Pause :size="22" />
           </button>
           <button class="icon-btn" :disabled="!player.hasNext" title="Next" @click="player.next()">
-            <AppIcon name="next" :size="20" />
+            <SkipForward :size="20" />
           </button>
         </div>
         <div class="seek">
@@ -137,7 +137,7 @@ function gotoService() {
               :title="loopLabel"
               @click="player.toggleLoop()"
             >
-              <AppIcon name="repeat" :size="14" />
+              <Repeat :size="14" />
             </button>
             <button
               class="tool"
@@ -163,7 +163,7 @@ function gotoService() {
               title="Drop a marker at the playhead"
               @click="addMarkerHere"
             >
-              <AppIcon name="flag" :size="14" />
+              <Flag :size="14" />
             </button>
           </div>
           <span class="seek__time">{{ player.durationFormatted }}</span>
@@ -209,7 +209,7 @@ function gotoService() {
           />
         </div>
         <div class="master">
-          <AppIcon name="volume" :size="18" />
+          <Volume2 :size="18" />
           <VolumeSlider
             class="master__slider"
             :model-value="player.masterVolume"
@@ -263,19 +263,24 @@ function gotoService() {
   background: linear-gradient(135deg, var(--c-bg-2), var(--c-bg-3));
   color: var(--c-accent);
   border: 1px solid var(--c-border);
+  transition:
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 .np__art--playing {
-  animation: pulse 2s var(--ease) infinite;
+  animation: breathe 3s var(--ease) infinite;
   color: var(--c-accent-soft);
   border-color: var(--c-accent);
 }
-@keyframes pulse {
+@keyframes breathe {
   0%,
   100% {
     box-shadow: 0 0 0 0 var(--c-accent-glow);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 18px 2px var(--c-accent-glow);
+    box-shadow: 0 0 22px 4px var(--c-accent-glow);
+    transform: scale(1.04);
   }
 }
 .np__meta {
@@ -313,6 +318,12 @@ function gotoService() {
 .transport__controls .icon-btn[disabled] {
   opacity: 0.35;
   cursor: not-allowed;
+}
+.transport__controls .icon-btn--primary {
+  transition:
+    background var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur-fast) var(--ease-spring);
 }
 .seek {
   display: flex;

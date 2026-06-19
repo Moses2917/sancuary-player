@@ -23,6 +23,15 @@ export default defineConfigWithVueTs(
   vueTsConfigs.recommended,
 
   {
+    name: 'app/overrides',
+    files: ['**/*.vue'],
+    rules: {
+      // Waveform, PlayerBar, etc. are perfectly clear single-word names.
+      'vue/multi-word-component-names': 'off',
+    },
+  },
+
+  {
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },

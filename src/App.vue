@@ -35,14 +35,14 @@ useKeyboardShortcuts()
 .fade-leave-active {
   transition:
     opacity var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+    transform var(--dur) var(--ease-out);
 }
 .fade-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(10px) scale(0.992);
 }
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(0.992);
 }
 </style>

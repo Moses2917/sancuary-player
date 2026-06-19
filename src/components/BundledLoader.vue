@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import AppIcon from './AppIcon.vue'
+import { Check, X } from '@lucide/vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
@@ -70,7 +70,7 @@ function confirm() {
             <p class="modal__sub">From <code>public/audio/manifest.json</code></p>
           </div>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <AppIcon name="x" :size="20" />
+            <X :size="20" />
           </button>
         </header>
 
@@ -92,7 +92,7 @@ function confirm() {
                 @click="toggle(row)"
               >
                 <span class="check" :class="{ 'check--on': row.checked || row.alreadyImported }">
-                  <AppIcon name="check" :size="12" :stroke-width="3" />
+                  <Check :size="12" :stroke-width="3" />
                 </span>
                 <span class="title">{{ row.title }}</span>
                 <span v-if="row.alreadyImported" class="badge">imported</span>

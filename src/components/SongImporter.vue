@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import AppIcon from './AppIcon.vue'
+import { Upload, X } from '@lucide/vue'
 import { useLibraryStore } from '@/stores/library'
 import type { SongTag } from '@/types'
 
@@ -98,7 +98,7 @@ async function submit() {
         <header class="modal__head">
           <h2>Add Song</h2>
           <button class="icon-btn" @click="emit('close')" aria-label="Close">
-            <AppIcon name="x" :size="20" />
+            <X :size="20" />
           </button>
         </header>
 
@@ -152,7 +152,7 @@ async function submit() {
               @dragover.prevent
               @drop.prevent="dropPiano"
             >
-              <AppIcon name="upload" :size="22" />
+              <Upload :size="22" />
               <div class="drop__label">
                 <span class="drop__tag">Piano track</span>
                 <span class="drop__name" :title="piano?.name">
@@ -169,7 +169,7 @@ async function submit() {
               @dragover.prevent
               @drop.prevent="dropChoir"
             >
-              <AppIcon name="upload" :size="22" />
+              <Upload :size="22" />
               <div class="drop__label">
                 <span class="drop__tag">Choir track</span>
                 <span class="drop__name" :title="choir?.name">

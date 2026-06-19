@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Calendar, Plus, Search, X } from '@lucide/vue'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import ServiceCard from '@/components/ServiceCard.vue'
 import ServiceEditor from '@/components/ServiceEditor.vue'
-import AppIcon from '@/components/AppIcon.vue'
 
 const services = useServicesStore()
 const library = useLibraryStore()
@@ -47,13 +47,13 @@ const filtered = computed(() => {
       <h1>Services</h1>
       <div class="section-title__actions">
         <button class="btn btn--primary" @click="editorOpen = true">
-          <AppIcon name="plus" :size="16" /> New service
+          <Plus :size="16" /> New service
         </button>
       </div>
     </div>
 
     <div v-if="!services.loading && services.services.length > 0" class="search">
-      <AppIcon name="search" :size="16" />
+      <Search :size="16" />
       <input
         v-model="query"
         type="search"
@@ -62,21 +62,21 @@ const filtered = computed(() => {
         aria-label="Search services"
       />
       <button v-if="query" class="search__clear" title="Clear" @click="query = ''">
-        <AppIcon name="x" :size="14" />
+        <X :size="14" />
       </button>
     </div>
 
     <div v-if="services.loading" class="empty"><p>Loading…</p></div>
 
     <div v-else-if="services.services.length === 0" class="empty surface">
-      <div class="empty__art"><AppIcon name="calendar" :size="36" /></div>
+      <div class="empty__art"><Calendar :size="36" /></div>
       <h3>No services yet</h3>
       <p>
         Create a service for each worship occasion — Sunday morning, Wednesday prayer, Easter, and
         so on — and arrange songs into a playlist.
       </p>
       <button class="btn btn--primary" @click="editorOpen = true">
-        <AppIcon name="plus" :size="16" /> Create your first service
+        <Plus :size="16" /> Create your first service
       </button>
     </div>
 

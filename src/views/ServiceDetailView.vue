@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
-import AppIcon from '@/components/AppIcon.vue'
+import { ArrowLeft, Calendar, Music, Pencil, Play, Plus, Upload } from '@lucide/vue'
 import SongPicker from '@/components/SongPicker.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
@@ -151,7 +151,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 
   <section v-else-if="current">
     <button class="back" @click="router.push({ name: 'services' })">
-      <AppIcon name="arrow-left" :size="16" /> All services
+      <ArrowLeft :size="16" /> All services
     </button>
 
     <header class="head">
@@ -159,11 +159,11 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         <template v-if="!editingMeta">
           <div class="head__meta">
             <span class="head__date">
-              <AppIcon name="calendar" :size="14" />
+              <Calendar :size="14" />
               {{ formatDate(current.date) || 'No date set' }}
             </span>
             <button class="head__edit" title="Edit" @click="editingMeta = true">
-              <AppIcon name="edit" :size="14" />
+              <Pencil :size="14" />
             </button>
           </div>
           <h1 class="head__title">{{ current.name }}</h1>
@@ -184,28 +184,28 @@ const serviceNotFound = computed(() => services.ready && !current.value)
       </div>
       <div class="head__actions">
         <button class="btn btn--primary" :disabled="resolved.length === 0" @click="playAll(0)">
-          <AppIcon name="play" :size="16" />
+          <Play :size="16" />
           {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
         </button>
         <button class="btn" @click="pickerOpen = true">
-          <AppIcon name="plus" :size="16" /> Add songs
+          <Plus :size="16" /> Add songs
         </button>
         <button class="btn" @click="creatorOpen = true">
-          <AppIcon name="upload" :size="16" /> Create song
+          <Upload :size="16" /> Create song
         </button>
       </div>
     </header>
 
     <div v-if="resolved.length === 0" class="empty surface">
-      <div class="empty__art"><AppIcon name="music" :size="36" /></div>
+      <div class="empty__art"><Music :size="36" /></div>
       <h3>Empty playlist</h3>
       <p>Add songs from your library to build this service's set list.</p>
       <div class="empty__actions">
         <button class="btn btn--primary" @click="pickerOpen = true">
-          <AppIcon name="plus" :size="16" /> Add songs
+          <Plus :size="16" /> Add songs
         </button>
         <button class="btn" @click="creatorOpen = true">
-          <AppIcon name="upload" :size="16" /> Create new
+          <Upload :size="16" /> Create new
         </button>
       </div>
     </div>
