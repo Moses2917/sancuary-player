@@ -1,14 +1,37 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
+import { computePeaks } from '@/utils/waveform'
 import AppIcon from './AppIcon.vue'
 import VolumeSlider from './VolumeSlider.vue'
+import Waveform from './Waveform.vue'
 
 const router = useRouter()
 const player = usePlayerStore()
 
 const hasSong = computed(() => !!player.currentSong)
+
+const peaks = ref<number[]>([])
+const peaksLoading = ref(false)
+
+async function refreshPeaks() {
+  const song = player.currentSong
+  if (!song) {
+    peaks.value = []
+    return
+  }
+  peaksLoading.value = true
+  try {
+    peaks.value = await computePeaks(song.id, song.piano)
+  } catch {
+    peaks.value = []
+  } finally {
+    peaksLoading.value = false
+  }
+}
+
+watch(() => player.currentSong?.id, refreshPeaks, { immediate: true })
 
 function onSeek(v: number) {
   if (Number.isFinite(player.duration)) player.seek(v)
@@ -74,16 +97,18 @@ function gotoService() {
         </div>
         <div class="seek">
           <span class="seek__time">{{ player.currentTimeFormatted }}</span>
-          <VolumeSlider
-            class="seek__bar"
-            :model-value="player.currentTime"
-            :min="0"
-            :max="player.duration || 1"
-            :step="0.1"
-            :disabled="!hasSong"
-            accent="--c-accent"
-            @update:model-value="onSeek"
-          />
+          <div class="seek__bar">
+            <Waveform
+              :peaks="peaks"
+              :duration="player.duration || 0"
+              :current="player.currentTime"
+              :disabled="!hasSong"
+              :height="36"
+              accent="var(--c-accent)"
+              @seek="onSeek"
+            />
+            <div v-if="peaksLoading" class="seek__hint">Analysing audio…</div>
+          </div>
           <span class="seek__time">{{ player.durationFormatted }}</span>
         </div>
       </div>
@@ -246,6 +271,16 @@ function gotoService() {
 }
 .seek__bar {
   flex: 1;
+  position: relative;
+}
+.seek__hint {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  color: var(--c-text-muted);
+  pointer-events: none;
 }
 
 /* mixers */

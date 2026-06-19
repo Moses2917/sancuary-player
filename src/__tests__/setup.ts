@@ -102,3 +102,29 @@ if (!('createObjectURL' in URL)) {
   // @ts-expect-error test shim
   URL.revokeObjectURL = () => {}
 }
+
+/**
+ * Minimal AudioContext stub for waveform tests. Real Web Audio isn't
+ * available in jsdom; this returns a synthetic single-channel buffer whose
+ * length tracks the source size so peak extraction has something to chew on.
+ */
+class FakeAudioBuffer {
+  constructor(private length: number) {}
+  getNumberOfChannels() {
+    return 1
+  }
+  getChannelData() {
+    const arr = new Float32Array(this.length)
+    for (let i = 0; i < this.length; i++) {
+      arr[i] = Math.sin(i / 12) * 0.5
+    }
+    return arr
+  }
+}
+class FakeAudioContext {
+  async decodeAudioData(buf: ArrayBuffer) {
+    return new FakeAudioBuffer(Math.max(1, Math.floor(buf.byteLength / 2)))
+  }
+  async close() {}
+}
+globalThis.AudioContext = FakeAudioContext as unknown as typeof AudioContext
