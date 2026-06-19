@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
+import { useLibraryStore } from '@/stores/library'
 import { getFakeAudioInstances, resetFakeAudioInstances } from '@/__tests__/setup'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
 import type { PlaylistItem, Service, Song } from '@/types'
@@ -436,6 +437,55 @@ describe('player store', () => {
       piano.__dispatch('timeupdate')
       expect(piano.currentTime).toBeCloseTo(player.loop!.start, 5)
       expect(choir.currentTime).toBeCloseTo(player.loop!.start, 5)
+    })
+  })
+
+  describe('cue markers', () => {
+    it('addMarkerHere persists a marker at the playhead on the current song', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Cued',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 0.5 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      piano.currentTime = 12
+      piano.__dispatch('timeupdate')
+      await player.addMarkerHere('Verse')
+      expect(player.currentMarkers.length).toBe(1)
+      expect(player.currentMarkers[0]?.time).toBe(12)
+      expect(player.currentMarkers[0]?.label).toBe('Verse')
+    })
+
+    it('addMarkerAt places a cue at an arbitrary time regardless of playhead', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Cued',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 0.5 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      piano.currentTime = 5
+      piano.__dispatch('timeupdate')
+      await player.addMarkerAt(42, 'Outro')
+      expect(player.currentMarkers[0]?.time).toBe(42)
+      expect(player.currentMarkers[0]?.label).toBe('Outro')
     })
   })
 })

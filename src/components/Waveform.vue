@@ -31,6 +31,9 @@ const props = withDefaults(
     disabled?: boolean
     /** Emit a seek on every pointer move during drag (true) or only on drop (false). */
     liveSeek?: boolean
+    /** When true, clicks on the waveform drop a cue at the clicked position
+     *  instead of seeking. Useful on touch devices where right-click isn't available. */
+    placeCueMode?: boolean
   }>(),
   {
     isPlaying: false,
@@ -41,6 +44,7 @@ const props = withDefaults(
     accent: 'var(--c-accent)',
     disabled: false,
     liveSeek: true,
+    placeCueMode: false,
   },
 )
 
@@ -48,6 +52,7 @@ const emit = defineEmits<{
   (e: 'seek', time: number): void
   (e: 'marker-seek', marker: WaveformMarker): void
   (e: 'add-cue', time: number): void
+  (e: 'add-cue-at', time: number): void
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -85,6 +90,14 @@ function clientXToRatio(clientX: number): number {
 
 function startDrag(e: PointerEvent) {
   if (props.disabled || props.duration <= 0) return
+  // In place-cue mode, a click drops a cue at the clicked position rather
+  // than seeking. We still let the user drag-seek by holding — but a click
+  // without movement becomes a cue placement.
+  if (props.placeCueMode) {
+    const t = ratioToTime(clientXToRatio(e.clientX))
+    emit('add-cue-at', t)
+    return
+  }
   dragging = true
   window.addEventListener('pointermove', onDragMove)
   window.addEventListener('pointerup', onDragEnd)
@@ -92,6 +105,14 @@ function startDrag(e: PointerEvent) {
   const t = ratioToTime(clientXToRatio(e.clientX))
   setPlayhead(t)
   emit('seek', t)
+}
+
+/** Right-click always drops a cue at the clicked position, regardless of mode. */
+function onContextMenu(e: MouseEvent) {
+  if (props.disabled || props.duration <= 0) return
+  e.preventDefault()
+  const t = ratioToTime(clientXToRatio(e.clientX))
+  emit('add-cue-at', t)
 }
 
 function onDragMove(e: PointerEvent) {
@@ -328,8 +349,10 @@ defineExpose({ redraw: draw })
     <canvas
       ref="canvas"
       class="waveform__canvas"
+      :class="{ 'waveform__canvas--placing': placeCueMode }"
       :style="{ height: `${height}px` }"
       @pointerdown="startDrag"
+      @contextmenu="onContextMenu"
       @dblclick="props.duration > 0 && emit('add-cue', playhead)"
     />
     <button
@@ -369,6 +392,9 @@ export { formatMarkerTime }
   width: 100%;
   cursor: pointer;
   border-radius: var(--r-sm);
+}
+.waveform__canvas--placing {
+  cursor: crosshair;
 }
 .waveform--disabled .waveform__canvas {
   cursor: not-allowed;

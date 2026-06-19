@@ -25,6 +25,8 @@ const hasSong = computed(() => !!player.currentSong)
 
 const peaks = ref<number[]>([])
 const peaksLoading = ref(false)
+/** When true, clicking the waveform drops a cue at the clicked position. */
+const placeCueMode = ref(false)
 
 async function refreshPeaks() {
   const song = player.currentSong
@@ -56,6 +58,19 @@ async function addMarkerHere() {
   if (!player.currentSong) return
   const label = window.prompt('Marker label (optional)', '') ?? ''
   await player.addMarkerHere(label)
+}
+
+async function addMarkerAt(time: number) {
+  if (!player.currentSong) return
+  const label = window.prompt(`Marker label at ${formatTime(time)} (optional)`, '') ?? ''
+  await player.addMarkerAt(time, label)
+  // Exit place-cue mode after a successful drop so the user doesn't
+  // accidentally spam cues on subsequent seeks.
+  placeCueMode.value = false
+}
+
+function togglePlaceCueMode() {
+  placeCueMode.value = !placeCueMode.value
 }
 
 function gotoService() {
@@ -147,12 +162,14 @@ const loopLabel = computed(() => {
           :is-playing="player.isPlaying"
           :markers="player.currentMarkers"
           :loop="player.loop"
+          :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
           :height="72"
           accent="var(--c-accent)"
           @seek="onSeek"
           @marker-seek="onMarkerSeek"
           @add-cue="addMarkerHere"
+          @add-cue-at="addMarkerAt"
         />
         <div v-if="peaksLoading" class="pod__hint">Analysing audio…</div>
         <div class="pod__times">
@@ -193,11 +210,16 @@ const loopLabel = computed(() => {
       </button>
       <button
         class="tool"
-        :disabled="!hasSong || player.currentTime <= 0"
-        title="Drop a marker at the playhead (or double-click the waveform)"
-        @click="addMarkerHere"
+        :class="{ 'tool--on': placeCueMode }"
+        :disabled="!hasSong"
+        :title="
+          placeCueMode
+            ? 'Click the waveform to drop a cue (click here to cancel)'
+            : 'Toggle: then click anywhere on the waveform to drop a cue'
+        "
+        @click="togglePlaceCueMode"
       >
-        <Flag :size="14" /> <span>Cue</span>
+        <Flag :size="14" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
       </button>
     </div>
 

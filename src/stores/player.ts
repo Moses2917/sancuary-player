@@ -369,18 +369,41 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /* ---------- cue markers ---------- */
+  /** After a library edit, refresh the in-queue song reference so derived
+   *  computeds (currentMarkers, etc.) pick up the new state. */
+  function refreshActiveSong() {
+    const active = current.value
+    if (!active) return
+    const library = useLibraryStore()
+    const updated = library.getById(active.song.id)
+    if (!updated || updated === active.song) return
+    queue.value = queue.value.map((item) =>
+      item.song.id === updated.id ? { item: item.item, song: updated } : item,
+    )
+  }
+
   /** Drop a named cue on the current song at the playhead. Persists to idb. */
   async function addMarkerHere(label?: string) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
     await library.addMarker(song.id, currentTime.value, label)
+    refreshActiveSong()
+  }
+  /** Drop a named cue on the current song at an arbitrary time. Persists to idb. */
+  async function addMarkerAt(time: number, label?: string) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.addMarker(song.id, time, label)
+    refreshActiveSong()
   }
   async function removeMarker(markerId: string) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
     await library.removeMarker(song.id, markerId)
+    refreshActiveSong()
   }
 
   const currentTimeFormatted = computed(() => formatTime(currentTime.value))
@@ -428,6 +451,7 @@ export const usePlayerStore = defineStore('player', () => {
     clearLoop,
     /* markers */
     addMarkerHere,
+    addMarkerAt,
     removeMarker,
     /* playlist */
     load,
