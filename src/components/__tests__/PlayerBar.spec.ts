@@ -44,7 +44,7 @@ describe('PlayerBar', () => {
   it('shows the empty state copy when nothing is loaded', async () => {
     const wrapper = await mountBar()
     expect(wrapper.text()).toContain('Nothing playing')
-    expect(wrapper.classes()).toContain('player-bar--empty')
+    expect(wrapper.classes()).toContain('pod--empty')
   })
 
   it('reflects the current song title after loading a service', async () => {
@@ -60,7 +60,7 @@ describe('PlayerBar', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('Amazing Grace')
     expect(wrapper.text()).toContain('Sunday Morning')
-    expect(wrapper.classes()).not.toContain('player-bar--empty')
+    expect(wrapper.classes()).not.toContain('pod--empty')
   })
 
   it('toggles playback via the main transport button', async () => {
@@ -113,7 +113,7 @@ describe('PlayerBar', () => {
     )
     await flushPromises()
 
-    const buttons = wrapper.findAll('.transport__controls .icon-btn')
+    const buttons = wrapper.findAll('.pod__transport .icon-btn')
     // [prev, play/pause, next]
     expect(buttons[0]!.attributes('disabled')).toBeDefined()
     expect(buttons[2]!.attributes('disabled')).toBeDefined()

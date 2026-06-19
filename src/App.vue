@@ -27,13 +27,13 @@ useMediaSession()
 <template>
   <AppHeader v-if="!isBare" />
   <main class="app-main">
+    <PlayerBar v-if="!isBare" />
     <RouterView v-slot="{ Component }">
       <transition name="fade" mode="out-in">
         <component :is="Component" />
       </transition>
     </RouterView>
   </main>
-  <PlayerBar v-if="!isBare" />
 </template>
 
 <style scoped>

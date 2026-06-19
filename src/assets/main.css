@@ -6,7 +6,7 @@
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--sp-6) var(--sp-5) calc(var(--player-h) + var(--sp-6));
+  padding: var(--sp-5) var(--sp-5) var(--sp-7);
 }
 
 /* Shared utility primitives */
