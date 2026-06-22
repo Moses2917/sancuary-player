@@ -68,15 +68,15 @@ const filtered = computed(() => {
 
     <div v-if="services.loading" class="empty"><p>Loading…</p></div>
 
-    <div v-else-if="services.services.length === 0" class="empty surface">
-      <div class="empty__art"><Calendar :size="36" /></div>
+    <div v-else-if="services.services.length === 0" class="empty">
+      <div class="empty__icon"><Calendar :size="32" :stroke-width="1.25" /></div>
       <h3>No services yet</h3>
       <p>
         Create a service for each worship occasion — Sunday morning, Wednesday prayer, Easter, and
         so on — and arrange songs into a playlist.
       </p>
       <button class="btn btn--primary" @click="editorOpen = true">
-        <Plus :size="16" /> Create your first service
+        <Plus :size="14" :stroke-width="2" /> Create your first service
       </button>
     </div>
 
@@ -94,21 +94,20 @@ const filtered = computed(() => {
 </template>
 
 <style scoped>
-.empty__art {
+.empty__icon {
   width: 64px;
   height: 64px;
-  margin: 0 auto var(--sp-3);
+  margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-lg);
-  background: linear-gradient(135deg, var(--c-bg-2), var(--c-bg-3));
-  color: var(--c-accent);
-  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  background: var(--c-bg-3);
+  color: var(--c-text-muted);
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--sp-4);
 }
 .search {
@@ -116,16 +115,19 @@ const filtered = computed(() => {
   align-items: center;
   gap: var(--sp-2);
   padding: 0 var(--sp-3);
-  background: var(--c-bg-1);
+  background: var(--c-surface-raised);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   color: var(--c-text-muted);
   max-width: 480px;
-  margin-bottom: var(--sp-4);
-  transition: border-color var(--dur-fast) var(--ease);
+  margin-bottom: var(--sp-5);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 .search:focus-within {
   border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-glow);
 }
 .search__input {
   flex: 1;
@@ -133,7 +135,7 @@ const filtered = computed(() => {
   border: none;
   outline: none;
   color: var(--c-text);
-  padding: var(--sp-3) 0;
+  padding: 0.55rem 0;
 }
 .search__input::placeholder {
   color: var(--c-text-muted);
