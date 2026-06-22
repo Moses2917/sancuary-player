@@ -8,7 +8,7 @@
   padding: 0;
 }
 
- html,
+html,
 body,
 #app {
   height: 100%;
@@ -19,8 +19,8 @@ html {
 }
 
 ::selection {
-  background: var(--c-accent-glow);
-  color: var(--c-accent-soft);
+  background: var(--c-accent);
+  color: #fbf9f3;
 }
 
 body {
@@ -29,14 +29,16 @@ body {
   line-height: 1.55;
   color: var(--c-text);
   background: var(--c-bg-0);
+  /* Subtle paper grain via two layered radial washes. So subtle you'd
+     only notice if it were gone. */
   background-image:
-    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(227, 184, 115, 0.08), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(127, 179, 255, 0.07), transparent 60%),
-    linear-gradient(180deg, var(--c-bg-0), var(--c-bg-1) 60%);
+    radial-gradient(circle at 0% 0%, rgba(139, 109, 63, 0.04), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(44, 94, 138, 0.03), transparent 40%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv05', 'ss01', 'kern';
 }
 
 /* Respect users who prefer reduced motion: strip transitions & animations. */
@@ -62,9 +64,10 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.15;
   color: var(--c-text);
+  letter-spacing: -0.01em;
 }
 
 a {
@@ -73,7 +76,7 @@ a {
   transition: color var(--dur-fast) var(--ease);
 }
 a:hover {
-  color: var(--c-accent-soft);
+  color: var(--c-accent-deep);
 }
 
 button {
@@ -97,10 +100,9 @@ ol {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
   border-radius: var(--r-sm);
-  box-shadow: 0 0 0 4px var(--c-accent-glow);
 }
 
-/* Scrollbar */
+/* Scrollbar — slim and quiet */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -109,13 +111,13 @@ ol {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--c-border-strong);
+  background: rgba(43, 27, 20, 0.16);
   border-radius: var(--r-pill);
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--c-accent-deep);
+  background: rgba(43, 27, 20, 0.3);
   background-clip: padding-box;
-  border: 2px solid transparent;
+  border: 3px solid transparent;
 }
