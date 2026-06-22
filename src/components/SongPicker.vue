@@ -96,9 +96,9 @@ function confirm() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 8, 18, 0.66);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(43, 27, 20, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,6 +110,7 @@ function confirm() {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  background: var(--c-surface-raised);
   box-shadow: var(--sh-lg);
 }
 .modal__head {
@@ -120,6 +121,8 @@ function confirm() {
 }
 .modal__head h2 {
   font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-3);
@@ -133,7 +136,7 @@ function confirm() {
   max-height: 50vh;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: 1px;
   padding-right: 4px;
 }
 .pick {
@@ -149,26 +152,27 @@ function confirm() {
   text-align: left;
   transition:
     background var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 .pick:hover {
-  background: var(--c-bg-2);
+  background: var(--c-bg-1);
 }
 .pick--on {
-  background: var(--c-bg-3);
-  border-color: var(--c-accent);
+  background: var(--c-accent-glow);
+  border-color: rgba(139, 44, 44, 0.25);
   color: var(--c-text);
 }
 .pick__check {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  border-radius: 5px;
-  border: 2px solid var(--c-border-strong);
+  border-radius: 4px;
+  border: 1.5px solid var(--c-border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #1a1208;
+  color: #fbf9f3;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
@@ -178,7 +182,9 @@ function confirm() {
   border-color: var(--c-accent);
 }
 .pick__title {
+  font-family: var(--font-display);
   font-weight: 500;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -191,7 +197,7 @@ function confirm() {
   border-top: 1px solid var(--c-border);
 }
 .count {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--c-text-muted);
 }
 .actions {
@@ -206,7 +212,7 @@ function confirm() {
 .modal-enter-active .modal,
 .modal-leave-active .modal {
   transition:
-    transform var(--dur) var(--ease),
+    transform var(--dur) var(--ease-out),
     opacity var(--dur) var(--ease);
 }
 .modal-enter-from,
@@ -215,7 +221,7 @@ function confirm() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(8px);
   opacity: 0;
 }
 </style>

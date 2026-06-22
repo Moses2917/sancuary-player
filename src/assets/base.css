@@ -20,21 +20,15 @@ html {
 
 ::selection {
   background: var(--c-accent);
-  color: #fbf9f3;
+  color: #fff;
 }
 
 body {
   font-family: var(--font-sans);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--c-text);
   background: var(--c-bg-0);
-  /* Subtle paper grain via two layered radial washes. So subtle you'd
-     only notice if it were gone. */
-  background-image:
-    radial-gradient(circle at 0% 0%, rgba(139, 109, 63, 0.04), transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(44, 94, 138, 0.03), transparent 40%);
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -57,6 +51,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: var(--c-bg-0);
 }
 
 h1,
@@ -64,10 +59,21 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.15;
   color: var(--c-text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
+}
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+h2 {
+  font-weight: 650;
+  letter-spacing: -0.026em;
+}
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 a {
@@ -104,20 +110,20 @@ ol {
 
 /* Scrollbar — slim and quiet */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(43, 27, 20, 0.16);
+  background: rgba(0, 0, 0, 0.16);
   border-radius: var(--r-pill);
   border: 3px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(43, 27, 20, 0.3);
+  background: rgba(0, 0, 0, 0.3);
   background-clip: padding-box;
   border: 3px solid transparent;
 }
