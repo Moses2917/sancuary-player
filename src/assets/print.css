@@ -37,9 +37,10 @@
     padding: 0 0.5in;
   }
   body[data-print='setlist'] .print-setlist__title {
-    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 28pt;
     font-weight: 700;
+    letter-spacing: -0.02em;
     margin: 0 0 4pt;
   }
   body[data-print='setlist'] .print-setlist__date {
