@@ -57,7 +57,12 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
       :title="isCurrentPlaying ? 'Pause' : 'Play from here'"
       @click="emit('play')"
     >
-      <component :is="isCurrentPlaying ? Pause : Play" :size="14" :stroke-width="2" />
+      <component
+        :is="isCurrentPlaying ? Pause : Play"
+        :size="14"
+        :stroke-width="2"
+        :style="!isCurrentPlaying ? 'margin-left: 2px' : ''"
+      />
     </button>
 
     <div class="row__title" :title="song.title">{{ song.title }}</div>
@@ -90,7 +95,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
     </div>
 
     <button class="icon-btn icon-btn--danger" title="Remove from service" @click="emit('remove')">
-      <Trash2 :size="15" :stroke-width="1.6" />
+      <Trash2 :size="15" :stroke-width="1.75" />
     </button>
   </li>
 </template>
@@ -98,7 +103,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 <style scoped>
 .row {
   display: grid;
-  grid-template-columns: 24px 28px 32px 1fr 1.4fr 32px;
+  grid-template-columns: 24px 28px 36px 1fr 1.4fr 32px;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
@@ -114,7 +119,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 }
 .row--current {
   background: var(--c-accent-glow);
-  border-color: rgba(139, 44, 44, 0.2);
+  border-color: rgba(232, 71, 76, 0.22);
 }
 .row--current:hover {
   background: var(--c-accent-glow);
@@ -137,14 +142,17 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   cursor: grab;
   padding: 4px;
   border-radius: var(--r-sm);
-  opacity: 0.5;
-  transition: opacity var(--dur-fast) var(--ease);
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 .row:hover .row__grip {
-  opacity: 1;
+  opacity: 0.7;
 }
 .row__grip:hover {
-  color: var(--c-text-soft);
+  color: var(--c-text);
+  opacity: 1;
 }
 .row__grip:active {
   cursor: grabbing;
@@ -153,44 +161,41 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .row__art {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--c-bg-3);
-  color: var(--c-text-soft);
-  border: 1px solid var(--c-border);
+  background: var(--c-bg-2);
+  color: var(--c-text);
+  border: none;
   transition:
     color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease);
 }
 .row__art:hover {
   background: var(--c-accent);
-  color: #fbf9f3;
-  border-color: var(--c-accent);
+  color: #fff;
 }
 .row__art--playing {
   background: var(--c-accent);
-  color: #fbf9f3;
-  border-color: var(--c-accent);
+  color: #fff;
 }
 .row__title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.05rem;
-  letter-spacing: -0.005em;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  color: var(--c-text);
 }
 .row__mix {
   display: grid;
@@ -211,10 +216,10 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   gap: 6px;
   font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--c-text-muted);
   min-width: 48px;
+  text-transform: uppercase;
 }
 .mix__dot {
   width: 6px;

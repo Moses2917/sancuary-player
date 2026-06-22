@@ -309,14 +309,16 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   gap: 6px;
   background: transparent;
   border: none;
-  color: var(--c-text-muted);
-  font-size: 0.82rem;
+  color: var(--c-accent);
+  font-size: 0.84rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   margin-bottom: var(--sp-5);
   padding: 4px 0;
   transition: color var(--dur-fast) var(--ease);
 }
 .back:hover {
-  color: var(--c-text);
+  color: var(--c-accent-deep);
 }
 
 .head {
@@ -337,9 +339,9 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-text-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  color: var(--c-accent);
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   font-weight: 600;
   margin-bottom: var(--sp-3);
@@ -363,10 +365,10 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   color: var(--c-accent);
 }
 .head__title {
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  line-height: 1.05;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.1rem, 5.4vw, 3.6rem);
+  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 .head__edit-form {
   display: flex;
@@ -387,14 +389,14 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 }
 
 .empty__icon {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-pill);
-  background: var(--c-bg-3);
+  border-radius: var(--r-md);
+  background: var(--c-bg-2);
   color: var(--c-text-muted);
 }
 
@@ -405,7 +407,8 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 }
 
 .btn--sm {
-  padding: var(--sp-1) var(--sp-3);
+  height: 28px;
+  padding: 0 12px;
   font-size: 0.78rem;
   align-self: flex-start;
 }
@@ -431,7 +434,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 
 @media (max-width: 600px) {
   .head__title {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
   }
   .head__actions {
     width: 100%;
