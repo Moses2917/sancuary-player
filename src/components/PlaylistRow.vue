@@ -46,7 +46,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
       @dragstart="emit('dragstart')"
       @dragend="emit('dragend')"
     >
-      <GripVertical :size="18" />
+      <GripVertical :size="16" :stroke-width="1.5" />
     </button>
 
     <span class="row__index">{{ index + 1 }}</span>
@@ -57,14 +57,16 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
       :title="isCurrentPlaying ? 'Pause' : 'Play from here'"
       @click="emit('play')"
     >
-      <component :is="isCurrentPlaying ? Pause : Play" :size="16" />
+      <component :is="isCurrentPlaying ? Pause : Play" :size="14" :stroke-width="2" />
     </button>
 
     <div class="row__title" :title="song.title">{{ song.title }}</div>
 
     <div class="row__mix">
-      <div class="mix" :class="{ 'mix--dim': false }">
-        <span class="mix__tag" style="--c: var(--c-piano)">Piano</span>
+      <div class="mix">
+        <span class="mix__tag" style="--c: var(--c-piano)">
+          <span class="mix__dot"></span>Piano
+        </span>
         <VolumeSlider
           class="mix__slider"
           :model-value="item.pianoVolume"
@@ -74,7 +76,9 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
         />
       </div>
       <div class="mix">
-        <span class="mix__tag" style="--c: var(--c-choir)">Choir</span>
+        <span class="mix__tag" style="--c: var(--c-choir)">
+          <span class="mix__dot"></span>Choir
+        </span>
         <VolumeSlider
           class="mix__slider"
           :model-value="item.choirVolume"
@@ -86,7 +90,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
     </div>
 
     <button class="icon-btn icon-btn--danger" title="Remove from service" @click="emit('remove')">
-      <Trash2 :size="16" />
+      <Trash2 :size="15" :stroke-width="1.6" />
     </button>
   </li>
 </template>
@@ -94,24 +98,26 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 <style scoped>
 .row {
   display: grid;
-  grid-template-columns: 28px 28px 40px 1fr 1.4fr 40px;
+  grid-template-columns: 24px 28px 32px 1fr 1.4fr 32px;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  border: 1px solid transparent;
+  background: transparent;
   transition:
-    border-color var(--dur-fast) var(--ease),
     background var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease);
 }
 .row:hover {
-  border-color: var(--c-border-strong);
+  background: var(--c-bg-1);
 }
 .row--current {
-  border-color: var(--c-accent);
-  background: color-mix(in srgb, var(--c-accent) 8%, var(--c-surface));
+  background: var(--c-accent-glow);
+  border-color: rgba(139, 44, 44, 0.2);
+}
+.row--current:hover {
+  background: var(--c-accent-glow);
 }
 .row--dragging {
   opacity: 0.4;
@@ -119,7 +125,6 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 .row--over {
   border-style: dashed;
   border-color: var(--c-accent);
-  transform: scale(1.005);
 }
 
 .row__grip {
@@ -132,6 +137,11 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   cursor: grab;
   padding: 4px;
   border-radius: var(--r-sm);
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.row:hover .row__grip {
+  opacity: 1;
 }
 .row__grip:hover {
   color: var(--c-text-soft);
@@ -143,12 +153,13 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: var(--font-display);
 }
 .row__art {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
@@ -158,21 +169,24 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   border: 1px solid var(--c-border);
   transition:
     color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 .row__art:hover {
   background: var(--c-accent);
-  color: #1a1208;
-  border-color: transparent;
+  color: #fbf9f3;
+  border-color: var(--c-accent);
 }
 .row__art--playing {
   background: var(--c-accent);
-  color: #1a1208;
-  border-color: transparent;
-  box-shadow: var(--sh-glow);
+  color: #fbf9f3;
+  border-color: var(--c-accent);
 }
 .row__title {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.05rem;
+  letter-spacing: -0.005em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,7 +195,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 .row__mix {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sp-4);
+  gap: var(--sp-5);
   min-width: 0;
 }
 .mix {
@@ -190,17 +204,23 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   gap: var(--sp-3);
   min-width: 0;
 }
-.mix--dim {
-  opacity: 0.5;
-}
 .mix__tag {
   flex-shrink: 0;
-  font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c);
-  min-width: 38px;
+  color: var(--c-text-muted);
+  min-width: 48px;
+}
+.mix__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
 }
 .mix__slider {
   flex: 1;
@@ -209,7 +229,7 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 
 @media (max-width: 760px) {
   .row {
-    grid-template-columns: 24px 28px 36px 1fr 36px;
+    grid-template-columns: 24px 28px 32px 1fr 32px;
     grid-template-areas:
       'grip idx art title remove'
       'mix  mix mix mix mix';
