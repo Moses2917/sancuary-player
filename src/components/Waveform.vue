@@ -189,9 +189,9 @@ function draw() {
   if (props.loop && props.duration > 0) {
     const lx = (props.loop.start / props.duration) * w
     const rx = (props.loop.end / props.duration) * w
-    ctx.fillStyle = 'rgba(74, 124, 89, 0.12)'
+    ctx.fillStyle = 'rgba(46, 158, 91, 0.12)'
     ctx.fillRect(lx, 0, Math.max(1, rx - lx), h)
-    ctx.strokeStyle = 'rgba(74, 124, 89, 0.55)'
+    ctx.strokeStyle = 'rgba(46, 158, 91, 0.55)'
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(lx, 0)
@@ -204,20 +204,20 @@ function draw() {
   const peaks = props.peaks
   if (peaks.length === 0) {
     // Placeholder rail
-    ctx.fillStyle = 'rgba(43, 27, 20, 0.1)'
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
     ctx.fillRect(0, baseline - 0.5, w, 1)
   } else {
     const barWidth = w / peaks.length
     const playedColor = props.accent
-    const unplayedColor = 'rgba(43, 27, 20, 0.16)'
-    const innerH = h - 6
+    const unplayedColor = 'rgba(0, 0, 0, 0.14)'
+    const innerH = h - 4
     for (let i = 0; i < peaks.length; i++) {
       const p = peaks[i] ?? 0
       const barH = Math.max(1.5, p * innerH)
       const x = i * barWidth
       const played = x + barWidth / 2 <= playedX
       ctx.fillStyle = played ? playedColor : unplayedColor
-      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.7), barH)
+      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.66), barH)
     }
   }
 
@@ -225,35 +225,35 @@ function draw() {
   if (props.markers.length && props.duration > 0) {
     for (const m of props.markers) {
       const x = (m.time / props.duration) * w
-      ctx.strokeStyle = 'rgba(139, 44, 44, 0.65)'
+      ctx.strokeStyle = 'rgba(232, 71, 76, 0.6)'
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(x, 0)
       ctx.lineTo(x, h)
       ctx.stroke()
       if (m.label) {
-        ctx.font = '500 9px Inter, system-ui, sans-serif'
+        ctx.font = '600 9px Inter, system-ui, sans-serif'
         const labelW = ctx.measureText(m.label).width
-        const pad = 3
+        const pad = 4
         let bx = x + 3
         if (bx + labelW + pad * 2 > w) bx = x - labelW - pad * 2 - 3
-        ctx.fillStyle = 'rgba(139, 44, 44, 0.9)'
-        ctx.fillRect(bx, 1, labelW + pad * 2, 12)
-        ctx.fillStyle = '#fbf9f3'
-        ctx.fillText(m.label, bx + pad, 10)
+        ctx.fillStyle = 'rgba(232, 71, 76, 0.92)'
+        ctx.fillRect(bx, 1, labelW + pad * 2, 13)
+        ctx.fillStyle = '#fff'
+        ctx.fillText(m.label, bx + pad, 11)
       }
     }
   }
 
   // Playhead line + small handle
   if (props.duration > 0) {
-    ctx.strokeStyle = 'rgba(26, 22, 18, 0.85)'
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)'
     ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.moveTo(playedX, 0)
     ctx.lineTo(playedX, h)
     ctx.stroke()
-    ctx.fillStyle = '#1a1612'
+    ctx.fillStyle = '#050505'
     ctx.beginPath()
     ctx.arc(playedX, baseline, 3.5, 0, Math.PI * 2)
     ctx.fill()
@@ -488,11 +488,11 @@ export { formatMarkerTime }
   bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--c-accent);
-  border: 1.5px solid var(--c-surface-raised);
+  border: 2px solid var(--c-surface-raised);
 }
 
 /* Fade regions: gray translucent boxes with resize handles. */
@@ -500,9 +500,9 @@ export { formatMarkerTime }
   position: absolute;
   top: 0;
   height: 100%;
-  background: rgba(43, 27, 20, 0.1);
-  border-left: 1px dashed rgba(43, 27, 20, 0.45);
-  border-right: 1px dashed rgba(43, 27, 20, 0.45);
+  background: rgba(0, 0, 0, 0.07);
+  border-left: 1px dashed rgba(0, 0, 0, 0.4);
+  border-right: 1px dashed rgba(0, 0, 0, 0.4);
   border-radius: 3px;
   pointer-events: auto;
   cursor: grab;
@@ -540,8 +540,8 @@ export { formatMarkerTime }
   justify-content: center;
   border-radius: 50%;
   border: none;
-  background: rgba(26, 22, 18, 0.55);
-  color: var(--c-surface-raised);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
@@ -550,6 +550,6 @@ export { formatMarkerTime }
 }
 .fade__close:hover {
   background: var(--c-danger);
-  color: #fbf9f3;
+  color: #fff;
 }
 </style>
