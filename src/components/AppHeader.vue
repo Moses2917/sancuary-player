@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { Calendar, Church, Music } from '@lucide/vue'
+import { Calendar, Music } from '@lucide/vue'
 </script>
 
 <template>
@@ -8,20 +8,19 @@ import { Calendar, Church, Music } from '@lucide/vue'
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
         <span class="brand__mark">
-          <Church :size="20" :stroke-width="1.75" />
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2v20M5 22V9l7-5 7 5v13M9 22v-5h6v5" />
+          </svg>
         </span>
-        <span class="brand__text">
-          <span class="brand__title">Sanctuary</span>
-          <span class="brand__sub">Player</span>
-        </span>
+        <span class="brand__text">Sanctuary</span>
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <Calendar :size="18" />
+          <Calendar :size="15" :stroke-width="1.6" />
           <span>Services</span>
         </RouterLink>
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <Music :size="18" />
+          <Music :size="15" :stroke-width="1.6" />
           <span>Library</span>
         </RouterLink>
       </nav>
@@ -34,9 +33,9 @@ import { Calendar, Church, Music } from '@lucide/vue'
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(180deg, rgba(11, 16, 32, 0.92), rgba(11, 16, 32, 0.6));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(244, 240, 231, 0.85);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 1px solid var(--c-border);
 }
 .app-header__inner {
@@ -49,11 +48,10 @@ import { Calendar, Church, Music } from '@lucide/vue'
   gap: var(--sp-6);
 }
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--sp-3);
   color: var(--c-text);
-  position: relative;
 }
 .brand:hover {
   color: var(--c-text);
@@ -62,91 +60,64 @@ import { Calendar, Church, Music } from '@lucide/vue'
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
-  color: #1a1208;
-  box-shadow: var(--sh-glow);
-  transition:
-    transform var(--dur) var(--ease-spring),
-    box-shadow var(--dur) var(--ease);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  color: var(--c-accent);
+  transition: color var(--dur-fast) var(--ease);
 }
 .brand:hover .brand__mark {
-  transform: rotate(-4deg) scale(1.06);
-  box-shadow: 0 0 38px var(--c-accent-glow);
+  color: var(--c-accent-deep);
 }
 .brand__text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-.brand__title {
   font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
-.brand__sub {
-  font-size: 0.7rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-}
+
 .nav {
   margin-left: auto;
   display: flex;
-  gap: var(--sp-2);
+  gap: 2px;
 }
 .nav__link {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
-  color: var(--c-text-soft);
+  color: var(--c-text-muted);
+  font-size: 0.86rem;
   font-weight: 500;
-  font-size: 0.92rem;
-  overflow: hidden;
   transition:
-    background var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-out);
-}
-.nav__link::after {
-  content: '';
-  position: absolute;
-  left: var(--sp-4);
-  right: var(--sp-4);
-  bottom: 4px;
-  height: 2px;
-  border-radius: var(--r-pill);
-  background: var(--c-accent);
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform var(--dur) var(--ease-spring);
+    background var(--dur-fast) var(--ease);
 }
 .nav__link:hover {
   color: var(--c-text);
   background: var(--c-bg-3);
-  transform: translateY(-1px);
 }
 .nav__link--active {
-  color: var(--c-accent);
-  background: rgba(227, 184, 115, 0.1);
+  color: var(--c-text);
 }
 .nav__link--active::after {
-  transform: scaleX(1);
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--c-accent);
 }
 
 @media (max-width: 560px) {
   .app-header__inner {
     gap: var(--sp-3);
     padding: 0 var(--sp-4);
-  }
-  .brand__sub {
-    display: none;
   }
   .nav__link span {
     display: none;
