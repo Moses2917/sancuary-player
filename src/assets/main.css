@@ -6,83 +6,88 @@
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--sp-5) var(--sp-5) var(--sp-7);
+  padding: var(--sp-6) var(--sp-5) var(--sp-8);
 }
 
-/* Shared utility primitives */
+/* Shared utility primitives
+   Surfaces are solid (no glass), with a single hairline border and a
+   very faint shadow. The whole aesthetic hangs on this restraint. */
 .surface {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   transition:
     border-color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease),
-    transform var(--dur) var(--ease-out);
+    box-shadow var(--dur) var(--ease);
 }
 
+/* Buttons — flat, ink-on-paper, never bubbly */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
+  padding: 0.55rem 1rem;
   border-radius: var(--r-md);
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--c-border-strong);
   background: var(--c-surface-raised);
   color: var(--c-text);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 500;
+  letter-spacing: 0.005em;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease);
 }
 .btn:hover {
-  border-color: var(--c-border-strong);
   background: var(--c-bg-3);
-  transform: translateY(-1px);
+  border-color: var(--c-text-muted);
 }
 .btn:active {
-  transform: translateY(1px) scale(0.985);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+  background: var(--c-bg-3);
 }
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
-  transform: none;
 }
 .btn--primary {
-  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
-  border-color: transparent;
-  color: #1a1208;
-  font-weight: 600;
-  box-shadow: 0 4px 16px rgba(227, 184, 115, 0.18);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: #fbf9f3;
+  font-weight: 500;
 }
 .btn--primary:hover {
-  background: linear-gradient(135deg, var(--c-accent-soft), var(--c-accent));
-  box-shadow: 0 6px 22px rgba(227, 184, 115, 0.28);
+  background: var(--c-accent-deep);
+  border-color: var(--c-accent-deep);
+  color: #fbf9f3;
 }
 .btn--ghost {
   background: transparent;
+  border-color: transparent;
+  color: var(--c-text-soft);
+}
+.btn--ghost:hover {
+  background: var(--c-bg-3);
+  color: var(--c-text);
 }
 .btn--danger {
   color: var(--c-danger);
+  border-color: rgba(162, 59, 46, 0.3);
 }
 .btn--danger:hover {
-  background: rgba(229, 118, 111, 0.12);
-  border-color: rgba(229, 118, 111, 0.4);
+  background: rgba(162, 59, 46, 0.08);
+  border-color: var(--c-danger);
+  color: var(--c-danger);
 }
 
+/* Icon buttons — solid circle, no glow */
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--r-pill);
   border: 1px solid transparent;
   background: transparent;
@@ -90,59 +95,59 @@
   transition:
     background var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-spring),
-    box-shadow var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease);
 }
 .icon-btn:hover {
   background: var(--c-bg-3);
   color: var(--c-text);
-  transform: scale(1.06);
 }
 .icon-btn:active {
-  transform: scale(0.92);
+  background: var(--c-bg-3);
 }
 .icon-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
-  transform: none;
 }
 .icon-btn--lg {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
 }
 .icon-btn--primary {
-  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
-  color: #1a1208;
-  box-shadow: var(--sh-glow);
+  background: var(--c-accent);
+  color: #fbf9f3;
 }
 .icon-btn--primary:hover {
-  color: #1a1208;
-  background: linear-gradient(135deg, var(--c-accent-soft), var(--c-accent));
-  box-shadow: 0 0 36px var(--c-accent-glow);
-}
-.icon-btn--primary:active {
-  transform: scale(0.94);
+  background: var(--c-accent-deep);
+  color: #fbf9f3;
 }
 .icon-btn--active {
   color: var(--c-accent);
 }
+.icon-btn--danger {
+  color: var(--c-text-muted);
+}
+.icon-btn--danger:hover {
+  background: rgba(162, 59, 46, 0.08);
+  color: var(--c-danger);
+}
 
+/* Form fields — minimal underlined-ish blocks */
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
 .field__label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-text-muted);
 }
 .input {
   width: 100%;
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--c-bg-1);
+  padding: 0.6rem 0.85rem;
+  background: var(--c-bg-2);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
   color: var(--c-text);
@@ -159,15 +164,19 @@
   box-shadow: 0 0 0 3px var(--c-accent-glow);
 }
 
+/* Section titles — editorial */
 .section-title {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
+  align-items: baseline;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
 }
 .section-title h1,
 .section-title h2 {
-  font-size: 1.8rem;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
 }
 .section-title__actions {
   margin-left: auto;
@@ -185,7 +194,8 @@
   color: var(--c-text-muted);
 }
 .empty h3 {
-  color: var(--c-text-soft);
+  color: var(--c-text);
   margin-bottom: var(--sp-2);
   font-size: 1.4rem;
+  font-weight: 500;
 }
