@@ -106,7 +106,7 @@ const loopLabel = computed(() => {
   <section class="pod surface" :class="{ 'pod--empty': !hasSong }">
     <header class="pod__head">
       <div class="pod__art" :class="{ 'pod__art--playing': player.isPlaying }">
-        <Music :size="18" :stroke-width="1.6" />
+        <Music :size="20" :stroke-width="1.5" />
       </div>
       <div class="pod__meta" @click="gotoService">
         <div class="pod__title" :title="player.currentSong?.title">
@@ -122,7 +122,7 @@ const loopLabel = computed(() => {
         title="Open full-screen Now Playing"
         @click="openNowPlaying"
       >
-        <Expand :size="16" :stroke-width="1.6" />
+        <Expand :size="16" :stroke-width="1.75" />
       </button>
     </header>
 
@@ -134,7 +134,7 @@ const loopLabel = computed(() => {
           title="Previous"
           @click="player.prev()"
         >
-          <SkipBack :size="18" :stroke-width="1.6" />
+          <SkipBack :size="18" :stroke-width="1.75" />
         </button>
         <button
           v-if="!player.isPlaying"
@@ -143,7 +143,7 @@ const loopLabel = computed(() => {
           title="Play"
           @click="player.play()"
         >
-          <Play :size="20" :stroke-width="1.75" />
+          <Play :size="20" :stroke-width="2" style="margin-left: 2px" />
         </button>
         <button
           v-else
@@ -151,7 +151,7 @@ const loopLabel = computed(() => {
           title="Pause"
           @click="player.pause()"
         >
-          <Pause :size="20" :stroke-width="1.75" />
+          <Pause :size="20" :stroke-width="2" />
         </button>
         <button
           class="icon-btn"
@@ -159,7 +159,7 @@ const loopLabel = computed(() => {
           title="Next"
           @click="player.next()"
         >
-          <SkipForward :size="18" :stroke-width="1.6" />
+          <SkipForward :size="18" :stroke-width="1.75" />
         </button>
       </div>
 
@@ -174,7 +174,7 @@ const loopLabel = computed(() => {
           :fades="player.currentFades"
           :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
-          :height="48"
+          :height="44"
           accent="var(--c-accent)"
           @seek="onSeek"
           @marker-seek="onMarkerSeek"
@@ -199,7 +199,7 @@ const loopLabel = computed(() => {
         :title="loopLabel"
         @click="player.toggleLoop()"
       >
-        <Repeat :size="13" :stroke-width="1.75" /> <span>Loop</span>
+        <Repeat :size="13" :stroke-width="2" /> <span>Loop</span>
       </button>
       <button
         class="tool tool--letter"
@@ -231,7 +231,7 @@ const loopLabel = computed(() => {
         "
         @click="togglePlaceCueMode"
       >
-        <Flag :size="13" :stroke-width="1.75" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
+        <Flag :size="13" :stroke-width="2" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
       </button>
       <button
         class="tool"
@@ -239,7 +239,7 @@ const loopLabel = computed(() => {
         title="Drop a fade-out region at the playhead (drag the gray box to reposition)"
         @click="addFadeHere"
       >
-        <ScissorsLineDashed :size="13" :stroke-width="1.75" /> <span>Fade</span>
+        <ScissorsLineDashed :size="13" :stroke-width="2" /> <span>Fade</span>
       </button>
     </div>
 
@@ -284,7 +284,7 @@ const loopLabel = computed(() => {
       </div>
       <div class="mix mix--master">
         <span class="mix__tag mix__tag--static">
-          <Volume2 :size="13" :stroke-width="1.75" />
+          <Volume2 :size="13" :stroke-width="2" />
           Master
         </span>
         <VolumeSlider
@@ -299,7 +299,7 @@ const loopLabel = computed(() => {
 </template>
 
 <style scoped>
-/* Solid bar, sits below the header. Hairline border, soft shadow. */
+/* Solid white card with a soft shadow, hangs below the header. */
 .pod {
   position: sticky;
   top: calc(var(--header-h) + var(--sp-4));
@@ -309,6 +309,8 @@ const loopLabel = computed(() => {
   margin: 0 auto var(--sp-6);
   padding: var(--sp-4) var(--sp-5);
   background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -325,36 +327,46 @@ const loopLabel = computed(() => {
 }
 .pod__art {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-sm);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--c-bg-3);
-  color: var(--c-text-soft);
-  border: 1px solid var(--c-border);
+  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
+  color: var(--c-text-muted);
+  position: relative;
   transition: color var(--dur) var(--ease);
 }
 .pod__art--playing {
   color: var(--c-accent);
+}
+.pod__art--playing::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 2px solid var(--c-surface-raised);
 }
 .pod__meta {
   min-width: 0;
   cursor: pointer;
 }
 .pod__title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--c-text);
 }
 .pod__service {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--c-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -380,7 +392,7 @@ const loopLabel = computed(() => {
   gap: var(--sp-1);
 }
 .pod__play {
-  margin: 0 4px;
+  margin: 0 6px;
 }
 .pod__seek {
   position: relative;
@@ -403,8 +415,9 @@ const loopLabel = computed(() => {
   justify-content: space-between;
   font-variant-numeric: tabular-nums;
   font-size: 0.72rem;
+  font-weight: 500;
   color: var(--c-text-muted);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.005em;
   padding: 0 2px;
 }
 
@@ -412,7 +425,7 @@ const loopLabel = computed(() => {
 .pod__tools {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-1);
+  gap: 2px;
   align-items: center;
   padding-top: var(--sp-3);
   border-top: 1px solid var(--c-border);
@@ -420,38 +433,39 @@ const loopLabel = computed(() => {
 .tool {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--r-sm);
-  border: 1px solid transparent;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  border: none;
   background: transparent;
   color: var(--c-text-muted);
   font-size: 0.74rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease);
 }
 .tool:hover:not(:disabled) {
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   color: var(--c-text);
 }
 .tool--letter {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 3px 9px;
+  font-weight: 650;
+  font-size: 0.78rem;
+  padding: 5px 9px;
   letter-spacing: 0;
 }
 .tool--on {
-  background: var(--c-accent-glow);
-  color: var(--c-accent);
-  border-color: rgba(139, 44, 44, 0.25);
+  background: var(--c-accent);
+  color: #fff;
+}
+.tool--on:hover {
+  background: var(--c-accent-deep);
+  color: #fff;
 }
 .tool:disabled {
-  opacity: 0.35;
+  opacity: 0.32;
   cursor: not-allowed;
 }
 .tool__sep {
@@ -477,21 +491,21 @@ const loopLabel = computed(() => {
   min-width: 0;
 }
 .mix--dim {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .mix__tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: 6px;
   align-self: flex-start;
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--c-text-muted);
   background: transparent;
   border: none;
   padding: 0;
+  text-transform: uppercase;
   transition: color var(--dur-fast) var(--ease);
 }
 .mix__tag:hover {
@@ -514,14 +528,14 @@ const loopLabel = computed(() => {
   width: 100%;
 }
 
-/* Empty (no song) state — visually recede without hiding controls */
+/* Empty (no song) state */
 .pod--empty {
   opacity: 0.96;
 }
 .pod--empty .pod__transport .icon-btn,
 .pod--empty .pod__tools,
 .pod--empty .pod__mix {
-  opacity: 0.45;
+  opacity: 0.4;
 }
 
 /* Responsive */
@@ -529,6 +543,7 @@ const loopLabel = computed(() => {
   .pod {
     top: var(--header-h);
     padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-lg);
   }
   .pod__main {
     grid-template-columns: 1fr;
