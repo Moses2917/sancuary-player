@@ -10,8 +10,8 @@
 }
 
 /* Shared utility primitives
-   Surfaces are solid (no glass), with a single hairline border and a
-   very faint shadow. The whole aesthetic hangs on this restraint. */
+   Solid white surfaces with hairline borders and whisper shadows.
+   No glass, no gradient, no decoration. */
 .surface {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -21,46 +21,51 @@
     box-shadow var(--dur) var(--ease);
 }
 
-/* Buttons — flat, ink-on-paper, never bubbly */
+/* Buttons — pill, confident, secondary outlined */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  padding: 0.55rem 1rem;
-  border-radius: var(--r-md);
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--c-border-strong);
   background: var(--c-surface-raised);
   color: var(--c-text);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 500;
-  letter-spacing: 0.005em;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease-out);
 }
 .btn:hover {
-  background: var(--c-bg-3);
-  border-color: var(--c-text-muted);
+  background: var(--c-bg-2);
+  border-color: rgba(0, 0, 0, 0.22);
 }
 .btn:active {
   background: var(--c-bg-3);
+  transform: scale(0.985);
 }
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
 }
 .btn--primary {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: #fbf9f3;
-  font-weight: 500;
+  color: #fff;
+  font-weight: 600;
 }
 .btn--primary:hover {
   background: var(--c-accent-deep);
   border-color: var(--c-accent-deep);
-  color: #fbf9f3;
+  color: #fff;
 }
 .btn--ghost {
   background: transparent;
@@ -68,57 +73,60 @@
   color: var(--c-text-soft);
 }
 .btn--ghost:hover {
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
+  border-color: transparent;
   color: var(--c-text);
 }
 .btn--danger {
   color: var(--c-danger);
-  border-color: rgba(162, 59, 46, 0.3);
+  border-color: rgba(214, 54, 76, 0.28);
 }
 .btn--danger:hover {
-  background: rgba(162, 59, 46, 0.08);
+  background: rgba(214, 54, 76, 0.08);
   border-color: var(--c-danger);
   color: var(--c-danger);
 }
 
-/* Icon buttons — solid circle, no glow */
+/* Icon buttons — circular, transparent until hovered */
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--r-pill);
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--c-text-soft);
   transition:
     background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease);
 }
 .icon-btn:hover {
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   color: var(--c-text);
 }
 .icon-btn:active {
   background: var(--c-bg-3);
 }
 .icon-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.32;
   cursor: not-allowed;
 }
 .icon-btn--lg {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
 }
 .icon-btn--primary {
   background: var(--c-accent);
-  color: #fbf9f3;
+  color: #fff;
 }
 .icon-btn--primary:hover {
   background: var(--c-accent-deep);
-  color: #fbf9f3;
+  color: #fff;
+}
+.icon-btn--primary:active {
+  background: var(--c-accent-deep);
 }
 .icon-btn--active {
   color: var(--c-accent);
@@ -127,30 +135,31 @@
   color: var(--c-text-muted);
 }
 .icon-btn--danger:hover {
-  background: rgba(162, 59, 46, 0.08);
+  background: rgba(214, 54, 76, 0.08);
   color: var(--c-danger);
 }
 
-/* Form fields — minimal underlined-ish blocks */
+/* Form fields */
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
 .field__label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--c-text-muted);
 }
 .input {
   width: 100%;
-  padding: 0.6rem 0.85rem;
-  background: var(--c-bg-2);
-  border: 1px solid var(--c-border);
+  height: 38px;
+  padding: 0 12px;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border-strong);
   border-radius: var(--r-md);
   color: var(--c-text);
+  font-size: 0.92rem;
   transition:
     border-color var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease);
@@ -164,24 +173,24 @@
   box-shadow: 0 0 0 3px var(--c-accent-glow);
 }
 
-/* Section titles — editorial */
+/* Section titles — editorial Apple-Music scale */
 .section-title {
   display: flex;
   align-items: baseline;
   gap: var(--sp-4);
-  margin-bottom: var(--sp-6);
-  padding-bottom: var(--sp-4);
-  border-bottom: 1px solid var(--c-border);
+  margin-bottom: var(--sp-5);
 }
 .section-title h1,
 .section-title h2 {
-  font-size: 2rem;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.85rem, 3.4vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 .section-title__actions {
   margin-left: auto;
   display: flex;
   gap: var(--sp-2);
+  flex-wrap: wrap;
 }
 
 .muted {
@@ -196,6 +205,7 @@
 .empty h3 {
   color: var(--c-text);
   margin-bottom: var(--sp-2);
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
