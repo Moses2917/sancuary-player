@@ -95,14 +95,14 @@ const filtered = computed(() => {
 
 <style scoped>
 .empty__icon {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-pill);
-  background: var(--c-bg-3);
+  border-radius: var(--r-md);
+  background: var(--c-bg-2);
   color: var(--c-text-muted);
 }
 .grid {
@@ -114,20 +114,23 @@ const filtered = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-3);
-  background: var(--c-surface-raised);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
+  padding: 0 14px;
+  background: var(--c-bg-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
   color: var(--c-text-muted);
   max-width: 480px;
   margin-bottom: var(--sp-5);
+  height: 36px;
   transition:
+    background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease);
 }
 .search:focus-within {
-  border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px var(--c-accent-glow);
+  background: var(--c-surface-raised);
+  border-color: var(--c-border-strong);
+  box-shadow: var(--sh-sm);
 }
 .search__input {
   flex: 1;
@@ -135,7 +138,6 @@ const filtered = computed(() => {
   border: none;
   outline: none;
   color: var(--c-text);
-  padding: 0.55rem 0;
 }
 .search__input::placeholder {
   color: var(--c-text-muted);
@@ -151,11 +153,12 @@ const filtered = computed(() => {
   border-radius: var(--r-pill);
 }
 .search__clear:hover {
-  background: var(--c-bg-3);
+  background: rgba(0, 0, 0, 0.08);
   color: var(--c-text);
 }
 .btn--sm {
-  padding: var(--sp-1) var(--sp-3);
-  font-size: 0.8rem;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 0.78rem;
 }
 </style>
