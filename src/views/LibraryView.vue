@@ -117,13 +117,13 @@ const counts = computed(() => {
       <h1>Library</h1>
       <div class="section-title__actions">
         <button class="btn" :disabled="backupBusy" @click="exportBackup" title="Download a backup">
-          <Download :size="14" :stroke-width="1.6" /> <span class="hide-sm">Export</span>
+          <Download :size="14" :stroke-width="1.75" /> <span class="hide-sm">Export</span>
         </button>
         <button class="btn" :disabled="backupBusy" @click="importBackup" title="Restore a backup">
-          <Database :size="14" :stroke-width="1.6" /> <span class="hide-sm">Restore</span>
+          <Database :size="14" :stroke-width="1.75" /> <span class="hide-sm">Restore</span>
         </button>
         <button class="btn" @click="bundledOpen = true">
-          <Upload :size="14" :stroke-width="1.6" /> <span class="hide-sm">Bundled</span>
+          <Upload :size="14" :stroke-width="1.75" /> <span class="hide-sm">Bundled</span>
         </button>
         <button class="btn btn--primary" @click="importerOpen = true">
           <Plus :size="14" :stroke-width="2" /> Add song
@@ -135,7 +135,7 @@ const counts = computed(() => {
 
     <div v-if="!library.loading && library.songs.length > 0" class="filters">
       <div class="search">
-        <Search :size="15" :stroke-width="1.6" />
+        <Search :size="15" :stroke-width="1.75" />
         <input
           v-model="query"
           type="search"
@@ -205,7 +205,7 @@ const counts = computed(() => {
       <li v-for="song in filtered" :key="song.id" class="song">
         <button class="song__art" :title="`Play ${song.title}`" @click="preview(song)">
           <Music :size="18" :stroke-width="1.5" />
-          <span class="song__play"><Play :size="16" :stroke-width="2" /></span>
+          <span class="song__play"><Play :size="16" :stroke-width="2" style="margin-left: 2px" /></span>
         </button>
         <div class="song__meta">
           <div class="song__title" :title="song.title">{{ song.title }}</div>
@@ -229,7 +229,7 @@ const counts = computed(() => {
             <component
               :is="player.currentSong?.id === song.id && player.isPlaying ? Pause : Play"
               :size="16"
-              :stroke-width="1.75"
+              :stroke-width="2"
             />
           </button>
           <button
@@ -238,7 +238,7 @@ const counts = computed(() => {
             title="Remove"
             @click="confirmingId = song.id"
           >
-            <Trash2 :size="15" :stroke-width="1.6" />
+            <Trash2 :size="15" :stroke-width="1.75" />
           </button>
           <template v-else>
             <button class="btn btn--danger btn--sm" @click="remove(song)">Delete</button>
@@ -255,20 +255,24 @@ const counts = computed(() => {
 
 <style scoped>
 .empty__icon {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-pill);
-  background: var(--c-bg-3);
+  border-radius: var(--r-md);
+  background: var(--c-bg-2);
   color: var(--c-text-muted);
 }
 
 .songs {
   display: flex;
   flex-direction: column;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
 }
 .song {
   display: grid;
@@ -279,8 +283,8 @@ const counts = computed(() => {
   border-bottom: 1px solid var(--c-border);
   transition: background var(--dur-fast) var(--ease);
 }
-.song:first-child {
-  border-top: 1px solid var(--c-border);
+.song:last-child {
+  border-bottom: none;
 }
 .song:hover {
   background: var(--c-bg-1);
@@ -288,18 +292,16 @@ const counts = computed(() => {
 .song__art {
   position: relative;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-sm);
-  background: var(--c-bg-3);
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
   color: var(--c-text-muted);
-  border: 1px solid var(--c-border);
-  transition:
-    color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
+  border: none;
+  transition: color var(--dur-fast) var(--ease);
 }
 .song__play {
   position: absolute;
@@ -308,8 +310,9 @@ const counts = computed(() => {
   align-items: center;
   justify-content: center;
   background: var(--c-accent);
-  color: #fbf9f3;
+  color: #fff;
   opacity: 0;
+  border-radius: inherit;
   transition: opacity var(--dur-fast) var(--ease);
 }
 .song__art:hover .song__play {
@@ -319,10 +322,9 @@ const counts = computed(() => {
   min-width: 0;
 }
 .song__title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.08rem;
-  letter-spacing: -0.005em;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -343,7 +345,7 @@ const counts = computed(() => {
   background: var(--c);
 }
 .sep {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 .song__actions {
   display: flex;
@@ -351,23 +353,24 @@ const counts = computed(() => {
   gap: 2px;
 }
 .btn--sm {
-  padding: var(--sp-1) var(--sp-3);
+  height: 28px;
+  padding: 0 12px;
   font-size: 0.78rem;
 }
 
 .tag {
   font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: var(--r-pill);
-  border: 1px solid var(--c-border-strong);
   color: var(--c-text-muted);
+  background: var(--c-bg-2);
 }
 .tag--new {
   color: var(--c-success);
-  border-color: rgba(74, 124, 89, 0.35);
+  background: rgba(46, 158, 91, 0.12);
 }
 .tag--old {
   color: var(--c-text-soft);
@@ -385,21 +388,24 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-3);
-  background: var(--c-surface-raised);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
+  padding: 0 14px;
+  background: var(--c-bg-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
   color: var(--c-text-muted);
   min-width: 220px;
   flex: 1;
   max-width: 360px;
+  height: 36px;
   transition:
+    background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease);
 }
 .search:focus-within {
-  border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px var(--c-accent-glow);
+  background: var(--c-surface-raised);
+  border-color: var(--c-border-strong);
+  box-shadow: var(--sh-sm);
 }
 .search__input {
   flex: 1;
@@ -407,7 +413,6 @@ const counts = computed(() => {
   border: none;
   outline: none;
   color: var(--c-text);
-  padding: 0.55rem 0;
 }
 .search__input::placeholder {
   color: var(--c-text-muted);
@@ -418,7 +423,7 @@ const counts = computed(() => {
   gap: 2px;
   flex-wrap: wrap;
   padding: 3px;
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   border-radius: var(--r-pill);
 }
 .chip {
@@ -431,7 +436,8 @@ const counts = computed(() => {
   background: transparent;
   color: var(--c-text-muted);
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     background var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease);
@@ -442,12 +448,13 @@ const counts = computed(() => {
 .chip--on {
   background: var(--c-surface-raised);
   color: var(--c-text);
-  box-shadow: var(--sh-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .chip__count {
   font-variant-numeric: tabular-nums;
   font-size: 0.72rem;
-  opacity: 0.7;
+  opacity: 0.6;
+  font-weight: 500;
 }
 
 .backup-msg {
@@ -474,11 +481,7 @@ const counts = computed(() => {
     max-width: none;
   }
   .song {
-    grid-template-columns: 40px 1fr auto;
-  }
-  .song__art {
-    width: 36px;
-    height: 36px;
+    grid-template-columns: 42px 1fr auto;
   }
   .tag {
     display: none;
