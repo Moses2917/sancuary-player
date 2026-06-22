@@ -96,9 +96,9 @@ function confirm() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(43, 27, 20, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,7 +111,10 @@ function confirm() {
   display: flex;
   flex-direction: column;
   background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   box-shadow: var(--sh-lg);
+  overflow: hidden;
 }
 .modal__head {
   display: flex;
@@ -120,9 +123,9 @@ function confirm() {
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
-  font-size: 1.4rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-3);
@@ -160,19 +163,19 @@ function confirm() {
 }
 .pick--on {
   background: var(--c-accent-glow);
-  border-color: rgba(139, 44, 44, 0.25);
+  border-color: rgba(232, 71, 76, 0.22);
   color: var(--c-text);
 }
 .pick__check {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
   border: 1.5px solid var(--c-border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fbf9f3;
+  color: #fff;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
@@ -182,9 +185,9 @@ function confirm() {
   border-color: var(--c-accent);
 }
 .pick__title {
-  font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 550;
   font-size: 1rem;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -197,7 +200,8 @@ function confirm() {
   border-top: 1px solid var(--c-border);
 }
 .count {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--c-text-muted);
 }
 .actions {
@@ -221,7 +225,7 @@ function confirm() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(8px);
+  transform: translateY(8px) scale(0.985);
   opacity: 0;
 }
 </style>

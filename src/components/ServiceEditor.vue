@@ -75,9 +75,9 @@ function submit() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(43, 27, 20, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,6 +87,8 @@ function submit() {
   width: 100%;
   max-width: 460px;
   background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   box-shadow: var(--sh-lg);
 }
 .modal__head {
@@ -96,9 +98,9 @@ function submit() {
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
-  font-size: 1.4rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-4);
@@ -130,7 +132,7 @@ function submit() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(8px);
+  transform: translateY(8px) scale(0.985);
   opacity: 0;
 }
 </style>

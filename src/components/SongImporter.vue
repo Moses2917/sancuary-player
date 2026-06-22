@@ -225,9 +225,9 @@ async function submit() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(43, 27, 20, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -239,6 +239,8 @@ async function submit() {
   max-height: 90vh;
   overflow: auto;
   background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   box-shadow: var(--sh-lg);
 }
 .modal__head {
@@ -248,9 +250,9 @@ async function submit() {
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
-  font-size: 1.4rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-4);
@@ -269,7 +271,7 @@ async function submit() {
   gap: var(--sp-3);
   padding: var(--sp-4);
   border-radius: var(--r-md);
-  border: 1px dashed var(--c-border-strong);
+  border: 1.5px dashed var(--c-border-strong);
   background: var(--c-bg-1);
   color: var(--c-text-soft);
   text-align: left;
@@ -280,12 +282,12 @@ async function submit() {
 }
 .drop:hover {
   border-color: var(--c);
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
 }
 .drop--filled {
   border-style: solid;
   border-color: var(--c);
-  background: color-mix(in srgb, var(--c) 6%, var(--c-bg-1));
+  background: color-mix(in srgb, var(--c) 7%, var(--c-bg-1));
   color: var(--c-text);
 }
 .drop__label {
@@ -296,16 +298,18 @@ async function submit() {
 .drop__tag {
   font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c);
 }
 .drop__name {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+  letter-spacing: -0.01em;
 }
 .error {
   color: var(--c-danger);
@@ -313,7 +317,7 @@ async function submit() {
 }
 .hint {
   color: var(--c-text-muted);
-  font-size: 0.76rem;
+  font-size: 0.78rem;
 }
 .modal__foot {
   display: flex;
@@ -328,7 +332,7 @@ async function submit() {
   gap: 2px;
   flex-wrap: wrap;
   padding: 3px;
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   border-radius: var(--r-pill);
 }
 .tag-pick__opt {
@@ -337,12 +341,13 @@ async function submit() {
   border: none;
   background: transparent;
   color: var(--c-text-muted);
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 .tag-pick__opt:hover {
   color: var(--c-text);
@@ -350,7 +355,7 @@ async function submit() {
 .tag-pick__opt--on {
   background: var(--c-surface-raised);
   color: var(--c-text);
-  box-shadow: var(--sh-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .modal-enter-active,
@@ -369,7 +374,7 @@ async function submit() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(8px);
+  transform: translateY(8px) scale(0.985);
   opacity: 0;
 }
 </style>
