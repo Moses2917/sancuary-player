@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { Calendar, Music } from '@lucide/vue'
+import { Calendar, Church, Music } from '@lucide/vue'
 </script>
 
 <template>
@@ -8,9 +8,7 @@ import { Calendar, Music } from '@lucide/vue'
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
         <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v20M5 22V9l7-5 7 5v13M9 22v-5h6v5" />
-          </svg>
+          <Church :size="16" :stroke-width="1.75" />
         </span>
         <span class="brand__text">Sanctuary</span>
       </RouterLink>
