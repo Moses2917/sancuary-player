@@ -7,8 +7,8 @@ import { Calendar, Music } from '@lucide/vue'
   <header class="app-header">
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
-        <span class="brand__mark">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v20M5 22V9l7-5 7 5v13M9 22v-5h6v5" />
           </svg>
         </span>
@@ -16,11 +16,11 @@ import { Calendar, Music } from '@lucide/vue'
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <Calendar :size="15" :stroke-width="1.6" />
+          <Calendar :size="14" :stroke-width="1.75" />
           <span>Services</span>
         </RouterLink>
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <Music :size="15" :stroke-width="1.6" />
+          <Music :size="14" :stroke-width="1.75" />
           <span>Library</span>
         </RouterLink>
       </nav>
@@ -33,9 +33,9 @@ import { Calendar, Music } from '@lucide/vue'
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(244, 240, 231, 0.85);
-  backdrop-filter: saturate(180%) blur(10px);
-  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--c-border);
 }
 .app-header__inner {
@@ -45,12 +45,12 @@ import { Calendar, Music } from '@lucide/vue'
   height: var(--header-h);
   display: flex;
   align-items: center;
-  gap: var(--sp-6);
+  gap: var(--sp-5);
 }
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   color: var(--c-text);
 }
 .brand:hover {
@@ -60,58 +60,48 @@ import { Calendar, Music } from '@lucide/vue'
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r-sm);
-  color: var(--c-accent);
-  transition: color var(--dur-fast) var(--ease);
-}
-.brand:hover .brand__mark {
-  color: var(--c-accent-deep);
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--c-accent);
+  color: #fff;
 }
 .brand__text {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  font-size: 1.04rem;
+  letter-spacing: -0.02em;
 }
 
 .nav {
   margin-left: auto;
   display: flex;
   gap: 2px;
+  background: var(--c-bg-2);
+  padding: 3px;
+  border-radius: var(--r-pill);
 }
 .nav__link {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
   color: var(--c-text-muted);
-  font-size: 0.86rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     color var(--dur-fast) var(--ease),
     background var(--dur-fast) var(--ease);
 }
 .nav__link:hover {
   color: var(--c-text);
-  background: var(--c-bg-3);
 }
 .nav__link--active {
+  background: var(--c-surface-raised);
   color: var(--c-text);
-}
-.nav__link--active::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -2px;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 2px;
-  border-radius: var(--r-pill);
-  background: var(--c-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 560px) {
@@ -123,7 +113,7 @@ import { Calendar, Music } from '@lucide/vue'
     display: none;
   }
   .nav__link {
-    padding: var(--sp-2);
+    padding: 6px 10px;
   }
 }
 </style>
