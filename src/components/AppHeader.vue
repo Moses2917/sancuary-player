@@ -7,21 +7,18 @@ import { Calendar, Church, Music } from '@lucide/vue'
   <header class="app-header">
     <div class="app-header__inner">
       <RouterLink to="/" class="brand">
-        <span class="brand__mark">
-          <Church :size="20" :stroke-width="1.75" />
+        <span class="brand__mark" aria-hidden="true">
+          <Church :size="16" :stroke-width="1.75" />
         </span>
-        <span class="brand__text">
-          <span class="brand__title">Sanctuary</span>
-          <span class="brand__sub">Player</span>
-        </span>
+        <span class="brand__text">Sanctuary</span>
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <Calendar :size="18" />
+          <Calendar :size="14" :stroke-width="1.75" />
           <span>Services</span>
         </RouterLink>
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <Music :size="18" />
+          <Music :size="14" :stroke-width="1.75" />
           <span>Library</span>
         </RouterLink>
       </nav>
@@ -34,9 +31,9 @@ import { Calendar, Church, Music } from '@lucide/vue'
   position: sticky;
   top: 0;
   z-index: 30;
-  background: linear-gradient(180deg, rgba(11, 16, 32, 0.92), rgba(11, 16, 32, 0.6));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--c-border);
 }
 .app-header__inner {
@@ -46,14 +43,13 @@ import { Calendar, Church, Music } from '@lucide/vue'
   height: var(--header-h);
   display: flex;
   align-items: center;
-  gap: var(--sp-6);
+  gap: var(--sp-5);
 }
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   color: var(--c-text);
-  position: relative;
 }
 .brand:hover {
   color: var(--c-text);
@@ -62,82 +58,48 @@ import { Calendar, Church, Music } from '@lucide/vue'
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
-  color: #1a1208;
-  box-shadow: var(--sh-glow);
-  transition:
-    transform var(--dur) var(--ease-spring),
-    box-shadow var(--dur) var(--ease);
-}
-.brand:hover .brand__mark {
-  transform: rotate(-4deg) scale(1.06);
-  box-shadow: 0 0 38px var(--c-accent-glow);
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--c-accent);
+  color: #fff;
 }
 .brand__text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
+  font-weight: 650;
+  font-size: 1.04rem;
+  letter-spacing: -0.02em;
 }
-.brand__title {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.brand__sub {
-  font-size: 0.7rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-}
+
 .nav {
   margin-left: auto;
   display: flex;
-  gap: var(--sp-2);
+  gap: 2px;
+  background: var(--c-bg-2);
+  padding: 3px;
+  border-radius: var(--r-pill);
 }
 .nav__link {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--r-md);
-  color: var(--c-text-soft);
-  font-weight: 500;
-  font-size: 0.92rem;
-  overflow: hidden;
-  transition:
-    background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-out);
-}
-.nav__link::after {
-  content: '';
-  position: absolute;
-  left: var(--sp-4);
-  right: var(--sp-4);
-  bottom: 4px;
-  height: 2px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: var(--r-pill);
-  background: var(--c-accent);
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform var(--dur) var(--ease-spring);
+  color: var(--c-text-muted);
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
 }
 .nav__link:hover {
   color: var(--c-text);
-  background: var(--c-bg-3);
-  transform: translateY(-1px);
 }
 .nav__link--active {
-  color: var(--c-accent);
-  background: rgba(227, 184, 115, 0.1);
-}
-.nav__link--active::after {
-  transform: scaleX(1);
+  background: var(--c-surface-raised);
+  color: var(--c-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 560px) {
@@ -145,14 +107,11 @@ import { Calendar, Church, Music } from '@lucide/vue'
     gap: var(--sp-3);
     padding: 0 var(--sp-4);
   }
-  .brand__sub {
-    display: none;
-  }
   .nav__link span {
     display: none;
   }
   .nav__link {
-    padding: var(--sp-2);
+    padding: 6px 10px;
   }
 }
 </style>

@@ -51,6 +51,8 @@ export interface Song {
   markers?: SectionMarker[]
   /** Saved fade regions for this song, applied during playback. */
   fades?: FadeRegion[]
+  /** Last-known playhead position in seconds; used by "resume position" rehearsal mode. */
+  position?: number
   createdAt: number
 }
 
@@ -76,6 +78,12 @@ export interface AppSettings {
   id: 'app'
   masterVolume: number
   lastServiceId?: string
+  /** SinkId (per HTMLMediaElement.setSinkId) for the piano track. '' = system default. */
+  pianoSinkId?: string
+  /** SinkId for the choir track. '' = system default. */
+  choirSinkId?: string
+  /** When true, save and restore the per-song playhead position (rehearsal mode). */
+  resumePosition?: boolean
 }
 
 export interface BundledSongManifestEntry {

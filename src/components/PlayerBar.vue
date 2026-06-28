@@ -2,8 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  AlertTriangle,
   Expand,
   Flag,
+  Headphones,
   Music,
   Pause,
   Play,
@@ -12,12 +14,14 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  X,
 } from '@lucide/vue'
 import { usePlayerStore } from '@/stores/player'
 import { computePeaks } from '@/utils/waveform'
 import { formatTime } from '@/utils'
 import VolumeSlider from './VolumeSlider.vue'
 import Waveform from './Waveform.vue'
+import AudioOutputs from './AudioOutputs.vue'
 
 const router = useRouter()
 const player = usePlayerStore()
@@ -28,6 +32,8 @@ const peaks = ref<number[]>([])
 const peaksLoading = ref(false)
 /** When true, clicking the waveform drops a cue at the clicked position. */
 const placeCueMode = ref(false)
+/** When true, the audio outputs panel is shown. */
+const showOutputs = ref(false)
 
 async function refreshPeaks() {
   const song = player.currentSong
@@ -103,11 +109,22 @@ const loopLabel = computed(() => {
 </script>
 
 <template>
-  <div class="pod surface" :class="{ 'pod--empty': !hasSong }">
-    <!-- HEAD: song title + service + expand -->
-    <div class="pod__head">
+  <section class="pod surface" :class="{ 'pod--empty': !hasSong }">
+    <div v-if="player.error" class="pod__error" role="alert">
+      <AlertTriangle :size="14" :stroke-width="2" />
+      <span class="pod__error-text">{{ player.error }}</span>
+      <button
+        class="pod__error-close"
+        title="Dismiss"
+        @click="player.clearError()"
+      >
+        <X :size="14" :stroke-width="2" />
+      </button>
+    </div>
+
+    <header class="pod__head">
       <div class="pod__art" :class="{ 'pod__art--playing': player.isPlaying }">
-        <Music :size="20" />
+        <Music :size="20" :stroke-width="1.5" />
       </div>
       <div class="pod__meta" @click="gotoService">
         <div class="pod__title" :title="player.currentSong?.title">
@@ -123,11 +140,10 @@ const loopLabel = computed(() => {
         title="Open full-screen Now Playing"
         @click="openNowPlaying"
       >
-        <Expand :size="18" />
+        <Expand :size="16" :stroke-width="1.75" />
       </button>
-    </div>
+    </header>
 
-    <!-- MAIN: transport + thick waveform -->
     <div class="pod__main">
       <div class="pod__transport">
         <button
@@ -136,7 +152,7 @@ const loopLabel = computed(() => {
           title="Previous"
           @click="player.prev()"
         >
-          <SkipBack :size="20" />
+          <SkipBack :size="18" :stroke-width="1.75" />
         </button>
         <button
           v-if="!player.isPlaying"
@@ -145,7 +161,7 @@ const loopLabel = computed(() => {
           title="Play"
           @click="player.play()"
         >
-          <Play :size="24" />
+          <Play :size="20" :stroke-width="2" style="margin-left: 2px" />
         </button>
         <button
           v-else
@@ -153,7 +169,7 @@ const loopLabel = computed(() => {
           title="Pause"
           @click="player.pause()"
         >
-          <Pause :size="24" />
+          <Pause :size="20" :stroke-width="2" />
         </button>
         <button
           class="icon-btn"
@@ -161,7 +177,15 @@ const loopLabel = computed(() => {
           title="Next"
           @click="player.next()"
         >
-          <SkipForward :size="20" />
+          <SkipForward :size="18" :stroke-width="1.75" />
+        </button>
+        <button
+          class="icon-btn pod__panic"
+          :disabled="!hasSong"
+          title="Panic: fade out and stop (Esc twice)"
+          @click="player.panicStop()"
+        >
+          <span aria-hidden="true">■</span>
         </button>
       </div>
 
@@ -176,7 +200,7 @@ const loopLabel = computed(() => {
           :fades="player.currentFades"
           :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
-          :height="72"
+          :height="44"
           accent="var(--c-accent)"
           @seek="onSeek"
           @marker-seek="onMarkerSeek"
@@ -193,7 +217,6 @@ const loopLabel = computed(() => {
       </div>
     </div>
 
-    <!-- TOOLS: loop / markers / fade -->
     <div class="pod__tools">
       <button
         class="tool"
@@ -202,10 +225,10 @@ const loopLabel = computed(() => {
         :title="loopLabel"
         @click="player.toggleLoop()"
       >
-        <Repeat :size="14" /> <span>Loop</span>
+        <Repeat :size="13" :stroke-width="2" /> <span>Loop</span>
       </button>
       <button
-        class="tool"
+        class="tool tool--letter"
         :class="{ 'tool--on': !!player.loop }"
         :disabled="!hasSong || player.duration <= 0"
         title="Set loop start (A) at playhead"
@@ -214,7 +237,7 @@ const loopLabel = computed(() => {
         A
       </button>
       <button
-        class="tool"
+        class="tool tool--letter"
         :class="{ 'tool--on': !!player.loop }"
         :disabled="!hasSong || player.duration <= 0"
         title="Set loop end (B) at playhead"
@@ -222,6 +245,7 @@ const loopLabel = computed(() => {
       >
         B
       </button>
+      <span class="tool__sep" aria-hidden="true" />
       <button
         class="tool"
         :class="{ 'tool--on': placeCueMode }"
@@ -233,7 +257,7 @@ const loopLabel = computed(() => {
         "
         @click="togglePlaceCueMode"
       >
-        <Flag :size="14" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
+        <Flag :size="13" :stroke-width="2" /> <span>{{ placeCueMode ? 'Placing…' : 'Cue' }}</span>
       </button>
       <button
         class="tool"
@@ -241,11 +265,23 @@ const loopLabel = computed(() => {
         title="Drop a fade-out region at the playhead (drag the gray box to reposition)"
         @click="addFadeHere"
       >
-        <ScissorsLineDashed :size="14" /> <span>Fade</span>
+        <ScissorsLineDashed :size="13" :stroke-width="2" /> <span>Fade</span>
       </button>
+      <span class="tool__sep" aria-hidden="true" />
+      <div class="pod__outputs-wrap">
+        <button
+          class="tool"
+          :class="{ 'tool--on': showOutputs }"
+          title="Route piano and choir to separate audio outputs"
+          @click="showOutputs = !showOutputs"
+        >
+          <Headphones :size="13" :stroke-width="2" />
+          <span>Outputs</span>
+        </button>
+        <AudioOutputs v-if="showOutputs" @close="showOutputs = false" />
+      </div>
     </div>
 
-    <!-- MIXERS: piano / choir / master with % readouts -->
     <div class="pod__mix">
       <div class="mix" :class="{ 'mix--dim': player.pianoMuted }">
         <button
@@ -287,7 +323,7 @@ const loopLabel = computed(() => {
       </div>
       <div class="mix mix--master">
         <span class="mix__tag mix__tag--static">
-          <Volume2 :size="14" />
+          <Volume2 :size="13" :stroke-width="2" />
           Master
         </span>
         <VolumeSlider
@@ -298,31 +334,78 @@ const loopLabel = computed(() => {
         />
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-/* Floating squircle "pod" — sticks to the top of the main column so it
-   sits above the page title, horizontally centered. */
+/* Solid white card with a soft shadow, hangs below the header. */
 .pod {
   position: sticky;
-  top: calc(var(--header-h) + var(--sp-3));
+  top: calc(var(--header-h) + var(--sp-4));
   z-index: 25;
   width: 100%;
-  max-width: 880px;
-  margin: 0 auto var(--sp-5);
+  max-width: 920px;
+  margin: 0 auto var(--sp-6);
   padding: var(--sp-4) var(--sp-5);
-  border-radius: 28px;
-  background: var(--c-surface);
+  background: var(--c-surface-raised);
   border: 1px solid var(--c-border);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-radius: var(--r-xl);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  box-shadow: var(--sh-md);
+}
+
+/* Error banner */
+.pod__error {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: rgba(232, 71, 76, 0.12);
+  color: var(--c-danger, #c01f25);
+  font-size: 0.8rem;
+  font-weight: 550;
+  line-height: 1.3;
+}
+.pod__error-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pod__error-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.pod__error-close:hover {
+  background: rgba(232, 71, 76, 0.18);
+}
+
+/* Panic stop — visually distinct (red square) */
+.pod__panic {
+  margin-left: 6px;
+  color: var(--c-danger, #c01f25);
+}
+.pod__panic:hover:not(:disabled) {
+  background: rgba(232, 71, 76, 0.14);
+}
+.pod__panic span {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* Outputs panel wrapper (anchors the floating panel) */
+.pod__outputs-wrap {
+  position: relative;
 }
 
 /* HEAD */
@@ -337,59 +420,54 @@ const loopLabel = computed(() => {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: var(--r-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--c-bg-2), var(--c-bg-3));
-  color: var(--c-accent);
-  border: 1px solid var(--c-border);
-  transition:
-    color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
+  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
+  color: var(--c-text-muted);
+  position: relative;
+  transition: color var(--dur) var(--ease);
 }
 .pod__art--playing {
-  animation: breathe 3s var(--ease) infinite;
-  color: var(--c-accent-soft);
-  border-color: var(--c-accent);
+  color: var(--c-accent);
 }
-@keyframes breathe {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 var(--c-accent-glow);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 22px 4px var(--c-accent-glow);
-    transform: scale(1.04);
-  }
+.pod__art--playing::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 2px solid var(--c-surface-raised);
 }
 .pod__meta {
   min-width: 0;
   cursor: pointer;
 }
 .pod__title {
-  font-weight: 700;
+  font-weight: 650;
   font-size: 1.05rem;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--c-text);
 }
 .pod__service {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--c-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 1px;
 }
 .pod__expand {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  opacity: 0.65;
-}
-.pod__expand:hover {
-  opacity: 1;
+  width: 32px;
+  height: 32px;
 }
 
 /* MAIN: transport + waveform */
@@ -402,18 +480,17 @@ const loopLabel = computed(() => {
 .pod__transport {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
 }
 .pod__play {
-  width: 56px;
-  height: 56px;
+  margin: 0 6px;
 }
 .pod__seek {
   position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: 4px;
 }
 .pod__hint {
   position: absolute;
@@ -428,64 +505,75 @@ const loopLabel = computed(() => {
   display: flex;
   justify-content: space-between;
   font-variant-numeric: tabular-nums;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
+  font-weight: 500;
   color: var(--c-text-muted);
-  padding: 0 4px;
+  letter-spacing: -0.005em;
+  padding: 0 2px;
 }
 
 /* TOOLS */
 .pod__tools {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
+  gap: 2px;
   align-items: center;
-  justify-content: center;
-  padding: var(--sp-1) 0;
+  padding-top: var(--sp-3);
   border-top: 1px solid var(--c-border);
-  border-bottom: 1px solid var(--c-border);
 }
 .tool {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 5px 10px;
   border-radius: var(--r-pill);
-  border: 1px solid var(--c-border);
+  border: none;
   background: transparent;
-  color: var(--c-text-soft);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  color: var(--c-text-muted);
+  font-size: 0.74rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     background var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-out);
+    color var(--dur-fast) var(--ease);
 }
 .tool:hover:not(:disabled) {
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   color: var(--c-text);
-  transform: translateY(-1px);
 }
-.tool:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+.tool--letter {
+  font-weight: 650;
+  font-size: 0.78rem;
+  padding: 5px 9px;
+  letter-spacing: 0;
 }
 .tool--on {
-  background: color-mix(in srgb, var(--c-success) 22%, transparent);
-  border-color: var(--c-success);
-  color: var(--c-success);
+  background: var(--c-accent);
+  color: #fff;
+}
+.tool--on:hover {
+  background: var(--c-accent-deep);
+  color: #fff;
 }
 .tool:disabled {
-  opacity: 0.35;
+  opacity: 0.32;
   cursor: not-allowed;
+}
+.tool__sep {
+  width: 1px;
+  height: 14px;
+  background: var(--c-border);
+  margin: 0 4px;
 }
 
 /* MIXERS */
 .pod__mix {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-4);
+  gap: var(--sp-5);
   align-items: center;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--c-border);
 }
 .mix {
   display: flex;
@@ -494,21 +582,21 @@ const loopLabel = computed(() => {
   min-width: 0;
 }
 .mix--dim {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .mix__tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: 6px;
   align-self: flex-start;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--c-text-muted);
   background: transparent;
   border: none;
   padding: 0;
+  text-transform: uppercase;
   transition: color var(--dur-fast) var(--ease);
 }
 .mix__tag:hover {
@@ -522,32 +610,31 @@ const loopLabel = computed(() => {
   text-decoration: line-through;
 }
 .mix__dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--c);
-  box-shadow: 0 0 8px var(--c);
 }
 .mix__slider {
   width: 100%;
 }
 
-/* Empty (no song) state — visually recede without hiding controls */
+/* Empty (no song) state */
 .pod--empty {
-  opacity: 0.92;
+  opacity: 0.96;
 }
 .pod--empty .pod__transport .icon-btn,
 .pod--empty .pod__tools,
 .pod--empty .pod__mix {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 /* Responsive */
 @media (max-width: 720px) {
   .pod {
     top: var(--header-h);
-    border-radius: 22px;
     padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-lg);
   }
   .pod__main {
     grid-template-columns: 1fr;

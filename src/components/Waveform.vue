@@ -189,9 +189,9 @@ function draw() {
   if (props.loop && props.duration > 0) {
     const lx = (props.loop.start / props.duration) * w
     const rx = (props.loop.end / props.duration) * w
-    ctx.fillStyle = 'rgba(116, 215, 168, 0.12)'
+    ctx.fillStyle = 'rgba(46, 158, 91, 0.12)'
     ctx.fillRect(lx, 0, Math.max(1, rx - lx), h)
-    ctx.strokeStyle = 'rgba(116, 215, 168, 0.55)'
+    ctx.strokeStyle = 'rgba(46, 158, 91, 0.55)'
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(lx, 0)
@@ -204,29 +204,29 @@ function draw() {
   const peaks = props.peaks
   if (peaks.length === 0) {
     // Placeholder rail
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)'
-    ctx.fillRect(0, baseline - 1, w, 2)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
+    ctx.fillRect(0, baseline - 0.5, w, 1)
   } else {
     const barWidth = w / peaks.length
     const playedColor = props.accent
-    const unplayedColor = 'rgba(255, 255, 255, 0.22)'
-    const innerH = h - 8
+    const unplayedColor = 'rgba(0, 0, 0, 0.14)'
+    const innerH = h - 4
     for (let i = 0; i < peaks.length; i++) {
       const p = peaks[i] ?? 0
-      const barH = Math.max(2, p * innerH)
+      const barH = Math.max(1.5, p * innerH)
       const x = i * barWidth
       const played = x + barWidth / 2 <= playedX
       ctx.fillStyle = played ? playedColor : unplayedColor
-      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.78), barH)
+      ctx.fillRect(x, baseline - barH / 2, Math.max(1, barWidth * 0.66), barH)
     }
   }
 
-  // Markers (vertical lines + labels)
+  // Markers (thin vertical lines + labels)
   if (props.markers.length && props.duration > 0) {
     for (const m of props.markers) {
       const x = (m.time / props.duration) * w
-      ctx.strokeStyle = 'rgba(227, 184, 115, 0.9)'
-      ctx.lineWidth = 1.5
+      ctx.strokeStyle = 'rgba(232, 71, 76, 0.6)'
+      ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(x, 0)
       ctx.lineTo(x, h)
@@ -234,28 +234,28 @@ function draw() {
       if (m.label) {
         ctx.font = '600 9px Inter, system-ui, sans-serif'
         const labelW = ctx.measureText(m.label).width
-        const pad = 3
+        const pad = 4
         let bx = x + 3
         if (bx + labelW + pad * 2 > w) bx = x - labelW - pad * 2 - 3
-        ctx.fillStyle = 'rgba(227, 184, 115, 0.18)'
-        ctx.fillRect(bx, 1, labelW + pad * 2, 12)
-        ctx.fillStyle = 'rgba(240, 205, 149, 1)'
-        ctx.fillText(m.label, bx + pad, 10)
+        ctx.fillStyle = 'rgba(232, 71, 76, 0.92)'
+        ctx.fillRect(bx, 1, labelW + pad * 2, 13)
+        ctx.fillStyle = '#fff'
+        ctx.fillText(m.label, bx + pad, 11)
       }
     }
   }
 
-  // Playhead line + handle
+  // Playhead line + small handle
   if (props.duration > 0) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)'
-    ctx.lineWidth = 2
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)'
+    ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.moveTo(playedX, 0)
     ctx.lineTo(playedX, h)
     ctx.stroke()
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = '#050505'
     ctx.beginPath()
-    ctx.arc(playedX, baseline, 5, 0, Math.PI * 2)
+    ctx.arc(playedX, baseline, 3.5, 0, Math.PI * 2)
     ctx.fill()
   }
 }
@@ -405,7 +405,7 @@ defineExpose({ redraw: draw })
       <span class="waveform__marker-dot" />
     </button>
 
-    <!-- Draggable fade regions: gray translucent boxes with resize handles. -->
+    <!-- Draggable fade regions: gradient-filled boxes with grabbable resize handles. -->
     <div
       v-for="fade in fades"
       :key="fade.id"
@@ -414,21 +414,29 @@ defineExpose({ redraw: draw })
         left: duration > 0 ? `${(fade.start / duration) * 100}%` : '0%',
         width:
           duration > 0 ? `${((fade.end - fade.start) / duration) * 100}%` : '0%',
+        '--fade-target': fadeTargetPercent(fade),
       }"
     >
+      <div class="fade__ramp" />
       <div
         class="fade__handle fade__handle--start"
         @pointerdown="startFadeDrag($event, fade, 'start')"
-      />
+      >
+        <span class="fade__grip" />
+      </div>
       <div
         class="fade__body"
-        title="Drag to move the fade region"
+        title="Drag to move · drag edges to resize"
         @pointerdown="startFadeDrag($event, fade, 'move')"
-      />
+      >
+        <span class="fade__label">{{ formatFadeDuration(fade) }}</span>
+      </div>
       <div
         class="fade__handle fade__handle--end"
         @pointerdown="startFadeDrag($event, fade, 'end')"
-      />
+      >
+        <span class="fade__grip" />
+      </div>
       <button
         class="fade__close"
         title="Remove fade"
@@ -449,7 +457,20 @@ function formatMarkerTime(t: number): string {
   const s = total % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 }
-export { formatMarkerTime }
+
+function formatFadeDuration(fade: { end: number; start: number }): string {
+  const s = Math.max(0, fade.end - fade.start)
+  if (!Number.isFinite(s) || s <= 0) return '0s'
+  if (s < 10) return `${s.toFixed(1)}s`
+  return `${Math.round(s)}s`
+}
+
+function fadeTargetPercent(fade: { toVolume?: number }): string {
+  const v = fade.toVolume ?? 0
+  return `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`
+}
+
+export { formatMarkerTime, formatFadeDuration, fadeTargetPercent }
 </script>
 
 <style scoped>
@@ -488,26 +509,28 @@ export { formatMarkerTime }
   bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--c-accent);
-  box-shadow: 0 0 8px var(--c-accent-glow);
-  border: 2px solid var(--c-bg-0);
+  border: 2px solid var(--c-surface-raised);
 }
 
-/* Fade regions: gray translucent boxes with resize handles. */
+/* Fade regions: translucent box with a visible volume ramp inside,
+ * grabbable resize handles on each edge, and a duration label. */
 .fade {
   position: absolute;
   top: 0;
   height: 100%;
-  background: rgba(180, 180, 180, 0.18);
-  border-left: 1px dashed rgba(220, 220, 220, 0.6);
-  border-right: 1px dashed rgba(220, 220, 220, 0.6);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border-left: 2px solid rgba(0, 0, 0, 0.45);
+  border-right: 2px solid rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
   pointer-events: auto;
   cursor: grab;
   user-select: none;
+  box-sizing: border-box;
+  --fade-target: 0%;
 }
 .fade:active {
   cursor: grabbing;
@@ -515,42 +538,101 @@ export { formatMarkerTime }
 .fade__body {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+/* The visual ramp: solid at the right edge (target volume), faint at the left.
+ * Drives home "this is where the sound tapers off". */
+.fade__ramp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(232, 71, 76, 0.05) 0%,
+    rgba(232, 71, 76, 0.32) var(--fade-target, 0%) 100%
+  );
+  /* Ramp fades from low alpha on the left to high alpha at the right end. */
+  opacity: 0.85;
+}
+.fade__label {
+  position: relative;
+  z-index: 1;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(232, 71, 76, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  white-space: nowrap;
 }
 .fade__handle {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 8px;
+  width: 14px;
   cursor: ew-resize;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .fade__handle--start {
-  left: -4px;
+  left: -8px;
 }
 .fade__handle--end {
-  right: -4px;
+  right: -8px;
+}
+.fade__grip {
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  transition: background var(--dur-fast) var(--ease);
+}
+.fade__handle:hover .fade__grip {
+  background: var(--c-accent);
 }
 .fade__close {
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   border: none;
   background: rgba(0, 0, 0, 0.55);
-  color: var(--c-text);
-  font-size: 14px;
+  color: #fff;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
   padding: 0;
 }
 .fade__close:hover {
   background: var(--c-danger);
   color: #fff;
+}
+@media (max-width: 600px) {
+  .fade__label {
+    display: none;
+  }
+  .fade__handle {
+    width: 22px;
+  }
+  .fade__handle--start {
+    left: -11px;
+  }
+  .fade__handle--end {
+    right: -11px;
+  }
 }
 </style>

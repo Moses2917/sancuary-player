@@ -54,16 +54,19 @@ function exit() {
 
 <template>
   <div class="np-screen" :class="{ 'np-screen--empty': !hasSong }">
-    <button class="np-exit" title="Exit full screen" @click="exit">Exit</button>
+    <button class="np-exit" title="Exit full screen" @click="exit">
+      <span aria-hidden="true">×</span> Exit
+    </button>
 
     <div v-if="!hasSong" class="np-empty">
+      <p class="np-kicker">Sanctuary</p>
       <h1>Nothing is playing</h1>
-      <p>Start a service or song from the main view to project it here.</p>
+      <p class="np-empty__hint">Start a service or song from the main view to project it here.</p>
     </div>
 
     <div v-else class="np-stage">
       <div class="np-meta">
-        <div class="np-tag">{{ player.service?.name ?? 'Preview' }}</div>
+        <p class="np-kicker">{{ player.service?.name ?? 'Preview' }}</p>
         <h1 class="np-title" :title="player.currentSong?.title">
           {{ player.currentSong?.title }}
         </h1>
@@ -76,7 +79,7 @@ function exit() {
           :current="player.currentTime"
           :markers="player.currentMarkers"
           :loop="player.loop"
-          :height="120"
+          :height="88"
           accent="var(--c-accent)"
           @seek="(t) => player.seek(t)"
         />
@@ -93,10 +96,19 @@ function exit() {
           title="Previous"
           @click="player.prev()"
         >
-          <SkipBack :size="36" />
+          <SkipBack :size="26" :stroke-width="1.75" />
         </button>
-        <button class="np-btn np-btn--play" :title="player.isPlaying ? 'Pause' : 'Play'" @click="player.toggle()">
-          <component :is="player.isPlaying ? Pause : Play" :size="64" />
+        <button
+          class="np-btn np-btn--play"
+          :title="player.isPlaying ? 'Pause' : 'Play'"
+          @click="player.toggle()"
+        >
+          <component
+            :is="player.isPlaying ? Pause : Play"
+            :size="40"
+            :stroke-width="2"
+            :style="!player.isPlaying ? 'margin-left: 4px' : ''"
+          />
         </button>
         <button
           class="np-btn"
@@ -104,7 +116,7 @@ function exit() {
           title="Next"
           @click="player.next()"
         >
-          <SkipForward :size="36" />
+          <SkipForward :size="26" :stroke-width="1.75" />
         </button>
       </div>
 
@@ -121,11 +133,7 @@ function exit() {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: radial-gradient(
-    ellipse at center,
-    var(--c-bg-1) 0%,
-    var(--c-bg-0) 70%
-  );
+  background: var(--c-bg-0);
   color: var(--c-text);
   display: flex;
   align-items: center;
@@ -133,57 +141,64 @@ function exit() {
   padding: var(--sp-7);
   overflow: hidden;
 }
-.np-screen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 20%, var(--c-accent-glow), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(127, 179, 255, 0.1), transparent 60%);
-  pointer-events: none;
-  opacity: 0.6;
-}
 .np-exit {
   position: absolute;
   top: var(--sp-4);
   right: var(--sp-4);
   z-index: 2;
-  background: rgba(0, 0, 0, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--c-bg-2);
   color: var(--c-text-soft);
-  border: 1px solid var(--c-border);
-  padding: var(--sp-2) var(--sp-4);
+  border: none;
+  padding: 7px 14px;
   border-radius: var(--r-pill);
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   cursor: pointer;
-  backdrop-filter: blur(8px);
   transition:
     color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease);
+}
+.np-exit span {
+  font-size: 1.15rem;
+  line-height: 0.8;
 }
 .np-exit:hover {
+  background: var(--c-bg-3);
   color: var(--c-text);
-  border-color: var(--c-accent);
 }
 
 .np-empty {
   text-align: center;
   z-index: 1;
 }
-.np-empty h1 {
-  font-size: 4rem;
+.np-kicker {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-accent);
   margin-bottom: var(--sp-3);
 }
-.np-empty p {
+.np-empty h1 {
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  margin-bottom: var(--sp-3);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.np-empty__hint {
   color: var(--c-text-muted);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
 }
 
 .np-stage {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1080px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -191,20 +206,13 @@ function exit() {
 }
 .np-meta {
   text-align: center;
-}
-.np-tag {
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--c-accent);
-  margin-bottom: var(--sp-3);
+  max-width: 100%;
 }
 .np-title {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 6rem);
+  font-size: clamp(2.6rem, 8vw, 5.6rem);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
@@ -219,7 +227,9 @@ function exit() {
   justify-content: space-between;
   font-variant-numeric: tabular-nums;
   color: var(--c-text-muted);
-  font-size: 1.4rem;
+  font-size: 1rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
 }
 
 .np-transport {
@@ -232,38 +242,35 @@ function exit() {
   align-items: center;
   justify-content: center;
   border-radius: var(--r-pill);
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--c-text-soft);
   cursor: pointer;
-  padding: var(--sp-4);
+  padding: var(--sp-3);
   transition:
     color var(--dur-fast) var(--ease),
     background var(--dur-fast) var(--ease),
-    transform var(--dur-fast) var(--ease-spring);
+    transform var(--dur-fast) var(--ease-out);
 }
-.np-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+.np-btn:hover:not(:disabled) {
+  background: var(--c-bg-2);
   color: var(--c-text);
-  transform: scale(1.05);
 }
-.np-btn:active {
-  transform: scale(0.95);
+.np-btn:active:not(:disabled) {
+  transform: scale(0.94);
 }
 .np-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-  transform: none;
 }
 .np-btn--play {
-  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-deep));
-  color: #1a1208;
-  box-shadow: var(--sh-glow);
+  background: var(--c-accent);
+  color: #fff;
+  padding: var(--sp-5);
 }
 .np-btn--play:hover {
-  background: linear-gradient(135deg, var(--c-accent-soft), var(--c-accent));
-  box-shadow: 0 0 60px var(--c-accent-glow);
-  color: #1a1208;
+  background: var(--c-accent-deep);
+  color: #fff;
 }
 
 .np-upnext {
@@ -271,24 +278,25 @@ function exit() {
   bottom: var(--sp-5);
   right: var(--sp-5);
   text-align: right;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--c-border);
+  background: var(--c-bg-2);
+  border: none;
   border-radius: var(--r-md);
   padding: var(--sp-3) var(--sp-4);
-  backdrop-filter: blur(10px);
 }
 .np-upnext__label {
   display: block;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--c-text-muted);
   margin-bottom: 4px;
+  font-weight: 600;
 }
 .np-upnext__title {
   display: block;
-  font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-weight: 650;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
   color: var(--c-text);
 }
 
@@ -298,6 +306,12 @@ function exit() {
   }
   .np-btn {
     padding: var(--sp-2);
+  }
+  .np-upnext {
+    left: var(--sp-4);
+    right: var(--sp-4);
+    bottom: var(--sp-4);
+    text-align: left;
   }
 }
 </style>

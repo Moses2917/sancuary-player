@@ -225,9 +225,9 @@ async function submit() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 8, 18, 0.66);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,6 +238,9 @@ async function submit() {
   max-width: 520px;
   max-height: 90vh;
   overflow: auto;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   box-shadow: var(--sh-lg);
 }
 .modal__head {
@@ -247,7 +250,9 @@ async function submit() {
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-4);
@@ -282,7 +287,7 @@ async function submit() {
 .drop--filled {
   border-style: solid;
   border-color: var(--c);
-  background: color-mix(in srgb, var(--c) 10%, var(--c-bg-1));
+  background: color-mix(in srgb, var(--c) 7%, var(--c-bg-1));
   color: var(--c-text);
 }
 .drop__label {
@@ -291,17 +296,20 @@ async function submit() {
   min-width: 0;
 }
 .drop__tag {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c);
 }
 .drop__name {
   font-size: 0.92rem;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
+  letter-spacing: -0.01em;
 }
 .error {
   color: var(--c-danger);
@@ -321,37 +329,33 @@ async function submit() {
 
 .tag-pick {
   display: inline-flex;
-  gap: var(--sp-2);
+  gap: 2px;
   flex-wrap: wrap;
+  padding: 3px;
+  background: var(--c-bg-2);
+  border-radius: var(--r-pill);
 }
 .tag-pick__opt {
-  padding: var(--sp-2) var(--sp-4);
+  padding: 5px 14px;
   border-radius: var(--r-pill);
-  border: 1px solid var(--c-border-strong);
+  border: none;
   background: transparent;
-  color: var(--c-text-soft);
+  color: var(--c-text-muted);
   font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 550;
+  letter-spacing: -0.005em;
   transition:
     background var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease);
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
-.tag-pick__opt--new.tag-pick__opt--on {
-  background: color-mix(in srgb, var(--c-success) 22%, transparent);
-  border-color: var(--c-success);
-  color: var(--c-success);
-}
-.tag-pick__opt--old.tag-pick__opt--on {
-  background: color-mix(in srgb, var(--c-piano) 22%, transparent);
-  border-color: var(--c-piano);
-  color: var(--c-piano);
-}
-.tag-pick__opt--on:not(.tag-pick__opt--new):not(.tag-pick__opt--old) {
-  background: var(--c-bg-3);
-  border-color: var(--c-text-soft);
+.tag-pick__opt:hover {
   color: var(--c-text);
+}
+.tag-pick__opt--on {
+  background: var(--c-surface-raised);
+  color: var(--c-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .modal-enter-active,
@@ -361,7 +365,7 @@ async function submit() {
 .modal-enter-active .modal,
 .modal-leave-active .modal {
   transition:
-    transform var(--dur) var(--ease),
+    transform var(--dur) var(--ease-out),
     opacity var(--dur) var(--ease);
 }
 .modal-enter-from,
@@ -370,7 +374,7 @@ async function submit() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(8px) scale(0.985);
   opacity: 0;
 }
 </style>

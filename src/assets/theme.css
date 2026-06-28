@@ -1,36 +1,47 @@
-/* Sanctuary Player — design tokens */
+/* Sanctuary Player — design tokens
+ * Crisp white canvas, generous negative space, single confident red.
+ * Inspired by the restraint of modern media apps — every element earns
+ * its place; nothing decorates for its own sake.
+ */
 :root {
-  /* Palette: deep navy/charcoal with warm gold accent */
-  --c-bg-0: #0b1020;
-  --c-bg-1: #121931;
-  --c-bg-2: #1a2347;
-  --c-bg-3: #243059;
-  --c-surface: rgba(26, 35, 71, 0.72);
-  --c-surface-raised: rgba(36, 48, 89, 0.82);
-  --c-surface-glass: rgba(18, 25, 49, 0.6);
+  /* Palette — pure white surfaces, whisper-gray sectioning */
+  --c-bg-0: #ffffff;
+  --c-bg-1: #fbfbfd;
+  --c-bg-2: #f5f5f7;
+  --c-bg-3: #ececef;
 
-  --c-border: rgba(255, 255, 255, 0.08);
-  --c-border-strong: rgba(255, 255, 255, 0.16);
+  --c-surface: #ffffff;
+  --c-surface-raised: #ffffff;
+  --c-surface-glass: rgba(255, 255, 255, 0.82);
 
-  --c-text: #eef1fb;
-  --c-text-soft: #b9c0d8;
-  --c-text-muted: #8089a8;
+  --c-border: rgba(0, 0, 0, 0.07);
+  --c-border-strong: rgba(0, 0, 0, 0.14);
 
-  --c-accent: #e3b873;
-  --c-accent-soft: #f0cd95;
-  --c-accent-deep: #b4894a;
-  --c-accent-glow: rgba(227, 184, 115, 0.35);
+  --c-text: #050505;
+  --c-text-soft: #4a4a4f;
+  --c-text-muted: #86868b;
 
-  --c-piano: #7fb3ff;
-  --c-choir: #e3b873;
-  --c-danger: #e5766f;
-  --c-success: #74d7a8;
+  /* Single confident accent — a refined crimson */
+  --c-accent: #e8474c;
+  --c-accent-soft: #f1676b;
+  --c-accent-deep: #c62f34;
+  --c-accent-glow: rgba(232, 71, 76, 0.12);
 
-  /* Typography */
+  /* Track colors — desaturated, calm */
+  --c-piano: #2e6cb6;
+  --c-choir: #c77808;
+  --c-danger: #d6364c;
+  --c-success: #2e9e5b;
+
+  /* Typography — Inter tight for everything.
+     Heavy weights for display, regular for body, all with negative
+     tracking so headlines feel set rather than typed. */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
+  --font-display:
+    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* Spacing scale */
   --sp-1: 0.25rem;
@@ -42,30 +53,28 @@
   --sp-7: 3rem;
   --sp-8: 4rem;
 
-  /* Radii */
+  /* Radii — soft but not bubbly */
   --r-sm: 6px;
   --r-md: 10px;
-  --r-lg: 16px;
-  --r-xl: 24px;
-  --r-pill: 999px;
+  --r-lg: 14px;
+  --r-xl: 22px;
+  --r-pill: 980px;
 
-  /* Shadows */
-  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --sh-md: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --sh-lg: 0 18px 50px rgba(0, 0, 0, 0.5);
-  --sh-glow: 0 0 30px var(--c-accent-glow);
+  /* Shadows — barely-there, soft and long */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sh-md: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.06);
+  --sh-lg: 0 2px 8px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.12);
 
   /* Layout */
-  --player-h: 96px;
-  --header-h: 64px;
-  --content-max: 1180px;
+  --player-h: 92px;
+  --header-h: 60px;
+  --content-max: 1120px;
 
-  /* Motion */
+  /* Motion — quick and confident */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out-back: cubic-bezier(0.34, 1.2, 0.64, 1);
-  --dur-fast: 120ms;
-  --dur: 220ms;
-  --dur-slow: 400ms;
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --dur-fast: 110ms;
+  --dur: 180ms;
+  --dur-slow: 320ms;
 }

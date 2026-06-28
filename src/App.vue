@@ -45,10 +45,10 @@ useMediaSession()
 }
 .fade-enter-from {
   opacity: 0;
-  transform: translateY(10px) scale(0.992);
+  transform: translateY(6px);
 }
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(-6px) scale(0.992);
+  transform: translateY(-4px);
 }
 </style>

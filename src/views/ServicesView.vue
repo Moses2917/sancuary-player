@@ -68,15 +68,15 @@ const filtered = computed(() => {
 
     <div v-if="services.loading" class="empty"><p>Loading…</p></div>
 
-    <div v-else-if="services.services.length === 0" class="empty surface">
-      <div class="empty__art"><Calendar :size="36" /></div>
+    <div v-else-if="services.services.length === 0" class="empty">
+      <div class="empty__icon"><Calendar :size="32" :stroke-width="1.25" /></div>
       <h3>No services yet</h3>
       <p>
         Create a service for each worship occasion — Sunday morning, Wednesday prayer, Easter, and
         so on — and arrange songs into a playlist.
       </p>
       <button class="btn btn--primary" @click="editorOpen = true">
-        <Plus :size="16" /> Create your first service
+        <Plus :size="14" :stroke-width="2" /> Create your first service
       </button>
     </div>
 
@@ -94,38 +94,43 @@ const filtered = computed(() => {
 </template>
 
 <style scoped>
-.empty__art {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--sp-3);
+.empty__icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-lg);
-  background: linear-gradient(135deg, var(--c-bg-2), var(--c-bg-3));
-  color: var(--c-accent);
-  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-bg-2);
+  color: var(--c-text-muted);
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--sp-4);
 }
 .search {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-3);
-  background: var(--c-bg-1);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
+  padding: 0 14px;
+  background: var(--c-bg-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
   color: var(--c-text-muted);
   max-width: 480px;
-  margin-bottom: var(--sp-4);
-  transition: border-color var(--dur-fast) var(--ease);
+  margin-bottom: var(--sp-5);
+  height: 36px;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 .search:focus-within {
-  border-color: var(--c-accent);
+  background: var(--c-surface-raised);
+  border-color: var(--c-border-strong);
+  box-shadow: var(--sh-sm);
 }
 .search__input {
   flex: 1;
@@ -133,7 +138,6 @@ const filtered = computed(() => {
   border: none;
   outline: none;
   color: var(--c-text);
-  padding: var(--sp-3) 0;
 }
 .search__input::placeholder {
   color: var(--c-text-muted);
@@ -149,11 +153,12 @@ const filtered = computed(() => {
   border-radius: var(--r-pill);
 }
 .search__clear:hover {
-  background: var(--c-bg-3);
+  background: rgba(0, 0, 0, 0.08);
   color: var(--c-text);
 }
 .btn--sm {
-  padding: var(--sp-1) var(--sp-3);
-  font-size: 0.8rem;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 0.78rem;
 }
 </style>

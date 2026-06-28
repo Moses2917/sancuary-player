@@ -120,9 +120,9 @@ function confirm() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 8, 18, 0.66);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +134,11 @@ function confirm() {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
   box-shadow: var(--sh-lg);
+  overflow: hidden;
 }
 .modal__head {
   display: flex;
@@ -143,18 +147,21 @@ function confirm() {
   padding: var(--sp-5) var(--sp-5) var(--sp-3);
 }
 .modal__head h2 {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 .modal__sub {
   margin-top: 4px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--c-text-muted);
 }
 .modal__sub code {
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   padding: 1px 6px;
   border-radius: var(--r-sm);
   font-size: 0.74rem;
+  font-family: var(--font-mono);
 }
 .modal__body {
   padding: 0 var(--sp-5) var(--sp-3);
@@ -167,7 +174,7 @@ function confirm() {
   max-height: 50vh;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: 1px;
 }
 .row {
   width: 100%;
@@ -185,23 +192,23 @@ function confirm() {
     border-color var(--dur-fast) var(--ease);
 }
 .row:hover:not(:disabled) {
-  background: var(--c-bg-2);
+  background: var(--c-bg-1);
 }
 .row--on {
-  background: var(--c-bg-3);
-  border-color: var(--c-accent);
+  background: var(--c-accent-glow);
+  border-color: rgba(232, 71, 76, 0.22);
   color: var(--c-text);
 }
 .row--dim {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .check {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 5px;
-  border: 2px solid var(--c-border-strong);
+  border: 1.5px solid var(--c-border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -214,23 +221,25 @@ function confirm() {
 .check--on {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: #1a1208;
+  color: #fff;
 }
 .title {
   flex: 1;
-  font-weight: 500;
+  font-weight: 550;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .badge {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--c-text-muted);
   background: var(--c-bg-2);
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: var(--r-pill);
 }
 .modal__foot {
@@ -242,6 +251,7 @@ function confirm() {
 }
 .count {
   font-size: 0.8rem;
+  font-weight: 500;
   color: var(--c-text-muted);
 }
 .actions {
@@ -256,7 +266,7 @@ function confirm() {
 .modal-enter-active .modal,
 .modal-leave-active .modal {
   transition:
-    transform var(--dur) var(--ease),
+    transform var(--dur) var(--ease-out),
     opacity var(--dur) var(--ease);
 }
 .modal-enter-from,
@@ -265,7 +275,7 @@ function confirm() {
 }
 .modal-enter-from .modal,
 .modal-leave-to .modal {
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(8px) scale(0.985);
   opacity: 0;
 }
 </style>

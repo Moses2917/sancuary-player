@@ -16,6 +16,7 @@ class FakeAudioElement {
   preload: string = 'auto'
   paused = true
   ended = false
+  sinkId = ''
   private listeners = new Map<string, Set<Listener>>()
 
   constructor(src?: string) {
@@ -53,6 +54,11 @@ class FakeAudioElement {
   }
   removeAttribute(name: string) {
     if (name === 'src') this.src = ''
+  }
+  /** Stub for HTMLMediaElement.setSinkId; resolves successfully. */
+  setSinkId(id: string) {
+    this.sinkId = id
+    return Promise.resolve()
   }
 }
 

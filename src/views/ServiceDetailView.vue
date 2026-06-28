@@ -157,7 +157,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 </script>
 
 <template>
-  <section v-if="serviceNotFound" class="empty surface">
+  <section v-if="serviceNotFound" class="empty">
     <h3>Service not found</h3>
     <p>This service may have been deleted.</p>
     <button class="btn btn--primary" @click="router.push({ name: 'services' })">
@@ -167,7 +167,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 
   <section v-else-if="current">
     <button class="back" @click="router.push({ name: 'services' })">
-      <ArrowLeft :size="16" /> All services
+      <ArrowLeft :size="14" :stroke-width="1.75" /> All services
     </button>
 
     <header class="head">
@@ -175,11 +175,11 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         <template v-if="!editingMeta">
           <div class="head__meta">
             <span class="head__date">
-              <Calendar :size="14" />
+              <Calendar :size="12" :stroke-width="1.75" />
               {{ formatDate(current.date) || 'No date set' }}
             </span>
             <button class="head__edit" title="Edit" @click="editingMeta = true">
-              <Pencil :size="14" />
+              <Pencil :size="13" :stroke-width="1.6" />
             </button>
           </div>
           <h1 class="head__title">{{ current.name }}</h1>
@@ -205,31 +205,35 @@ const serviceNotFound = computed(() => services.ready && !current.value)
           title="Print or save as PDF"
           @click="printSetlist"
         >
-          <Printer :size="16" /> <span class="hide-sm">Print</span>
-        </button>
-        <button class="btn btn--primary" :disabled="resolved.length === 0" @click="playAll(0)">
-          <Play :size="16" />
-          {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
+          <Printer :size="14" :stroke-width="1.6" /> <span class="hide-sm">Print</span>
         </button>
         <button class="btn" @click="pickerOpen = true">
-          <Plus :size="16" /> Add songs
+          <Plus :size="14" :stroke-width="2" /> Add songs
         </button>
         <button class="btn" @click="creatorOpen = true">
-          <Upload :size="16" /> Create song
+          <Upload :size="14" :stroke-width="1.6" /> <span class="hide-sm">Create</span>
+        </button>
+        <button
+          class="btn btn--primary"
+          :disabled="resolved.length === 0"
+          @click="playAll(0)"
+        >
+          <Play :size="14" :stroke-width="2" />
+          {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
         </button>
       </div>
     </header>
 
-    <div v-if="resolved.length === 0" class="empty surface">
-      <div class="empty__art"><Music :size="36" /></div>
+    <div v-if="resolved.length === 0" class="empty">
+      <div class="empty__icon"><Music :size="32" :stroke-width="1.25" /></div>
       <h3>Empty playlist</h3>
       <p>Add songs from your library to build this service's set list.</p>
       <div class="empty__actions">
         <button class="btn btn--primary" @click="pickerOpen = true">
-          <Plus :size="16" /> Add songs
+          <Plus :size="14" :stroke-width="2" /> Add songs
         </button>
         <button class="btn" @click="creatorOpen = true">
-          <Upload :size="16" /> Create new
+          <Upload :size="14" :stroke-width="1.6" /> Create new
         </button>
       </div>
     </div>
@@ -305,14 +309,16 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   gap: 6px;
   background: transparent;
   border: none;
-  color: var(--c-text-muted);
-  font-size: 0.85rem;
-  margin-bottom: var(--sp-4);
+  color: var(--c-accent);
+  font-size: 0.84rem;
+  font-weight: 550;
+  letter-spacing: -0.005em;
+  margin-bottom: var(--sp-5);
   padding: 4px 0;
   transition: color var(--dur-fast) var(--ease);
 }
 .back:hover {
-  color: var(--c-text);
+  color: var(--c-accent-deep);
 }
 
 .head {
@@ -321,6 +327,8 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   justify-content: space-between;
   gap: var(--sp-5);
   margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--c-border);
   flex-wrap: wrap;
 }
 .head__main {
@@ -331,9 +339,12 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-text-muted);
-  font-size: 0.85rem;
-  margin-bottom: var(--sp-2);
+  color: var(--c-accent);
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: var(--sp-3);
 }
 .head__date {
   display: inline-flex;
@@ -348,13 +359,16 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   color: var(--c-text-muted);
   padding: 2px;
   border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease);
 }
 .head__edit:hover {
   color: var(--c-accent);
 }
 .head__title {
-  font-size: 2.4rem;
-  line-height: 1.1;
+  font-size: clamp(2.1rem, 5.4vw, 3.6rem);
+  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 .head__edit-form {
   display: flex;
@@ -368,32 +382,34 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 }
 .head__actions {
   display: flex;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.empty__art {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--sp-3);
+.empty__icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-lg);
-  background: linear-gradient(135deg, var(--c-bg-2), var(--c-bg-3));
-  color: var(--c-accent);
-  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-bg-2);
+  color: var(--c-text-muted);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: 2px;
 }
 
 .btn--sm {
-  padding: var(--sp-1) var(--sp-3);
-  font-size: 0.8rem;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 0.78rem;
   align-self: flex-start;
 }
 .empty__actions {
@@ -418,7 +434,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 
 @media (max-width: 600px) {
   .head__title {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
   }
   .head__actions {
     width: 100%;
