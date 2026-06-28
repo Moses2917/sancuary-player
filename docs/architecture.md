@@ -57,9 +57,14 @@ The heart of the app. Owns two non-reactive `<audio>` elements (piano and
 choir) and drives them together so they stay sample-locked. Key state:
 
 - `service`, `queue`, `index`, `isPlaying`, `currentTime`, `duration`
-- per-track `pianoVolume`, `choirVolume`, mute / solo flags
+- per-track `pianoVolume`, `choirVolume`, `pianoMuted`, `choirMuted`
+- `solo` (`'piano' | 'choir' | null`); `pianoSolo` / `choirSolo` are
+  backward-compat derived getters
 - `masterVolume` multiplier
 - `loop` (A-B region) and `fadeMultiplier` (recomputed on every timeupdate)
+- `pianoSinkId`, `choirSinkId`, `outputRoutingSupported`
+- `resumePosition` flag and per-song `position` (stored on the Song)
+- `error` banner message (null when healthy)
 - derived `currentSong`, `currentMarkers`, `currentFades`
 
 Notable behaviours:
@@ -67,10 +72,20 @@ Notable behaviours:
   into sync with piano if drift exceeds 80ms), applies the active loop, and
   recomputes the fade multiplier.
 - `load(svc, songs, startIndex, autoplay)` resolves a service's items
-  against the library, builds the queue, and starts playback.
+  against the library, builds the queue, and starts playback. If
+  `resumePosition` is on and the song has a saved `position`, the playhead
+  is restored here.
+- `setPianoSink` / `setChoirSink` call `HTMLMediaElement.setSinkId` on the
+  underlying elements and fall back silently where unsupported.
+- `panicStop` ramps `fadeMultiplier` to zero over ~450 ms via RAF, then
+  pauses and rewinds. A token guards against overlapping ramps.
+- `play` distinguishes total vs partial play() failures and surfaces a
+  user-facing `error` instead of swallowing rejections.
 - `seek`, `next`, `prev`, `playSingle` are the transport entry points.
 - Cue and fade edits go through the library store, then `refreshActiveSong`
   swaps the in-queue song reference so derived computeds see the new state.
+- `dispose()` tears down listeners and audio elements (used by tests and
+  any future hot-reload paths).
 
 ### `useLibraryStore` (`src/stores/library.ts`)
 
@@ -87,19 +102,23 @@ and choirVolume 0.5 (choir supports rather than matches the piano).
 
 ### `useSettingsStore` (`src/stores/settings.ts`)
 
-Loads and persists the master volume (debounced writes).
+Loads and persists app settings (debounced writes): `masterVolume`,
+`pianoSinkId`, `choirSinkId`, `resumePosition`.
 
 ## Components
 
 - **`PlayerBar.vue`** - the floating squircle pod at the top of the main
-  column. Houses transport, the waveform, loop / cue / fade tools, and the
-  three volume mixers. Sticky-positioned so it stays visible while the page
-  scrolls.
+  column. Houses transport (incl. panic stop), the waveform, loop / cue /
+  fade / outputs tools, the three volume mixers, and a dismissible error
+  banner. Sticky-positioned so it stays visible while the page scrolls.
+- **`AudioOutputs.vue`** - popover panel for routing piano and choir to
+  separate audio output devices, plus the resume-position rehearsal
+  toggle. Hidden on browsers without `setSinkId` support.
 - **`Waveform.vue`** - canvas renderer for the decoded peaks plus
-  interactive overlays (markers, draggable fade regions). Pointer events
-  bind to `window` during a drag so the user can scrub outside the canvas.
-  A RAF loop interpolates the playhead between `<audio>` timeupdates for
-  smooth 60fps motion.
+  interactive overlays (markers, draggable fade regions with a visible
+  ramp gradient). Pointer events bind to `window` during a drag so the
+  user can scrub outside the canvas. A RAF loop interpolates the playhead
+  between `<audio>` timeupdates for smooth 60fps motion.
 - **`VolumeSlider.vue`** - styled range input with optional percentage
   readout.
 - **`PlaylistRow.vue`**, **`SongPicker.vue`**, **`SongImporter.vue`**,
@@ -120,8 +139,9 @@ the header and player pod.
 
 ## Composables
 
-- **`useKeyboardShortcuts`** - Space toggles play, Shift+Arrow steps
-  tracks, Escape stops.
+- **`useKeyboardShortcuts`** - Space toggles play, Arrow keys seek ±5 s
+  (Shift = track skip), M/P/C mute, L loops, F drops a fade, 1-9 jump to
+  cue markers, Escape stops. Ignored while typing in an input.
 - **`useMediaSession`** - bridges the player to the OS Media Session API
   (lock screen controls, Bluetooth media buttons). No-ops gracefully when
   the API is unavailable.

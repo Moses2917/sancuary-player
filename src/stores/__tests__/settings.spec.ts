@@ -59,4 +59,66 @@ describe('settings store', () => {
     expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ masterVolume: 0.55 }))
     saveSpy.mockRestore()
   })
+
+  it('restores persisted sink ids onto the player', async () => {
+    await idb.saveSettings({
+      masterVolume: 0.9,
+      pianoSinkId: 'dev-piano',
+      choirSinkId: 'dev-choir',
+    })
+    const settings = useSettingsStore()
+    const player = usePlayerStore()
+    await settings.init()
+    expect(settings.pianoSinkId).toBe('dev-piano')
+    expect(settings.choirSinkId).toBe('dev-choir')
+    expect(player.pianoSinkId).toBe('dev-piano')
+    expect(player.choirSinkId).toBe('dev-choir')
+  })
+
+  it('defaults sink ids to empty (both tracks share system default)', async () => {
+    const settings = useSettingsStore()
+    const player = usePlayerStore()
+    await settings.init()
+    expect(settings.pianoSinkId).toBe('')
+    expect(settings.choirSinkId).toBe('')
+    expect(player.pianoSinkId).toBe('')
+    expect(player.choirSinkId).toBe('')
+  })
+
+  it('restores the resume-position flag', async () => {
+    await idb.saveSettings({ masterVolume: 0.9, resumePosition: true })
+    const settings = useSettingsStore()
+    const player = usePlayerStore()
+    await settings.init()
+    expect(settings.resumePosition).toBe(true)
+    expect(player.resumePosition).toBe(true)
+  })
+
+  it('watchPlayer persists sink and resumePosition changes (debounced)', async () => {
+    const saveSpy = vi.spyOn(idb, 'saveSettings').mockResolvedValue({
+      id: 'app',
+      masterVolume: 0.9,
+    })
+    const settings = useSettingsStore()
+    const player = usePlayerStore()
+    await settings.init()
+    settings.watchPlayer(player)
+
+    vi.useFakeTimers()
+    await player.setPianoSink('new-sink')
+    await player.setChoirSink('other-sink')
+    player.setResumePosition(true)
+    await nextTick()
+    vi.advanceTimersByTime(300)
+    vi.useRealTimers()
+
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pianoSinkId: 'new-sink',
+        choirSinkId: 'other-sink',
+        resumePosition: true,
+      }),
+    )
+    saveSpy.mockRestore()
+  })
 })

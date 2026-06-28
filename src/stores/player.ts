@@ -9,12 +9,42 @@ interface ActiveItem {
   song: Song
 }
 
+/* ---------- Tunable constants ---------- */
+/** Linear volume clamp helper. */
 const SAFE_VOLUME = (v: number) => Math.max(0, Math.min(1, v))
+/** Seconds of piano/choir drift before we re-sync the laggard. */
+const DRIFT_THRESHOLD_SEC = 0.08
+/** Debounce window for the "both tracks ended → advance" check. */
+const ENDED_DEBOUNCE_MS = 120
+/** Default fade region length when one is dropped from the toolbar. */
+const DEFAULT_FADE_LEN_SEC = 8
+/** Panic-stop ramp duration (fade-to-zero before pausing). */
+const PANIC_FADE_MS = 450
+/** Default volumes. */
+const DEFAULT_MASTER_VOLUME = 0.9
+const DEFAULT_PIANO_VOLUME = 1
+/** Choir default is half — supports the piano rather than matching it. */
+const DEFAULT_CHOIR_VOLUME = 0.5
+/** How often (ms) we persist the resume-position marker while playing. */
+const POSITION_SAVE_INTERVAL_MS = 5000
+/** Solo target. */
+type SoloTarget = 'piano' | 'choir' | null
+
+/** True if this browser supports routing an <audio> element to a specific output device. */
+export function supportsAudioOutputRouting(): boolean {
+  if (typeof HTMLMediaElement === 'undefined') return false
+  return (
+    typeof (HTMLMediaElement.prototype as { setSinkId?: unknown }).setSinkId === 'function'
+  )
+}
 
 /**
  * Dual-track locked-sync player.
  * Two underlying <audio> elements (piano + choir) are driven together;
  * per-track .volume provides independent gain, with a master multiplier.
+ *
+ * Each track can be routed to a separate audio output device via setSinkId
+ * (Chrome/Edge/Firefox 136+; Safari ignores the calls gracefully).
  */
 export const usePlayerStore = defineStore('player', () => {
   /* ---------- non-reactive audio elements ---------- */
@@ -24,6 +54,13 @@ export const usePlayerStore = defineStore('player', () => {
   let currentChoirUrl: string | null = null
   let driftGuard = false
   let stopTimeout: ReturnType<typeof setTimeout> | null = null
+  /** Active panic-stop ramp; tracks an increasing id so a new panic cancels the previous. */
+  let panicToken = 0
+  /** Resume-position autosave timer; only runs while playing and resume is enabled. */
+  let positionSaveTimer: ReturnType<typeof setInterval> | null = null
+  /** Pending piano/choir sinkIds to apply once the elements exist. */
+  let pendingPianoSink: string | undefined
+  let pendingChoirSink: string | undefined
 
   function ensureElements() {
     if (pianoEl) return
@@ -43,6 +80,35 @@ export const usePlayerStore = defineStore('player', () => {
       })
       el.addEventListener('error', onError)
     }
+    // Apply any sinks that were requested before the elements existed.
+    void applySink(pianoEl, pendingPianoSink)
+    void applySink(choirEl, pendingChoirSink)
+  }
+
+  /** Tear down audio elements and listeners. Safe to call multiple times. */
+  function dispose() {
+    if (stopTimeout) {
+      clearTimeout(stopTimeout)
+      stopTimeout = null
+    }
+    if (positionSaveTimer) {
+      clearInterval(positionSaveTimer)
+      positionSaveTimer = null
+    }
+    panicToken++ // invalidate any in-flight ramp
+    for (const el of [pianoEl, choirEl]) {
+      if (!el) continue
+      el.pause()
+      el.removeEventListener('loadedmetadata', syncMetadata)
+      el.removeEventListener('timeupdate', onTimeUpdate)
+      el.removeEventListener('ended', onEnded)
+      el.removeEventListener('error', onError)
+      el.removeAttribute('src')
+      el.load()
+    }
+    pianoEl = null
+    choirEl = null
+    revokeUrls()
   }
 
   /* ---------- reactive state ---------- */
@@ -53,14 +119,13 @@ export const usePlayerStore = defineStore('player', () => {
   const currentTime = ref(0)
   const duration = ref(0)
 
-  const masterVolume = ref(0.9)
-  const pianoVolume = ref(1)
-  // Choir default is half — supports the piano rather than matching it.
-  const choirVolume = ref(0.5)
+  const masterVolume = ref(DEFAULT_MASTER_VOLUME)
+  const pianoVolume = ref(DEFAULT_PIANO_VOLUME)
+  const choirVolume = ref(DEFAULT_CHOIR_VOLUME)
   const pianoMuted = ref(false)
   const choirMuted = ref(false)
-  const pianoSolo = ref(false)
-  const choirSolo = ref(false)
+  /** Single source of truth for solo state; piano/choir solo are mutually exclusive. */
+  const solo = ref<SoloTarget>(null)
 
   /** Active A↔B loop region in seconds, or null when disabled. */
   const loop = ref<{ start: number; end: number } | null>(null)
@@ -75,6 +140,19 @@ export const usePlayerStore = defineStore('player', () => {
 
   const ready = ref(false)
   const isLoading = ref(false)
+
+  /** Last user-facing error (audio load failure, blocked playback, sink error). */
+  const error = ref<string | null>(null)
+
+  /** When true, the player records and restores the per-song playhead position. */
+  const resumePosition = ref(false)
+
+  /** Current piano/choir sinkIds ('' = system default). */
+  const pianoSinkId = ref('')
+  const choirSinkId = ref('')
+
+  /** Whether the browser exposes per-element audio output routing. */
+  const outputRoutingSupported = ref(supportsAudioOutputRouting())
 
   /* ---------- derived ---------- */
   const current = computed<ActiveItem | null>(() =>
@@ -91,16 +169,91 @@ export const usePlayerStore = defineStore('player', () => {
     duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0,
   )
 
+  // Backward-compatible solo accessors.
+  const pianoSolo = computed<boolean>(() => solo.value === 'piano')
+  const choirSolo = computed<boolean>(() => solo.value === 'choir')
+
+  /* ---------- error reporting ---------- */
+  function setError(message: string | null) {
+    error.value = message
+  }
+  function clearError() {
+    error.value = null
+  }
+
   /* ---------- volume application ---------- */
   function applyVolumes() {
     if (!pianoEl || !choirEl) return
     const m = fadeMultiplier.value
     const effPiano =
-      pianoMuted.value || choirSolo.value ? 0 : pianoVolume.value * masterVolume.value * m
+      pianoMuted.value || solo.value === 'choir' ? 0 : pianoVolume.value * masterVolume.value * m
     const effChoir =
-      choirMuted.value || pianoSolo.value ? 0 : choirVolume.value * masterVolume.value * m
+      choirMuted.value || solo.value === 'piano' ? 0 : choirVolume.value * masterVolume.value * m
     pianoEl.volume = SAFE_VOLUME(effPiano)
     choirEl.volume = SAFE_VOLUME(effChoir)
+  }
+
+  /* ---------- audio output routing ---------- */
+  async function applySink(el: HTMLAudioElement | null, sinkId: string | undefined) {
+    if (!el) return
+    if (!outputRoutingSupported.value) return
+    const target = sinkId ?? ''
+    // Cast: TS lib targets older browsers; setSinkId exists at runtime when supported.
+    type Sinked = { setSinkId: (id: string) => Promise<void> }
+    const sinked = el as unknown as Sinked & HTMLAudioElement
+    if (typeof sinked.setSinkId !== 'function') return
+    try {
+      await sinked.setSinkId(target)
+    } catch (err) {
+      setError(
+        `Couldn't route audio to the selected output${
+          err instanceof Error ? `: ${err.message}` : ''
+        }. Falling back to default.`,
+      )
+    }
+  }
+
+  /** Set the piano track's output device; persisted via settings. */
+  async function setPianoSink(sinkId: string) {
+    pianoSinkId.value = sinkId
+    pendingPianoSink = sinkId
+    await applySink(pianoEl, sinkId)
+  }
+  /** Set the choir track's output device; persisted via settings. */
+  async function setChoirSink(sinkId: string) {
+    choirSinkId.value = sinkId
+    pendingChoirSink = sinkId
+    await applySink(choirEl, sinkId)
+  }
+
+  /**
+   * List audiooutput devices. Returns a minimal shape even before permission
+   * is granted (labels blank). Call requestOutputPermission() from a user
+   * gesture to surface friendly names.
+   */
+  async function enumerateOutputs(): Promise<MediaDeviceInfo[]> {
+    if (!navigator.mediaDevices?.enumerateDevices) return []
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      return devices.filter((d) => d.kind === 'audiooutput')
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * Triggers the permission prompt that unlocks labeled device descriptions.
+   * Must be called from a user-gesture handler (e.g. the outputs panel button).
+   * No-ops on browsers that don't expose the API.
+   */
+  async function requestOutputPermission(): Promise<void> {
+    if (!navigator.mediaDevices?.getUserMedia) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((t) => t.stop())
+    } catch {
+      // Permission denied — we still get deviceId, just no label. Not fatal.
+    }
   }
 
   /* ---------- source loading ---------- */
@@ -160,6 +313,21 @@ export const usePlayerStore = defineStore('player', () => {
     ready.value = false
     currentTime.value = 0
 
+    // Re-apply any pending sinks; setSinkId survives src changes on most
+    // browsers but Chrome occasionally loses it across load().
+    void applySink(pianoEl, pendingPianoSink)
+    void applySink(choirEl, pendingChoirSink)
+
+    // Restore saved playhead position when rehearsal mode is on.
+    if (resumePosition.value && typeof active.song.position === 'number') {
+      const pos = Math.max(0, Math.min(active.song.position, duration.value || Infinity))
+      if (Number.isFinite(pos) && pos > 0.5) {
+        pianoEl.currentTime = pos
+        if (choirEl) choirEl.currentTime = pos
+        currentTime.value = pos
+      }
+    }
+
     if (wasPlaying) {
       await play()
     }
@@ -192,7 +360,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     if (!driftGuard && isPlaying.value && choirEl && choirEl.src) {
       const drift = Math.abs(choirEl.currentTime - t)
-      if (drift > 0.08) {
+      if (drift > DRIFT_THRESHOLD_SEC) {
         driftGuard = true
         try {
           choirEl.currentTime = t
@@ -237,17 +405,56 @@ export const usePlayerStore = defineStore('player', () => {
       const pEnded = pianoEl?.ended || pianoEl?.paused
       const cEnded = !choirEl?.src || choirEl?.ended || choirEl?.paused
       if (pEnded && cEnded) {
+        void saveCurrentPosition()
         if (hasNext.value) next(true)
         else {
           isPlaying.value = false
         }
       }
-    }, 120)
+    }, ENDED_DEBOUNCE_MS)
   }
 
   function onError(e: Event) {
     const el = e.target as HTMLAudioElement
-    console.warn('Audio error', el?.error)
+    const mediaErr = el?.error
+    setError(
+      `Audio failed to load${
+        mediaErr ? ` (code ${mediaErr.code})` : ''
+      }. Check the file is accessible and try re-importing.`,
+    )
+    console.warn('Audio error', mediaErr)
+  }
+
+  /* ---------- resume position ---------- */
+  async function saveCurrentPosition() {
+    if (!resumePosition.value) return
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    const t = currentTime.value
+    if (!Number.isFinite(t) || t <= 0.5) return
+    await library.updateSong(song.id, { position: t })
+  }
+
+  function startPositionSaver() {
+    if (positionSaveTimer) clearInterval(positionSaveTimer)
+    if (!resumePosition.value) return
+    positionSaveTimer = setInterval(() => {
+      void saveCurrentPosition()
+    }, POSITION_SAVE_INTERVAL_MS)
+  }
+
+  function stopPositionSaver() {
+    if (positionSaveTimer) {
+      clearInterval(positionSaveTimer)
+      positionSaveTimer = null
+    }
+  }
+
+  function setResumePosition(enabled: boolean) {
+    resumePosition.value = enabled
+    if (enabled) startPositionSaver()
+    else stopPositionSaver()
   }
 
   /* ---------- transport ---------- */
@@ -256,17 +463,44 @@ export const usePlayerStore = defineStore('player', () => {
     if (!pianoEl || !choirEl) return
     if (!current.value) return
     applyVolumes()
+    let pianoErr: unknown = null
+    let choirErr: unknown = null
     const tasks: Promise<unknown>[] = []
-    if (pianoEl.src) tasks.push(pianoEl.play().catch(() => undefined))
-    if (choirEl.src) tasks.push(choirEl.play().catch(() => undefined))
+    if (pianoEl.src) {
+      tasks.push(
+        pianoEl.play().catch((e) => {
+          pianoErr = e
+        }),
+      )
+    }
+    if (choirEl.src) {
+      tasks.push(
+        choirEl.play().catch((e) => {
+          choirErr = e
+        }),
+      )
+    }
     await Promise.all(tasks)
-    isPlaying.value = true
+    // Reflect actual element state regardless of errors.
+    isPlaying.value = pianoEl.paused === false || choirEl.paused === false
+    if (pianoErr && choirErr) {
+      // Total failure: typically browser autoplay policy or no user gesture.
+      setError('Playback was blocked by the browser. Click play again to start audio.')
+    } else if (pianoErr || choirErr) {
+      // Partial failure: one track couldn't start (e.g. missing src, codec error).
+      setError('One of the tracks failed to start. Check the file and try again.')
+    } else {
+      clearError()
+      startPositionSaver()
+    }
   }
 
   function pause() {
     pianoEl?.pause()
     choirEl?.pause()
     isPlaying.value = false
+    stopPositionSaver()
+    void saveCurrentPosition()
   }
 
   function toggle() {
@@ -279,6 +513,39 @@ export const usePlayerStore = defineStore('player', () => {
     if (pianoEl) pianoEl.currentTime = 0
     if (choirEl) choirEl.currentTime = 0
     currentTime.value = 0
+  }
+
+  /**
+   * Panic stop: smooth fade-out then pause+rewind. Avoids an abrupt cut
+   * when the operator needs to silence the room immediately.
+   */
+  async function panicStop() {
+    ensureElements()
+    if (!pianoEl || !choirEl) return
+    const token = ++panicToken
+    const startWall = performance.now()
+    const startMult = fadeMultiplier.value
+    return new Promise<void>((resolve) => {
+      const step = () => {
+        if (token !== panicToken) return resolve() // superseded
+        const elapsed = performance.now() - startWall
+        const k = Math.min(1, elapsed / PANIC_FADE_MS)
+        fadeMultiplier.value = startMult * (1 - k)
+        applyVolumes()
+        if (k < 1) {
+          requestAnimationFrame(step)
+        } else {
+          pause()
+          if (pianoEl) pianoEl.currentTime = 0
+          if (choirEl) choirEl.currentTime = 0
+          currentTime.value = 0
+          fadeMultiplier.value = 1
+          applyVolumes()
+          resolve()
+        }
+      }
+      requestAnimationFrame(step)
+    })
   }
 
   async function seek(time: number) {
@@ -374,13 +641,17 @@ export const usePlayerStore = defineStore('player', () => {
     applyVolumes()
   }
   function togglePianoSolo() {
-    pianoSolo.value = !pianoSolo.value
-    if (pianoSolo.value) choirSolo.value = false
+    solo.value = solo.value === 'piano' ? null : 'piano'
     applyVolumes()
   }
   function toggleChoirSolo() {
-    choirSolo.value = !choirSolo.value
-    if (choirSolo.value) pianoSolo.value = false
+    solo.value = solo.value === 'choir' ? null : 'choir'
+    applyVolumes()
+  }
+  /** Mute both tracks at once. */
+  function muteAll() {
+    pianoMuted.value = true
+    choirMuted.value = true
     applyVolumes()
   }
 
@@ -448,11 +719,14 @@ export const usePlayerStore = defineStore('player', () => {
 
   /* ---------- fade regions ---------- */
   /** Drop a fade region starting at the playhead with the given duration (s). */
-  async function addFadeHere(durationSeconds = 8) {
+  async function addFadeHere(durationSeconds = DEFAULT_FADE_LEN_SEC) {
     const song = currentSong.value
     if (!song) return
     const start = currentTime.value
-    const end = Math.min(start + durationSeconds, duration.value || start + durationSeconds)
+    const end = Math.min(
+      start + durationSeconds,
+      duration.value || start + durationSeconds,
+    )
     const library = useLibraryStore()
     await library.addFade(song.id, { start, end, toVolume: 0 })
     refreshActiveSong()
@@ -494,6 +768,11 @@ export const usePlayerStore = defineStore('player', () => {
     choirSolo,
     loop,
     fadeMultiplier,
+    error,
+    resumePosition,
+    pianoSinkId,
+    choirSinkId,
+    outputRoutingSupported,
     /* derived */
     current,
     currentSong,
@@ -509,6 +788,7 @@ export const usePlayerStore = defineStore('player', () => {
     pause,
     toggle,
     stop,
+    panicStop,
     seek,
     next,
     prev,
@@ -537,5 +817,19 @@ export const usePlayerStore = defineStore('player', () => {
     toggleChoirMute,
     togglePianoSolo,
     toggleChoirSolo,
+    muteAll,
+    /* outputs */
+    setPianoSink,
+    setChoirSink,
+    enumerateOutputs,
+    requestOutputPermission,
+    /* resume position */
+    setResumePosition,
+    saveCurrentPosition,
+    /* error reporting */
+    setError,
+    clearError,
+    /* lifecycle */
+    dispose,
   }
 })

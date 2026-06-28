@@ -22,10 +22,13 @@ press play.
 ## Highlights
 
 - Dual-track playback with independent piano / choir / master volumes
+- Per-track audio output routing — send piano to the room, choir to in-ears
 - Per-service setlists with drag-and-drop ordering and per-item mix presets
 - Real waveform seek bar computed from the decoded audio
 - Section markers (cues) you can drop anywhere on the timeline
-- A-B loop and draggable fade-out regions
+- A-B loop and draggable fade-out regions with on-waveform ramp preview
+- Panic stop (fade-out-and-stop) for moments that need to go silent now
+- Optional per-song resume position for rehearsal pickup
 - New / Old tag on songs with library filtering
 - Search for services by name, date, or song title
 - Library backup (export / import JSON with blobs inlined as base64)

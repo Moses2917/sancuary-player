@@ -91,10 +91,11 @@ The floating player pod at the top of the page stays visible while you
 scroll. It shows:
 
 - The song title and service name
-- Transport (previous, play / pause, next)
+- Transport (previous, play / pause, next, panic stop)
 - A thick waveform with the current playhead
-- Loop and cue and fade tools
+- Loop, cue, fade, and outputs tools
 - Piano / Choir / Master volume sliders with percentage readouts
+- A dismissible red banner when audio fails to load or play
 
 Click **Expand** (top-right of the pod) to open the full-screen Now Playing
 view, suitable for projecting on a second screen.
@@ -130,12 +131,48 @@ A fade region scales every track's volume linearly from full at the start
 down to zero (or a chosen target) at the end.
 
 - Tap **Fade** to drop an 8-second fade starting at the playhead.
-- Drag the gray box body to move the whole region.
-- Drag either dashed edge to resize.
+- Drag the body of the box to move the whole region.
+- Drag either solid edge handle to resize; the duration pill updates live.
 - Click the **x** in the corner of the box to remove it.
 
-Multiple fades can coexist on a single song. They're saved per song, so
-they apply every time you play that song.
+The box itself shows a red ramp gradient from faint (start) to strong (end)
+so you can see at a glance where the audio tapers off. Multiple fades can
+coexist on a single song. They're saved per song, so they apply every time
+you play that song.
+
+### Audio outputs
+
+The **Outputs** tool in the player pod lets you route piano and choir to
+separate audio devices — for example, piano to the main speakers and choir
+to the choir's in-ear monitors.
+
+- Open the panel from any track's mix area.
+- The first time, the browser will ask for microphone permission. This is
+  only used to unlock readable device names; no audio is captured.
+- Pick a destination for each track. **System default** sends both to your
+  normal output (the default behaviour).
+- **Reset both to default** restores the single-output setup.
+- **Refresh list** re-scans for newly plugged-in devices.
+
+Routing uses `HTMLMediaElement.setSinkId`, so it works in Chrome, Edge, and
+Firefox 136+. The panel shows a notice on Safari, which doesn't support
+per-element output routing.
+
+### Panic stop
+
+The red square next to the transport buttons triggers an instant
+fade-out-and-stop: volume ramps to zero over roughly half a second, then
+playback pauses and rewinds to the start. Useful when something needs to
+go silent immediately (a pastoral prayer, an unplanned announcement).
+
+### Resume position (rehearsal mode)
+
+Under **Rehearsal tools** inside the Outputs panel, tick **Remember
+playhead position** to have Sanctuary Player save where you left off in
+each song and restore it the next time you open that song. Handy for
+rehearsing a tricky passage across multiple sittings without scrubbing
+back to it each time. Turn it off during services so songs always start
+from the top.
 
 ## Print / PDF setlist
 
@@ -146,8 +183,15 @@ blank notes column. Choose "Save as PDF" as the destination to export.
 ## Keyboard shortcuts
 
 - **Space** - play / pause
+- **ArrowRight** / **ArrowLeft** - seek ±5 seconds
 - **Shift + ArrowRight** - next track
 - **Shift + ArrowLeft** - previous track
+- **M** - mute both tracks (toggle)
+- **P** - toggle piano mute
+- **C** - toggle choir mute
+- **L** - toggle A-B loop
+- **F** - drop a fade region at the playhead
+- **1..9** - jump to the Nth cue marker
 - **Escape** - stop
 
 Shortcuts are ignored while typing in an input.

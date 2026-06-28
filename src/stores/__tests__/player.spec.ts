@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePlayerStore } from '@/stores/player'
 import { useLibraryStore } from '@/stores/library'
@@ -541,6 +541,257 @@ describe('player store', () => {
       piano.__dispatch('timeupdate') // halfway through fade → ~0.5 multiplier
       // The actual element volume = pianoVol(1) * master(0.9) * fade(0.5) = 0.45
       expect(piano.volume).toBeCloseTo(0.45, 2)
+    })
+  })
+
+  describe('solo refactor', () => {
+    it('piano solo silences choir; choir solo turns piano solo off', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
+      const { piano, choir } = grabElements()
+      player.togglePianoSolo()
+      expect(player.pianoSolo).toBe(true)
+      expect(player.choirSolo).toBe(false)
+      expect(piano.volume).toBeGreaterThan(0)
+      expect(choir.volume).toBe(0)
+
+      player.toggleChoirSolo()
+      expect(player.pianoSolo).toBe(false)
+      expect(player.choirSolo).toBe(true)
+      expect(piano.volume).toBe(0)
+      expect(choir.volume).toBeGreaterThan(0)
+    })
+
+    it('toggling the same solo twice clears it', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      player.togglePianoSolo()
+      expect(player.pianoSolo).toBe(true)
+      player.togglePianoSolo()
+      expect(player.pianoSolo).toBe(false)
+      expect(player.choirSolo).toBe(false)
+    })
+  })
+
+  describe('muteAll', () => {
+    it('mutes both tracks together', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
+      const { piano, choir } = grabElements()
+      player.muteAll()
+      expect(player.pianoMuted).toBe(true)
+      expect(player.choirMuted).toBe(true)
+      expect(piano.volume).toBe(0)
+      expect(choir.volume).toBe(0)
+    })
+  })
+
+  describe('panicStop', () => {
+    it('pauses and rewinds both elements to zero', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
+      const { piano, choir } = grabElements()
+      piano.currentTime = 30
+      choir.currentTime = 30
+      await player.panicStop()
+      expect(piano.paused).toBe(true)
+      expect(choir.paused).toBe(true)
+      expect(piano.currentTime).toBe(0)
+      expect(choir.currentTime).toBe(0)
+      expect(player.isPlaying).toBe(false)
+      // fade multiplier is restored so subsequent playback isn't silent.
+      expect(player.fadeMultiplier).toBe(1)
+    })
+  })
+
+  describe('audio output routing', () => {
+    // Pretend the browser supports setSinkId by attaching it to the prototype.
+    const proto = HTMLMediaElement.prototype as unknown as Record<string, unknown>
+    const sinkCalls: string[] = []
+    let hadSetSinkId: unknown
+
+    beforeEach(() => {
+      hadSetSinkId = proto.setSinkId
+      sinkCalls.length = 0
+      proto.setSinkId = function (this: { sinkId?: string }, id: string) {
+        this.sinkId = id
+        sinkCalls.push(id)
+        return Promise.resolve()
+      }
+    })
+    afterEach(() => {
+      if (hadSetSinkId === undefined) delete proto.setSinkId
+      else proto.setSinkId = hadSetSinkId
+    })
+
+    it('setPianoSink routes the piano element only', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano, choir } = grabElements()
+      await player.setPianoSink('sink-piano')
+      expect(piano.sinkId).toBe('sink-piano')
+      expect(choir.sinkId).toBe('')
+    })
+
+    it('setChoirSink routes the choir element only', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano, choir } = grabElements()
+      await player.setChoirSink('sink-choir')
+      expect(choir.sinkId).toBe('sink-choir')
+      expect(piano.sinkId).toBe('')
+    })
+
+    it('defaults both tracks to the same (empty) sink', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      expect(player.pianoSinkId).toBe('')
+      expect(player.choirSinkId).toBe('')
+    })
+  })
+
+  describe('resume position', () => {
+    it('does not restore position when disabled', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Resumable',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      // Pre-seed a saved position.
+      await library.updateSong(song.id, { position: 42 })
+      player.setResumePosition(false)
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 1 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      expect(player.currentTime).toBe(0)
+    })
+
+    it('restores the saved position when enabled', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Resumable',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await library.updateSong(song.id, { position: 42 })
+      player.setResumePosition(true)
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 1 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      expect(player.currentTime).toBeCloseTo(42, 5)
+      expect(piano.currentTime).toBeCloseTo(42, 5)
+    })
+  })
+
+  describe('error reporting', () => {
+    it('exposes and clears errors', async () => {
+      const player = usePlayerStore()
+      expect(player.error).toBeNull()
+      player.setError('boom')
+      expect(player.error).toBe('boom')
+      player.clearError()
+      expect(player.error).toBeNull()
+    })
+
+    it('reports a blocked play() as a user-facing error', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano, choir } = grabElements()
+      // Force both play() calls to reject, simulating a blocked autoplay.
+      const pianoPlay = piano.play.bind(piano)
+      const choirPlay = choir.play.bind(choir)
+      piano.play = () => Promise.reject(new DOMException('blocked', 'NotAllowedError'))
+      choir.play = () => Promise.reject(new DOMException('blocked', 'NotAllowedError'))
+      try {
+        await player.play()
+        expect(player.error).toContain('blocked')
+        expect(player.isPlaying).toBe(false)
+      } finally {
+        piano.play = pianoPlay
+        choir.play = choirPlay
+      }
+    })
+
+    it('reports a partial failure when only one track rejects', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      const pianoPlay = piano.play.bind(piano)
+      piano.play = () => Promise.reject(new DOMException('blocked', 'NotAllowedError'))
+      try {
+        await player.play()
+        // Choir still started, so the player reflects that.
+        expect(player.isPlaying).toBe(true)
+        expect(player.error).toContain('One of the tracks failed')
+      } finally {
+        piano.play = pianoPlay
+      }
     })
   })
 })

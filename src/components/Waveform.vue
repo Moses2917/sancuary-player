@@ -405,7 +405,7 @@ defineExpose({ redraw: draw })
       <span class="waveform__marker-dot" />
     </button>
 
-    <!-- Draggable fade regions: gray translucent boxes with resize handles. -->
+    <!-- Draggable fade regions: gradient-filled boxes with grabbable resize handles. -->
     <div
       v-for="fade in fades"
       :key="fade.id"
@@ -414,21 +414,29 @@ defineExpose({ redraw: draw })
         left: duration > 0 ? `${(fade.start / duration) * 100}%` : '0%',
         width:
           duration > 0 ? `${((fade.end - fade.start) / duration) * 100}%` : '0%',
+        '--fade-target': fadeTargetPercent(fade),
       }"
     >
+      <div class="fade__ramp" />
       <div
         class="fade__handle fade__handle--start"
         @pointerdown="startFadeDrag($event, fade, 'start')"
-      />
+      >
+        <span class="fade__grip" />
+      </div>
       <div
         class="fade__body"
-        title="Drag to move the fade region"
+        title="Drag to move · drag edges to resize"
         @pointerdown="startFadeDrag($event, fade, 'move')"
-      />
+      >
+        <span class="fade__label">{{ formatFadeDuration(fade) }}</span>
+      </div>
       <div
         class="fade__handle fade__handle--end"
         @pointerdown="startFadeDrag($event, fade, 'end')"
-      />
+      >
+        <span class="fade__grip" />
+      </div>
       <button
         class="fade__close"
         title="Remove fade"
@@ -449,7 +457,20 @@ function formatMarkerTime(t: number): string {
   const s = total % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 }
-export { formatMarkerTime }
+
+function formatFadeDuration(fade: { end: number; start: number }): string {
+  const s = Math.max(0, fade.end - fade.start)
+  if (!Number.isFinite(s) || s <= 0) return '0s'
+  if (s < 10) return `${s.toFixed(1)}s`
+  return `${Math.round(s)}s`
+}
+
+function fadeTargetPercent(fade: { toVolume?: number }): string {
+  const v = fade.toVolume ?? 0
+  return `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`
+}
+
+export { formatMarkerTime, formatFadeDuration, fadeTargetPercent }
 </script>
 
 <style scoped>
@@ -495,18 +516,21 @@ export { formatMarkerTime }
   border: 2px solid var(--c-surface-raised);
 }
 
-/* Fade regions: gray translucent boxes with resize handles. */
+/* Fade regions: translucent box with a visible volume ramp inside,
+ * grabbable resize handles on each edge, and a duration label. */
 .fade {
   position: absolute;
   top: 0;
   height: 100%;
-  background: rgba(0, 0, 0, 0.07);
-  border-left: 1px dashed rgba(0, 0, 0, 0.4);
-  border-right: 1px dashed rgba(0, 0, 0, 0.4);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border-left: 2px solid rgba(0, 0, 0, 0.45);
+  border-right: 2px solid rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
   pointer-events: auto;
   cursor: grab;
   user-select: none;
+  box-sizing: border-box;
+  --fade-target: 0%;
 }
 .fade:active {
   cursor: grabbing;
@@ -514,20 +538,65 @@ export { formatMarkerTime }
 .fade__body {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+/* The visual ramp: solid at the right edge (target volume), faint at the left.
+ * Drives home "this is where the sound tapers off". */
+.fade__ramp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(232, 71, 76, 0.05) 0%,
+    rgba(232, 71, 76, 0.32) var(--fade-target, 0%) 100%
+  );
+  /* Ramp fades from low alpha on the left to high alpha at the right end. */
+  opacity: 0.85;
+}
+.fade__label {
+  position: relative;
+  z-index: 1;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(232, 71, 76, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  white-space: nowrap;
 }
 .fade__handle {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 8px;
+  width: 14px;
   cursor: ew-resize;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .fade__handle--start {
-  left: -4px;
+  left: -8px;
 }
 .fade__handle--end {
-  right: -4px;
+  right: -8px;
+}
+.fade__grip {
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  transition: background var(--dur-fast) var(--ease);
+}
+.fade__handle:hover .fade__grip {
+  background: var(--c-accent);
 }
 .fade__close {
   position: absolute;
@@ -545,11 +614,25 @@ export { formatMarkerTime }
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  z-index: 2;
+  z-index: 3;
   padding: 0;
 }
 .fade__close:hover {
   background: var(--c-danger);
   color: #fff;
+}
+@media (max-width: 600px) {
+  .fade__label {
+    display: none;
+  }
+  .fade__handle {
+    width: 22px;
+  }
+  .fade__handle--start {
+    left: -11px;
+  }
+  .fade__handle--end {
+    right: -11px;
+  }
 }
 </style>

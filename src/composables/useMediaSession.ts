@@ -66,9 +66,12 @@ export function useMediaSession() {
     trySet(() => player.stop(), 'stop')
     trySet(
       (details) => {
-        const offset = details.seekOffset ?? 10
-        const target = Math.max(0, player.currentTime + (details.seekOffset ? offset : 0))
-        void player.seek(details.seekTime ?? target)
+        // `seekTime` is an absolute target; if absent, fall back to the
+        // current position so we still report an accurate position state.
+        const target = Number.isFinite(details.seekTime as number)
+          ? (details.seekTime as number)
+          : player.currentTime
+        void player.seek(target)
       },
       'seekto',
     )

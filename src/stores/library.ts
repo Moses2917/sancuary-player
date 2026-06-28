@@ -104,7 +104,7 @@ export const useLibraryStore = defineStore('library', () => {
    */
   async function updateSong(
     id: string,
-    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'title'>>,
+    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'title' | 'position'>>,
   ) {
     const song = getById(id)
     if (!song) return undefined

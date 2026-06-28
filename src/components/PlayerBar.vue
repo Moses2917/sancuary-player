@@ -2,8 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  AlertTriangle,
   Expand,
   Flag,
+  Headphones,
   Music,
   Pause,
   Play,
@@ -12,12 +14,14 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  X,
 } from '@lucide/vue'
 import { usePlayerStore } from '@/stores/player'
 import { computePeaks } from '@/utils/waveform'
 import { formatTime } from '@/utils'
 import VolumeSlider from './VolumeSlider.vue'
 import Waveform from './Waveform.vue'
+import AudioOutputs from './AudioOutputs.vue'
 
 const router = useRouter()
 const player = usePlayerStore()
@@ -28,6 +32,8 @@ const peaks = ref<number[]>([])
 const peaksLoading = ref(false)
 /** When true, clicking the waveform drops a cue at the clicked position. */
 const placeCueMode = ref(false)
+/** When true, the audio outputs panel is shown. */
+const showOutputs = ref(false)
 
 async function refreshPeaks() {
   const song = player.currentSong
@@ -104,6 +110,18 @@ const loopLabel = computed(() => {
 
 <template>
   <section class="pod surface" :class="{ 'pod--empty': !hasSong }">
+    <div v-if="player.error" class="pod__error" role="alert">
+      <AlertTriangle :size="14" :stroke-width="2" />
+      <span class="pod__error-text">{{ player.error }}</span>
+      <button
+        class="pod__error-close"
+        title="Dismiss"
+        @click="player.clearError()"
+      >
+        <X :size="14" :stroke-width="2" />
+      </button>
+    </div>
+
     <header class="pod__head">
       <div class="pod__art" :class="{ 'pod__art--playing': player.isPlaying }">
         <Music :size="20" :stroke-width="1.5" />
@@ -160,6 +178,14 @@ const loopLabel = computed(() => {
           @click="player.next()"
         >
           <SkipForward :size="18" :stroke-width="1.75" />
+        </button>
+        <button
+          class="icon-btn pod__panic"
+          :disabled="!hasSong"
+          title="Panic: fade out and stop (Esc twice)"
+          @click="player.panicStop()"
+        >
+          <span aria-hidden="true">■</span>
         </button>
       </div>
 
@@ -241,6 +267,19 @@ const loopLabel = computed(() => {
       >
         <ScissorsLineDashed :size="13" :stroke-width="2" /> <span>Fade</span>
       </button>
+      <span class="tool__sep" aria-hidden="true" />
+      <div class="pod__outputs-wrap">
+        <button
+          class="tool"
+          :class="{ 'tool--on': showOutputs }"
+          title="Route piano and choir to separate audio outputs"
+          @click="showOutputs = !showOutputs"
+        >
+          <Headphones :size="13" :stroke-width="2" />
+          <span>Outputs</span>
+        </button>
+        <AudioOutputs v-if="showOutputs" @close="showOutputs = false" />
+      </div>
     </div>
 
     <div class="pod__mix">
@@ -315,6 +354,58 @@ const loopLabel = computed(() => {
   flex-direction: column;
   gap: var(--sp-3);
   box-shadow: var(--sh-md);
+}
+
+/* Error banner */
+.pod__error {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: rgba(232, 71, 76, 0.12);
+  color: var(--c-danger, #c01f25);
+  font-size: 0.8rem;
+  font-weight: 550;
+  line-height: 1.3;
+}
+.pod__error-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pod__error-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.pod__error-close:hover {
+  background: rgba(232, 71, 76, 0.18);
+}
+
+/* Panic stop — visually distinct (red square) */
+.pod__panic {
+  margin-left: 6px;
+  color: var(--c-danger, #c01f25);
+}
+.pod__panic:hover:not(:disabled) {
+  background: rgba(232, 71, 76, 0.14);
+}
+.pod__panic span {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* Outputs panel wrapper (anchors the floating panel) */
+.pod__outputs-wrap {
+  position: relative;
 }
 
 /* HEAD */
