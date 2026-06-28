@@ -200,4 +200,44 @@ describe('library store', () => {
     await lib.removeFade(song.id, fade!.id)
     expect(lib.getById(song.id)?.fades ?? []).toEqual([])
   })
+
+  it('addCut stores a cut region, updateCut patches it, removeCut drops it', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    const cut = await lib.addCut(song.id, { start: 30, end: 50 })
+    expect(cut?.id).toBeTruthy()
+    expect(lib.getById(song.id)?.cuts?.length).toBe(1)
+    expect(lib.getById(song.id)?.cuts?.[0]).toMatchObject({ start: 30, end: 50 })
+
+    // Patch the splice shape.
+    await lib.updateCut(song.id, cut!.id, { end: 48, curve: 'ease', fadeMs: 250 })
+    expect(lib.getById(song.id)?.cuts?.[0]).toMatchObject({
+      start: 30,
+      end: 48,
+      curve: 'ease',
+      fadeMs: 250,
+    })
+
+    await lib.removeCut(song.id, cut!.id)
+    expect(lib.getById(song.id)?.cuts ?? []).toEqual([])
+  })
+
+  it('keeps cut regions sorted by start', async () => {
+    const lib = useLibraryStore()
+    await lib.init()
+    const song = await lib.addSong({
+      title: 'X',
+      piano: makeNoiseWavFile('p.wav'),
+      choir: makeNoiseWavFile('c.wav'),
+    })
+    await lib.addCut(song.id, { start: 60, end: 70 })
+    await lib.addCut(song.id, { start: 10, end: 20 })
+    const starts = lib.getById(song.id)?.cuts?.map((c) => c.start)
+    expect(starts).toEqual([10, 60])
+  })
 })

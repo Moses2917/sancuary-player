@@ -515,7 +515,7 @@ export const usePlayerStore = defineStore('player', () => {
       const fadeSec = cutFadeSec(inside)
       setCutMult(0)
       spliceState = { startedWall: performance.now(), curve: cutCurveOf(inside), fadeSec }
-      void seek(inside.end)
+      seekTo(inside.end)
       return
     }
 
@@ -702,14 +702,19 @@ export const usePlayerStore = defineStore('player', () => {
     if (!pianoEl) return
     // Don't allow manual seeks to land inside a removed region — jump to its
     // end. Also cancel any in-flight splice fade-in so we don't ramp on a
-    // position the user just abandoned.
+    // position the user just abandoned, and lift any active duck.
     spliceState = null
-    const target = resolveCutClamp(time)
+    setCutMult(1)
+    seekTo(resolveCutClamp(time))
+  }
+
+  /** Low-level seek used by the dip engine: sets both elements + the exposed
+   *  time but leaves the cut multiplier untouched (the splice manages that). */
+  function seekTo(target: number) {
     driftGuard = true
-    pianoEl.currentTime = target
+    pianoEl!.currentTime = target
     if (choirEl && choirEl.src) choirEl.currentTime = target
     currentTime.value = target
-    setCutMult(1)
     requestAnimationFrame(() => (driftGuard = false))
   }
 

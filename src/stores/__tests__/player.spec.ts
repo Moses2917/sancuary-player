@@ -794,4 +794,142 @@ describe('player store', () => {
       }
     })
   })
+
+  describe('cut regions', () => {
+    // The dip engine reschedules itself on rAF every frame while playing.
+    // The default test shim auto-flushes each rAF as a microtask, which would
+    // spin forever. Swap in a manual stepper so we advance frame-by-frame.
+    const pendingFrames: FrameRequestCallback[] = []
+    let origRAF: typeof requestAnimationFrame
+    let origCancel: typeof cancelAnimationFrame
+
+    beforeEach(() => {
+      pendingFrames.length = 0
+      origRAF = globalThis.requestAnimationFrame
+      origCancel = globalThis.cancelAnimationFrame
+      globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+        pendingFrames.push(cb)
+        return pendingFrames.length
+      }) as typeof requestAnimationFrame
+      globalThis.cancelAnimationFrame = (() => {}) as typeof cancelAnimationFrame
+    })
+    afterEach(() => {
+      globalThis.requestAnimationFrame = origRAF
+      globalThis.cancelAnimationFrame = origCancel
+      pendingFrames.length = 0
+    })
+
+    /** Run only the frames queued so far (reschedules wait for the next call). */
+    const flushFrames = () => {
+      const batch = pendingFrames.splice(0)
+      for (const cb of batch) cb(performance.now())
+    }
+
+    async function loadWithCut(cut: { start: number; end: number; fadeMs?: number; curve?: 'linear' | 'equalPower' | 'ease' | 'fast' }, autoplay = false) {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Cut',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await library.addCut(song.id, cut)
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 1 }]),
+        [library.getById(song.id)!],
+        0,
+        autoplay,
+      )
+      player.duration = 100
+      return player
+    }
+
+    it('addCutHere creates a cut at the playhead with the default smoothing', async () => {
+      const player = usePlayerStore()
+      const library = useLibraryStore()
+      await library.init()
+      const song = await library.addSong({
+        title: 'Cut',
+        piano: makeNoiseWavFile('p.wav'),
+        choir: makeNoiseWavFile('c.wav'),
+      })
+      await player.load(
+        makeService([{ id: 'i1', songId: song.id, pianoVolume: 1, choirVolume: 1 }]),
+        [library.getById(song.id)!],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      player.duration = 100
+      piano.currentTime = 20
+      piano.__dispatch('timeupdate')
+      await player.addCutHere(16)
+      expect(player.currentCuts.length).toBe(1)
+      expect(player.currentCuts[0]).toMatchObject({ start: 20, end: 36 })
+      expect(player.currentCuts[0]?.curve).toBe('equalPower')
+      expect(player.currentCuts[0]?.fadeMs).toBe(120)
+    })
+
+    it('updateCut and removeCut mutate the current song', async () => {
+      const player = await loadWithCut({ start: 10, end: 20 })
+      const id = player.currentCuts[0]!.id
+      await player.updateCut(id, { curve: 'linear', fadeMs: 0 })
+      expect(player.currentCuts[0]).toMatchObject({ curve: 'linear', fadeMs: 0 })
+      await player.removeCut(id)
+      expect(player.currentCuts.length).toBe(0)
+    })
+
+    it('seek() into a cut snaps to its end; seeking to the end is allowed', async () => {
+      const player = await loadWithCut({ start: 10, end: 20 })
+      const { piano } = grabElements()
+      await player.seek(15) // inside the removed span
+      expect(player.currentTime).toBeCloseTo(20, 5)
+      expect(piano.currentTime).toBeCloseTo(20, 5)
+      await player.seek(20) // boundary stays put
+      expect(player.currentTime).toBe(20)
+      await player.seek(5) // before the cut is untouched
+      expect(player.currentTime).toBe(5)
+    })
+
+    it('ducks and jumps to the cut end when the playhead enters a cut', async () => {
+      const player = await loadWithCut({ start: 10, end: 20, fadeMs: 120 })
+      await player.play()
+      // Let the isPlaying watch fire and queue the dip engine's first frame.
+      await new Promise((r) => setTimeout(r, 0))
+      const { piano } = grabElements()
+      piano.currentTime = 15 // landed inside the cut
+      flushFrames()
+      expect(piano.currentTime).toBeCloseTo(20, 5)
+      expect(player.cutMultiplier).toBe(0)
+    })
+
+    it('ramps the volume down as the playhead approaches a cut (equal-power)', async () => {
+      const player = await loadWithCut({ start: 10, end: 20, fadeMs: 120 })
+      await player.play()
+      await new Promise((r) => setTimeout(r, 0))
+      const { piano } = grabElements()
+      // Halfway through the 120ms approach window [9.88, 10] → ~0.707 gain.
+      piano.currentTime = 9.94
+      flushFrames()
+      expect(player.cutMultiplier).toBeGreaterThan(0.6)
+      expect(player.cutMultiplier).toBeLessThan(0.8)
+      // Effective element volume = piano(1) * master(0.9) * cut(0.707) ≈ 0.64
+      expect(piano.volume).toBeGreaterThan(0.55)
+      expect(piano.volume).toBeLessThan(0.7)
+    })
+
+    it('returns to full volume after a hard cut lands', async () => {
+      const player = await loadWithCut({ start: 10, end: 20, fadeMs: 0 })
+      await player.play()
+      await new Promise((r) => setTimeout(r, 0))
+      const { piano } = grabElements()
+      piano.currentTime = 15
+      flushFrames() // jump frame: duck to 0
+      expect(player.cutMultiplier).toBe(0)
+      flushFrames() // with no fade, the fade-in completes immediately
+      expect(player.cutMultiplier).toBe(1)
+      expect(piano.currentTime).toBeCloseTo(20, 5)
+    })
+  })
 })
