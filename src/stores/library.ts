@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import * as idb from '@/db/idb'
 import type {
   BundledSongManifestEntry,
+  CutRegion,
   FadeRegion,
   SectionMarker,
   Song,
@@ -104,7 +105,7 @@ export const useLibraryStore = defineStore('library', () => {
    */
   async function updateSong(
     id: string,
-    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'title' | 'position'>>,
+    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'cuts' | 'title' | 'position'>>,
   ) {
     const song = getById(id)
     if (!song) return undefined
@@ -158,6 +159,33 @@ export const useLibraryStore = defineStore('library', () => {
     return updateSong(id, { fades: nextFades })
   }
 
+  /** Add a cut (skip) region to a song. */
+  async function addCut(id: string, cut: Omit<CutRegion, 'id'>) {
+    const song = getById(id)
+    if (!song) return undefined
+    const region: CutRegion = { id: uid('cut'), ...cut }
+    const cuts = [...(song.cuts ?? []), region].sort((a, b) => a.start - b.start)
+    const updated = await updateSong(id, { cuts })
+    return updated ? region : undefined
+  }
+
+  /** Remove a cut region by id. */
+  async function removeCut(id: string, cutId: string) {
+    const song = getById(id)
+    if (!song || !song.cuts) return undefined
+    const cuts = song.cuts.filter((c) => c.id !== cutId)
+    return updateSong(id, { cuts })
+  }
+
+  /** Patch a cut region's start/end/fadeMs/curve. */
+  async function updateCut(id: string, cutId: string, patch: Partial<CutRegion>) {
+    const song = getById(id)
+    if (!song || !song.cuts) return undefined
+    let nextCuts = song.cuts.map((c) => (c.id === cutId ? { ...c, ...patch } : c))
+    nextCuts = [...nextCuts].sort((a, b) => a.start - b.start)
+    return updateSong(id, { cuts: nextCuts })
+  }
+
   /** Fetch the manifest and report which entries aren't already imported. */
   async function fetchBundledManifest(): Promise<FetchedManifest> {
     const res = await fetch('/audio/manifest.json', { cache: 'no-cache' })
@@ -203,6 +231,9 @@ export const useLibraryStore = defineStore('library', () => {
     addFade,
     removeFade,
     updateFade,
+    addCut,
+    removeCut,
+    updateCut,
     fetchBundledManifest,
     importBundled,
   }

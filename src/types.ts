@@ -38,6 +38,33 @@ export interface FadeRegion {
   toVolume?: number
 }
 
+/**
+ * Fade curve shape used by the cut-region splice ramp. Mirrors the common
+ * crossfade options found in NLEs (DaVinci Resolve / Fairlight): linear
+ * (constant gain), equal-power (constant power, the smoothest default),
+ * ease (S-curve), and fast (exponential).
+ */
+export type CutCurve = 'linear' | 'equalPower' | 'ease' | 'fast'
+
+/**
+ * A cut (skip) region on a song's timeline. The audio between `start` and
+ * `end` is removed from playback: when the playhead reaches `start` it
+ * jumps to `end`. A short volume "dip" (fade out → jump → fade in) shaped
+ * by `curve` over `fadeMs` per side masks the splice so it's inaudible.
+ * Applied to every track in lockstep (the player already drives them together).
+ */
+export interface CutRegion {
+  id: string
+  /** Seconds from the start of the track; the last moment kept before the jump. */
+  start: number
+  /** Seconds from the start of the track; where playback resumes. Must be > start. */
+  end: number
+  /** Smoothing ramp length in milliseconds, applied to each side of the dip. 0 = hard cut. */
+  fadeMs?: number
+  /** Fade curve shape for the dip. Defaults to equalPower. */
+  curve?: CutCurve
+}
+
 export interface Song {
   id: string
   title: string
@@ -51,6 +78,8 @@ export interface Song {
   markers?: SectionMarker[]
   /** Saved fade regions for this song, applied during playback. */
   fades?: FadeRegion[]
+  /** Saved cut (skip) regions for this song; playback jumps over each one. */
+  cuts?: CutRegion[]
   /** Last-known playhead position in seconds; used by "resume position" rehearsal mode. */
   position?: number
   createdAt: number
