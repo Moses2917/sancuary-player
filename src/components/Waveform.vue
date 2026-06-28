@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { FadeRegion } from '@/types'
+import type { CutRegion, FadeRegion } from '@/types'
 
 /**
- * Marker / loop / fade overlays drawn on top of the waveform.
+ * Marker / loop / fade / cut overlays drawn on top of the waveform.
  * Times are in seconds.
  */
 export interface WaveformMarker {
@@ -21,6 +21,7 @@ const props = withDefaults(
     markers?: WaveformMarker[]
     loop?: { start: number; end: number } | null
     fades?: FadeRegion[]
+    cuts?: CutRegion[]
     height?: number
     accent?: string
     disabled?: boolean
@@ -35,6 +36,7 @@ const props = withDefaults(
     markers: () => [],
     loop: null,
     fades: () => [],
+    cuts: () => [],
     height: 56,
     accent: 'var(--c-accent)',
     disabled: false,
@@ -50,6 +52,8 @@ const emit = defineEmits<{
   (e: 'add-cue-at', time: number): void
   (e: 'update-fade', id: string, patch: Partial<FadeRegion>): void
   (e: 'remove-fade', id: string): void
+  (e: 'update-cut', id: string, patch: Partial<CutRegion>): void
+  (e: 'remove-cut', id: string): void
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -289,7 +293,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopRaf()
   onDragEnd() // removes any lingering window listeners
-  onFadeDragEnd()
+  onRegionDragEnd()
   ro?.disconnect()
   window.removeEventListener('devicepixelratiochange', resize)
 })
@@ -308,7 +312,7 @@ watch(
 )
 
 watch(
-  () => [props.peaks, props.duration, props.markers, props.loop, props.fades, props.height, props.accent],
+  () => [props.peaks, props.duration, props.markers, props.loop, props.fades, props.cuts, props.height, props.accent],
   () => draw(),
   { deep: true },
 )
@@ -322,10 +326,12 @@ watch(
   },
 )
 
-/* ---------- fade region dragging ---------- */
-const MIN_FADE_LEN = 0.5 // seconds; prevents zero-length regions
+/* ---------- region dragging (fades + cuts) ---------- */
+const MIN_REGION_LEN = 0.5 // seconds; prevents zero-length regions
 type DragMode = 'move' | 'start' | 'end'
-let fadeDrag: {
+type RegionKind = 'fade' | 'cut'
+let regionDrag: {
+  kind: RegionKind
   id: string
   mode: DragMode
   startClientX: number
@@ -334,27 +340,36 @@ let fadeDrag: {
   rectWidth: number
 } | null = null
 
-function startFadeDrag(e: PointerEvent, fade: FadeRegion, mode: DragMode) {
+/** Open cut transition popover, keyed by cut id; null when closed. */
+const openCutMenu = ref<string | null>(null)
+
+function startRegionDrag(
+  e: PointerEvent,
+  kind: RegionKind,
+  region: { id: string; start: number; end: number },
+  mode: DragMode,
+) {
   if (props.disabled || props.duration <= 0) return
   e.stopPropagation()
   e.preventDefault()
   const rect = canvas.value?.getBoundingClientRect()
   const rectWidth = rect?.width ?? 0
-  fadeDrag = {
-    id: fade.id,
+  regionDrag = {
+    kind,
+    id: region.id,
     mode,
     startClientX: e.clientX,
-    origStart: fade.start,
-    origEnd: fade.end,
+    origStart: region.start,
+    origEnd: region.end,
     rectWidth,
   }
-  window.addEventListener('pointermove', onFadeDragMove)
-  window.addEventListener('pointerup', onFadeDragEnd)
-  window.addEventListener('pointercancel', onFadeDragEnd)
+  window.addEventListener('pointermove', onRegionDragMove)
+  window.addEventListener('pointerup', onRegionDragEnd)
+  window.addEventListener('pointercancel', onRegionDragEnd)
 }
 
-function onFadeDragMove(e: PointerEvent) {
-  const drag = fadeDrag
+function onRegionDragMove(e: PointerEvent) {
+  const drag = regionDrag
   if (!drag || drag.rectWidth <= 0) return
   const dxSeconds = ((e.clientX - drag.startClientX) / drag.rectWidth) * props.duration
   const { origStart, origEnd, mode } = drag
@@ -365,19 +380,48 @@ function onFadeDragMove(e: PointerEvent) {
     nextStart = clamp(origStart + dxSeconds, 0, props.duration - len)
     nextEnd = nextStart + len
   } else if (mode === 'start') {
-    nextStart = clamp(origStart + dxSeconds, 0, origEnd - MIN_FADE_LEN)
+    nextStart = clamp(origStart + dxSeconds, 0, origEnd - MIN_REGION_LEN)
   } else if (mode === 'end') {
-    nextEnd = clamp(origEnd + dxSeconds, origStart + MIN_FADE_LEN, props.duration)
+    nextEnd = clamp(origEnd + dxSeconds, origStart + MIN_REGION_LEN, props.duration)
   }
-  emit('update-fade', drag.id, { start: nextStart, end: nextEnd })
+  const patch = { start: nextStart, end: nextEnd }
+  if (drag.kind === 'fade') emit('update-fade', drag.id, patch)
+  else emit('update-cut', drag.id, patch)
 }
 
-function onFadeDragEnd() {
-  fadeDrag = null
-  window.removeEventListener('pointermove', onFadeDragMove)
-  window.removeEventListener('pointerup', onFadeDragEnd)
-  window.removeEventListener('pointercancel', onFadeDragEnd)
+function onRegionDragEnd() {
+  regionDrag = null
+  window.removeEventListener('pointermove', onRegionDragMove)
+  window.removeEventListener('pointerup', onRegionDragEnd)
+  window.removeEventListener('pointercancel', onRegionDragEnd)
 }
+
+/** Stop pointer events from reaching the canvas when interacting with a cut menu. */
+function toggleCutMenu(cutId: string) {
+  openCutMenu.value = openCutMenu.value === cutId ? null : cutId
+}
+function setCutCurve(cut: CutRegion, curve: CutRegion['curve']) {
+  emit('update-cut', cut.id, { curve })
+}
+function setCutFadeMs(cut: CutRegion, fadeMs: number) {
+  emit('update-cut', cut.id, { fadeMs })
+}
+
+/** DaVinci-style splice curves (Power = constant power, the smooth default). */
+const curveOptions = [
+  { value: 'equalPower', label: 'Power', title: 'Constant power — smoothest (default)' },
+  { value: 'linear', label: 'Linear', title: 'Constant gain' },
+  { value: 'ease', label: 'Ease', title: 'S-curve' },
+  { value: 'fast', label: 'Fast', title: 'Exponential' },
+] as const
+/** Per-side fade lengths; 0 = hard cut. */
+const fadeOptions = [
+  { value: 0, label: 'Hard' },
+  { value: 60, label: '60ms' },
+  { value: 120, label: '120ms' },
+  { value: 250, label: '250ms' },
+  { value: 500, label: '500ms' },
+] as const
 
 defineExpose({ redraw: draw })
 </script>
@@ -420,20 +464,20 @@ defineExpose({ redraw: draw })
       <div class="fade__ramp" />
       <div
         class="fade__handle fade__handle--start"
-        @pointerdown="startFadeDrag($event, fade, 'start')"
+        @pointerdown="startRegionDrag($event, 'fade', fade, 'start')"
       >
         <span class="fade__grip" />
       </div>
       <div
         class="fade__body"
         title="Drag to move · drag edges to resize"
-        @pointerdown="startFadeDrag($event, fade, 'move')"
+        @pointerdown="startRegionDrag($event, 'fade', fade, 'move')"
       >
         <span class="fade__label">{{ formatFadeDuration(fade) }}</span>
       </div>
       <div
         class="fade__handle fade__handle--end"
-        @pointerdown="startFadeDrag($event, fade, 'end')"
+        @pointerdown="startRegionDrag($event, 'fade', fade, 'end')"
       >
         <span class="fade__grip" />
       </div>
@@ -445,6 +489,86 @@ defineExpose({ redraw: draw })
       >
         ×
       </button>
+    </div>
+
+    <!-- Draggable cut (skip) regions: the removed span is shown as a hatched
+         box with resize handles; a transition button opens the splice picker. -->
+    <div
+      v-for="cut in cuts"
+      :key="cut.id"
+      class="cut"
+      :style="{
+        left: duration > 0 ? `${(cut.start / duration) * 100}%` : '0%',
+        width:
+          duration > 0 ? `${((cut.end - cut.start) / duration) * 100}%` : '0%',
+      }"
+    >
+      <div class="cut__hatch" />
+      <div
+        class="cut__handle cut__handle--start"
+        @pointerdown="startRegionDrag($event, 'cut', cut, 'start')"
+      >
+        <span class="cut__grip" />
+      </div>
+      <div
+        class="cut__body"
+        title="Removed span · drag to move · drag edges to resize"
+        @pointerdown="startRegionDrag($event, 'cut', cut, 'move')"
+      >
+        <span class="cut__label">−{{ formatCutDuration(cut) }}</span>
+        <button
+          class="cut__transition"
+          :title="`Transition: ${curveLabel(cut)} · ${fadeLabel(cut)}`"
+          @click.stop="toggleCutMenu(cut.id)"
+          @pointerdown.stop
+        >
+          {{ curveInitial(cut) }}
+        </button>
+      </div>
+      <div
+        class="cut__handle cut__handle--end"
+        @pointerdown="startRegionDrag($event, 'cut', cut, 'end')"
+      >
+        <span class="cut__grip" />
+      </div>
+      <button
+        class="cut__close"
+        title="Remove cut"
+        @click.stop="emit('remove-cut', cut.id)"
+        @pointerdown.stop
+      >
+        ×
+      </button>
+
+      <!-- Transition picker (DaVinci-style): curve + fade length per side. -->
+      <div v-if="openCutMenu === cut.id" class="cut__menu" @pointerdown.stop @click.stop>
+        <div class="cut__menu-row">
+          <span class="cut__menu-title">Transition</span>
+        </div>
+        <div class="cut__menu-row cut__curves">
+          <button
+            v-for="opt in curveOptions"
+            :key="opt.value"
+            class="cut__chip"
+            :class="{ 'cut__chip--on': (cut.curve ?? 'equalPower') === opt.value }"
+            :title="opt.title"
+            @click="setCutCurve(cut, opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+        <div class="cut__menu-row cut__fades">
+          <button
+            v-for="opt in fadeOptions"
+            :key="opt.value"
+            class="cut__chip"
+            :class="{ 'cut__chip--on': (cut.fadeMs ?? 120) === opt.value }"
+            @click="setCutFadeMs(cut, opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -470,7 +594,39 @@ function fadeTargetPercent(fade: { toVolume?: number }): string {
   return `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`
 }
 
-export { formatMarkerTime, formatFadeDuration, fadeTargetPercent }
+/** Duration of a removed span, formatted with a leading minus sign. */
+function formatCutDuration(cut: { end: number; start: number }): string {
+  const s = Math.max(0, cut.end - cut.start)
+  if (!Number.isFinite(s) || s <= 0) return '0s'
+  if (s < 10) return `${s.toFixed(1)}s`
+  return `${Math.round(s)}s`
+}
+
+const CUT_CURVE_LABELS: Record<string, string> = {
+  equalPower: 'Constant power',
+  linear: 'Linear',
+  ease: 'Ease',
+  fast: 'Fast',
+}
+const CUT_CURVE_INITIALS: Record<string, string> = {
+  equalPower: 'P',
+  linear: 'L',
+  ease: 'E',
+  fast: 'F',
+}
+
+function curveLabel(cut: { curve?: string }): string {
+  return CUT_CURVE_LABELS[cut.curve ?? 'equalPower'] ?? 'Constant power'
+}
+function curveInitial(cut: { curve?: string }): string {
+  return CUT_CURVE_INITIALS[cut.curve ?? 'equalPower'] ?? 'P'
+}
+function fadeLabel(cut: { fadeMs?: number }): string {
+  const ms = cut.fadeMs ?? 120
+  return ms <= 0 ? 'hard cut' : `${ms}ms fade`
+}
+
+export { formatMarkerTime, formatFadeDuration, fadeTargetPercent, formatCutDuration }
 </script>
 
 <style scoped>
@@ -621,6 +777,182 @@ export { formatMarkerTime, formatFadeDuration, fadeTargetPercent }
   background: var(--c-danger);
   color: #fff;
 }
+
+/* Cut (skip) regions: the removed span. Hatched fill + scissors-toned frame
+ * to read as "gone", with the same grabbable handle pattern as fades plus a
+ * transition picker button and a small popover for curve/fade length. */
+.cut {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 2px dashed rgba(232, 71, 76, 0.7);
+  border-right: 2px dashed rgba(232, 71, 76, 0.7);
+  border-radius: 4px;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  box-sizing: border-box;
+}
+.cut:active {
+  cursor: grabbing;
+}
+.cut__hatch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(232, 71, 76, 0.16) 0,
+    rgba(232, 71, 76, 0.16) 6px,
+    rgba(232, 71, 76, 0.05) 6px,
+    rgba(232, 71, 76, 0.05) 12px
+  );
+  opacity: 0.9;
+}
+.cut__body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 2px;
+}
+.cut__label {
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: rgba(232, 71, 76, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.cut__transition {
+  border: 1px solid rgba(232, 71, 76, 0.6);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--c-danger, #c01f25);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cut__transition:hover {
+  background: #fff;
+}
+.cut__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  cursor: ew-resize;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cut__handle--start {
+  left: -8px;
+}
+.cut__handle--end {
+  right: -8px;
+}
+.cut__grip {
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  background: rgba(232, 71, 76, 0.55);
+  transition: background var(--dur-fast) var(--ease);
+}
+.cut__handle:hover .cut__grip {
+  background: var(--c-danger);
+}
+.cut__close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+  padding: 0;
+}
+.cut__close:hover {
+  background: var(--c-danger);
+  color: #fff;
+}
+/* Transition popover: curve chips + per-side fade length chips. */
+.cut__menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  z-index: 4;
+  background: var(--c-surface-raised, #fff);
+  border: 1px solid var(--c-border, #e3e3e8);
+  border-radius: var(--r-md, 8px);
+  box-shadow: var(--sh-md, 0 4px 14px rgba(0, 0, 0, 0.14));
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  white-space: nowrap;
+  cursor: default;
+}
+.cut__menu-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.cut__menu-title {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted, #888);
+  padding: 0 2px;
+}
+.cut__chip {
+  border: 1px solid var(--c-border, #e3e3e8);
+  background: transparent;
+  color: var(--c-text-soft, #555);
+  border-radius: var(--r-pill, 999px);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.cut__chip:hover {
+  background: var(--c-bg-2, #f3f3f6);
+}
+.cut__chip--on {
+  background: var(--c-accent, #2e9e5b);
+  border-color: var(--c-accent, #2e9e5b);
+  color: #fff;
+}
+.cut__chip--on:hover {
+  background: var(--c-accent-deep, #258a50);
+}
 @media (max-width: 600px) {
   .fade__label {
     display: none;
@@ -632,6 +964,18 @@ export { formatMarkerTime, formatFadeDuration, fadeTargetPercent }
     left: -11px;
   }
   .fade__handle--end {
+    right: -11px;
+  }
+  .cut__label {
+    display: none;
+  }
+  .cut__handle {
+    width: 22px;
+  }
+  .cut__handle--start {
+    left: -11px;
+  }
+  .cut__handle--end {
     right: -11px;
   }
 }
