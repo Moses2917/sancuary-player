@@ -23,8 +23,8 @@ src/
 Defined in `src/types.ts`. The shape that matters most:
 
 - **`Song`** - has `piano` and `choir` `TrackSource`s, an optional `tag`
-  (`'new' | 'old'`), an optional list of `SectionMarker`s, and an optional
-  list of `FadeRegion`s.
+  (`'new' | 'old'`), an optional list of `SectionMarker`s, an optional list
+  of `FadeRegion`s, and an optional list of `CutRegion`s.
 - **`Service`** - a named occasion (e.g. "Sunday Morning") with an ordered
   list of `PlaylistItem`s.
 - **`PlaylistItem`** - references a `songId` plus captured `pianoVolume`
@@ -32,6 +32,11 @@ Defined in `src/types.ts`. The shape that matters most:
 - **`SectionMarker`** - `{ id, time, label? }` in seconds.
 - **`FadeRegion`** - `{ id, start, end, toVolume? }`. Volume scales linearly
   from 1 at `start` to `toVolume` (default 0) at `end`.
+- **`CutRegion`** - `{ id, start, end, fadeMs?, curve? }`. The audio between
+  `start` and `end` is removed: playback jumps from `start` to `end`. A
+  short volume dip around the splice, shaped by `curve`
+  (`'linear' | 'equalPower' | 'ease' | 'fast'`, default `equalPower`) over
+  `fadeMs` per side (default 120; 0 = hard cut), masks the join.
 
 `TrackSource` is one of two shapes:
 - a stored `Blob` (when the user picked a file; lives in IndexedDB), or
@@ -65,12 +70,19 @@ choir) and drives them together so they stay sample-locked. Key state:
 - `pianoSinkId`, `choirSinkId`, `outputRoutingSupported`
 - `resumePosition` flag and per-song `position` (stored on the Song)
 - `error` banner message (null when healthy)
-- derived `currentSong`, `currentMarkers`, `currentFades`
+- derived `currentSong`, `currentMarkers`, `currentFades`, `currentCuts`
 
 Notable behaviours:
 - `onTimeUpdate` enforces drift correction (nudges the choir element back
   into sync with piano if drift exceeds 80ms), applies the active loop, and
   recomputes the fade multiplier.
+- Cut (skip) regions are driven by a separate rAF "dip engine" that only
+  runs while playing and the current song has cuts. Each frame it either
+  ramps the cut multiplier down as the playhead approaches a cut start,
+  ducks to silence + seeks both elements to the cut end + begins a fade-in
+  when the playhead lands inside a cut, or ramps back up after a splice.
+  The cut multiplier composes with the fade multiplier in `applyVolumes`.
+  Manual seeks are clamped out of removed spans.
 - `load(svc, songs, startIndex, autoplay)` resolves a service's items
   against the library, builds the queue, and starts playback. If
   `resumePosition` is on and the song has a saved `position`, the playhead
@@ -82,7 +94,7 @@ Notable behaviours:
 - `play` distinguishes total vs partial play() failures and surfaces a
   user-facing `error` instead of swallowing rejections.
 - `seek`, `next`, `prev`, `playSingle` are the transport entry points.
-- Cue and fade edits go through the library store, then `refreshActiveSong`
+- Cue, fade, and cut edits go through the library store, then `refreshActiveSong`
   swaps the in-queue song reference so derived computeds see the new state.
 - `dispose()` tears down listeners and audio elements (used by tests and
   any future hot-reload paths).
@@ -91,8 +103,9 @@ Notable behaviours:
 
 CRUD over the songs store. Provides `addSong`, `addBundledSongs`,
 `updateSong`, plus convenience wrappers `addMarker` / `removeMarker` /
-`addFade` / `removeFade` / `updateFade`. Also handles the bundled-track
-manifest flow (`fetchBundledManifest`, `importBundled`).
+`addFade` / `removeFade` / `updateFade` / `addCut` / `removeCut` /
+`updateCut`. Also handles the bundled-track manifest flow
+(`fetchBundledManifest`, `importBundled`).
 
 ### `useServicesStore` (`src/stores/services.ts`)
 
@@ -116,9 +129,10 @@ Loads and persists app settings (debounced writes): `masterVolume`,
   toggle. Hidden on browsers without `setSinkId` support.
 - **`Waveform.vue`** - canvas renderer for the decoded peaks plus
   interactive overlays (markers, draggable fade regions with a visible
-  ramp gradient). Pointer events bind to `window` during a drag so the
-  user can scrub outside the canvas. A RAF loop interpolates the playhead
-  between `<audio>` timeupdates for smooth 60fps motion.
+  ramp gradient, and draggable cut regions with a transition picker).
+  Pointer events bind to `window` during a drag so the user can scrub
+  outside the canvas. A RAF loop interpolates the playhead between
+  `<audio>` timeupdates for smooth 60fps motion.
 - **`VolumeSlider.vue`** - styled range input with optional percentage
   readout.
 - **`PlaylistRow.vue`**, **`SongPicker.vue`**, **`SongImporter.vue`**,

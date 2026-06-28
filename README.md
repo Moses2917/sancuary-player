@@ -27,6 +27,8 @@ press play.
 - Real waveform seek bar computed from the decoded audio
 - Section markers (cues) you can drop anywhere on the timeline
 - A-B loop and draggable fade-out regions with on-waveform ramp preview
+- Cut (skip) regions that jump over a span on both stems, with a smooth
+  DaVinci-style transition picker (curve + fade length)
 - Panic stop (fade-out-and-stop) for moments that need to go silent now
 - Optional per-song resume position for rehearsal pickup
 - New / Old tag on songs with library filtering
