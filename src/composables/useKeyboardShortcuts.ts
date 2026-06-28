@@ -11,6 +11,7 @@ import { usePlayerStore } from '@/stores/player'
  *   C                  toggle choir mute
  *   L                  toggle A↔B loop
  *   F                  drop a fade region at the playhead
+ *   X                  drop a cut (skip) region at the playhead
  *   1..9               jump to the Nth cue marker
  *   Esc                stop
  */
@@ -66,6 +67,10 @@ export function useKeyboardShortcuts() {
         case 'f':
           e.preventDefault()
           void player.addFadeHere()
+          return
+        case 'x':
+          e.preventDefault()
+          void player.addCutHere()
           return
       }
 

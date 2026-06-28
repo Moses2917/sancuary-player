@@ -79,6 +79,7 @@ function exit() {
           :current="player.currentTime"
           :markers="player.currentMarkers"
           :loop="player.loop"
+          :cuts="player.currentCuts"
           :height="88"
           accent="var(--c-accent)"
           @seek="(t) => player.seek(t)"
