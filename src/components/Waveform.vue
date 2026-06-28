@@ -340,6 +340,25 @@ let regionDrag: {
   rectWidth: number
 } | null = null
 
+/**
+ * Live position of the region currently being dragged, rendered locally so
+ * the box tracks the pointer smoothly WITHOUT round-tripping through the
+ * store + IndexedDB on every move (that re-serialized the whole song —
+ * blobs included — per pixel and made dragging unusably slow). The final
+ * position is emitted once, on pointer drop.
+ */
+const liveRegion = ref<{ id: string; start: number; end: number } | null>(null)
+
+/** Position of a region's edges, preferring the in-flight drag override. */
+function regionStart(region: { id: string; start: number }): number {
+  const live = liveRegion.value
+  return live && live.id === region.id ? live.start : region.start
+}
+function regionEnd(region: { id: string; end: number }): number {
+  const live = liveRegion.value
+  return live && live.id === region.id ? live.end : region.end
+}
+
 /** Open cut transition popover, keyed by cut id; null when closed. */
 const openCutMenu = ref<string | null>(null)
 
@@ -363,6 +382,7 @@ function startRegionDrag(
     origEnd: region.end,
     rectWidth,
   }
+  liveRegion.value = { id: region.id, start: region.start, end: region.end }
   window.addEventListener('pointermove', onRegionDragMove)
   window.addEventListener('pointerup', onRegionDragEnd)
   window.addEventListener('pointercancel', onRegionDragEnd)
@@ -384,13 +404,22 @@ function onRegionDragMove(e: PointerEvent) {
   } else if (mode === 'end') {
     nextEnd = clamp(origEnd + dxSeconds, origStart + MIN_REGION_LEN, props.duration)
   }
-  const patch = { start: nextStart, end: nextEnd }
-  if (drag.kind === 'fade') emit('update-fade', drag.id, patch)
-  else emit('update-cut', drag.id, patch)
+  // Local-only update: re-renders just this box's style, nothing else.
+  liveRegion.value = { id: drag.id, start: nextStart, end: nextEnd }
 }
 
 function onRegionDragEnd() {
+  // Commit the final position exactly once; the store updates memory
+  // synchronously (so the box doesn't snap back) and persists to idb async.
+  const drag = regionDrag
+  const live = liveRegion.value
+  if (drag && live) {
+    const patch = { start: live.start, end: live.end }
+    if (drag.kind === 'fade') emit('update-fade', drag.id, patch)
+    else emit('update-cut', drag.id, patch)
+  }
   regionDrag = null
+  liveRegion.value = null
   window.removeEventListener('pointermove', onRegionDragMove)
   window.removeEventListener('pointerup', onRegionDragEnd)
   window.removeEventListener('pointercancel', onRegionDragEnd)
@@ -455,9 +484,9 @@ defineExpose({ redraw: draw })
       :key="fade.id"
       class="fade"
       :style="{
-        left: duration > 0 ? `${(fade.start / duration) * 100}%` : '0%',
+        left: duration > 0 ? `${(regionStart(fade) / duration) * 100}%` : '0%',
         width:
-          duration > 0 ? `${((fade.end - fade.start) / duration) * 100}%` : '0%',
+          duration > 0 ? `${((regionEnd(fade) - regionStart(fade)) / duration) * 100}%` : '0%',
         '--fade-target': fadeTargetPercent(fade),
       }"
     >
@@ -473,7 +502,9 @@ defineExpose({ redraw: draw })
         title="Drag to move · drag edges to resize"
         @pointerdown="startRegionDrag($event, 'fade', fade, 'move')"
       >
-        <span class="fade__label">{{ formatFadeDuration(fade) }}</span>
+        <span class="fade__label">{{
+          formatFadeDuration({ start: regionStart(fade), end: regionEnd(fade) })
+        }}</span>
       </div>
       <div
         class="fade__handle fade__handle--end"
@@ -498,9 +529,9 @@ defineExpose({ redraw: draw })
       :key="cut.id"
       class="cut"
       :style="{
-        left: duration > 0 ? `${(cut.start / duration) * 100}%` : '0%',
+        left: duration > 0 ? `${(regionStart(cut) / duration) * 100}%` : '0%',
         width:
-          duration > 0 ? `${((cut.end - cut.start) / duration) * 100}%` : '0%',
+          duration > 0 ? `${((regionEnd(cut) - regionStart(cut)) / duration) * 100}%` : '0%',
       }"
     >
       <div class="cut__hatch" />
@@ -515,7 +546,9 @@ defineExpose({ redraw: draw })
         title="Removed span · drag to move · drag edges to resize"
         @pointerdown="startRegionDrag($event, 'cut', cut, 'move')"
       >
-        <span class="cut__label">−{{ formatCutDuration(cut) }}</span>
+        <span class="cut__label">−{{
+          formatCutDuration({ start: regionStart(cut), end: regionEnd(cut) })
+        }}</span>
         <button
           class="cut__transition"
           :title="`Transition: ${curveLabel(cut)} · ${fadeLabel(cut)}`"

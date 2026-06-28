@@ -101,6 +101,14 @@ export const useLibraryStore = defineStore('library', () => {
 
   /**
    * Patch a song's mutable metadata (tag, markers, etc.) and persist it.
+   *
+   * The in-memory `songs` array is updated BEFORE awaiting the IndexedDB
+   * write. Because async functions run synchronously up to their first
+   * `await`, a caller that fires this without awaiting (e.g. an edit
+   * happening during a waveform drag) still sees the new value in memory
+   * immediately, so the UI can re-render instantly while the (potentially
+   * multi-MB, blob-carrying) record persists in the background.
+   *
    * Returns the updated song, or undefined if the song was not found.
    */
   async function updateSong(
@@ -110,8 +118,8 @@ export const useLibraryStore = defineStore('library', () => {
     const song = getById(id)
     if (!song) return undefined
     const next: Song = { ...song, ...patch }
-    await idb.putSong(next)
     songs.value = songs.value.map((s) => (s.id === id ? next : s))
+    await idb.putSong(next)
     return next
   }
 

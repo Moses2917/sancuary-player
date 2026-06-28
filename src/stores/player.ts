@@ -868,7 +868,7 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.addMarker(song.id, currentTime.value, label)
+    void library.addMarker(song.id, currentTime.value, label)
     refreshActiveSong()
   }
   /** Drop a named cue on the current song at an arbitrary time. Persists to idb. */
@@ -876,14 +876,14 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.addMarker(song.id, time, label)
+    void library.addMarker(song.id, time, label)
     refreshActiveSong()
   }
   async function removeMarker(markerId: string) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.removeMarker(song.id, markerId)
+    void library.removeMarker(song.id, markerId)
     refreshActiveSong()
   }
 
@@ -898,21 +898,21 @@ export const usePlayerStore = defineStore('player', () => {
       duration.value || start + durationSeconds,
     )
     const library = useLibraryStore()
-    await library.addFade(song.id, { start, end, toVolume: 0 })
+    void library.addFade(song.id, { start, end, toVolume: 0 })
     refreshActiveSong()
   }
   async function updateFade(fadeId: string, patch: Partial<FadeRegion>) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.updateFade(song.id, fadeId, patch)
+    void library.updateFade(song.id, fadeId, patch)
     refreshActiveSong()
   }
   async function removeFade(fadeId: string) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.removeFade(song.id, fadeId)
+    void library.removeFade(song.id, fadeId)
     refreshActiveSong()
   }
 
@@ -931,7 +931,7 @@ export const usePlayerStore = defineStore('player', () => {
       duration.value || start + durationSeconds,
     )
     const library = useLibraryStore()
-    await library.addCut(song.id, {
+    void library.addCut(song.id, {
       start,
       end,
       fadeMs: DEFAULT_CUT_FADE_MS,
@@ -944,14 +944,14 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.updateCut(song.id, cutId, patch)
+    void library.updateCut(song.id, cutId, patch)
     refreshActiveSong()
   }
   async function removeCut(cutId: string) {
     const song = currentSong.value
     if (!song) return
     const library = useLibraryStore()
-    await library.removeCut(song.id, cutId)
+    void library.removeCut(song.id, cutId)
     refreshActiveSong()
     syncCutWatcher()
   }
