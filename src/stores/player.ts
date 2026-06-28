@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef } from 'vue'
-import type { FadeRegion, PlaylistItem, SectionMarker, Service, Song } from '@/types'
+import { computed, ref, shallowRef, watch } from 'vue'
+import type {
+  CutCurve,
+  CutRegion,
+  FadeRegion,
+  PlaylistItem,
+  SectionMarker,
+  Service,
+  Song,
+} from '@/types'
 import { formatTime } from '@/utils'
 import { useLibraryStore } from './library'
 
@@ -12,12 +20,42 @@ interface ActiveItem {
 /* ---------- Tunable constants ---------- */
 /** Linear volume clamp helper. */
 const SAFE_VOLUME = (v: number) => Math.max(0, Math.min(1, v))
+
+/**
+ * Map normalized fade-in progress (0→1) to a gain value (0→1) using one of
+ * the DaVinci-style crossfade curves. `equalPower` (sin) keeps perceived
+ * power constant across a splice and is the default; `linear` is constant
+ * gain; `ease` is a smoothstep S-curve; `fast` is exponential (slow start).
+ * A fade-out at progress q reuses this as gain(p) with p = 1 − q.
+ */
+function cutGain(curve: CutCurve, p: number): number {
+  const c = Math.max(0, Math.min(1, p))
+  switch (curve) {
+    case 'linear':
+      return c
+    case 'ease':
+      return c * c * (3 - 2 * c)
+    case 'fast':
+      return c * c
+    case 'equalPower':
+    default:
+      return Math.sin((c * Math.PI) / 2)
+  }
+}
 /** Seconds of piano/choir drift before we re-sync the laggard. */
 const DRIFT_THRESHOLD_SEC = 0.08
 /** Debounce window for the "both tracks ended → advance" check. */
 const ENDED_DEBOUNCE_MS = 120
 /** Default fade region length when one is dropped from the toolbar. */
 const DEFAULT_FADE_LEN_SEC = 8
+/** Default length (s) of a cut region dropped from the toolbar. */
+const DEFAULT_CUT_LEN_SEC = 16
+/** Default per-side smoothing ramp for a cut splice, in milliseconds. 0 = hard cut. */
+const DEFAULT_CUT_FADE_MS = 120
+/** Maximum smoothing ramp offered in the UI, in milliseconds. */
+const MAX_CUT_FADE_MS = 500
+/** Default fade curve for a cut splice (constant power — the smoothest). */
+const DEFAULT_CUT_CURVE: CutCurve = 'equalPower'
 /** Panic-stop ramp duration (fade-to-zero before pausing). */
 const PANIC_FADE_MS = 450
 /** Default volumes. */
@@ -61,6 +99,10 @@ export const usePlayerStore = defineStore('player', () => {
   /** Pending piano/choir sinkIds to apply once the elements exist. */
   let pendingPianoSink: string | undefined
   let pendingChoirSink: string | undefined
+  /** RAF id for the cut-splice dip engine; null when not running. */
+  let cutRafId: number | null = null
+  /** Active fade-in ramp after a splice; null when idle. */
+  let spliceState: { startedWall: number; curve: CutCurve; fadeSec: number } | null = null
 
   function ensureElements() {
     if (pianoEl) return
@@ -95,6 +137,12 @@ export const usePlayerStore = defineStore('player', () => {
       clearInterval(positionSaveTimer)
       positionSaveTimer = null
     }
+    if (cutRafId !== null) {
+      const id = cutRafId
+      cutRafId = null
+      cancelAnimationFrame(id)
+    }
+    spliceState = null
     panicToken++ // invalidate any in-flight ramp
     for (const el of [pianoEl, choirEl]) {
       if (!el) continue
@@ -138,6 +186,14 @@ export const usePlayerStore = defineStore('player', () => {
    */
   const fadeMultiplier = ref(1)
 
+  /**
+   * Current cut (skip) multiplier in 0..1, driven by the RAF dip engine.
+   * While playback is dipping around a cut splice this scales every track's
+   * effective volume; it's 1 everywhere else. Combined with `fadeMultiplier`
+   * in `applyVolumes` so cut regions and fade regions compose cleanly.
+   */
+  const cutMultiplier = ref(1)
+
   const ready = ref(false)
   const isLoading = ref(false)
 
@@ -163,6 +219,8 @@ export const usePlayerStore = defineStore('player', () => {
   const currentMarkers = computed<SectionMarker[]>(() => currentSong.value?.markers ?? [])
   /** Fades for the currently playing song, surfaced to the waveform UI. */
   const currentFades = computed<FadeRegion[]>(() => currentSong.value?.fades ?? [])
+  /** Cut (skip) regions for the currently playing song. */
+  const currentCuts = computed<CutRegion[]>(() => currentSong.value?.cuts ?? [])
   const hasNext = computed(() => index.value < queue.value.length - 1)
   const hasPrev = computed(() => index.value > 0)
   const progress = computed(() =>
@@ -184,7 +242,8 @@ export const usePlayerStore = defineStore('player', () => {
   /* ---------- volume application ---------- */
   function applyVolumes() {
     if (!pianoEl || !choirEl) return
-    const m = fadeMultiplier.value
+    // Fade regions and cut dips compose multiplicatively.
+    const m = fadeMultiplier.value * cutMultiplier.value
     const effPiano =
       pianoMuted.value || solo.value === 'choir' ? 0 : pianoVolume.value * masterVolume.value * m
     const effChoir =
@@ -282,6 +341,9 @@ export const usePlayerStore = defineStore('player', () => {
     pianoEl.pause()
     choirEl.pause()
     revokeUrls()
+    // A new track shouldn't inherit a leftover cut dip from the previous one.
+    spliceState = null
+    cutMultiplier.value = 1
 
     if (!active) {
       pianoEl.removeAttribute('src')
@@ -395,6 +457,94 @@ export const usePlayerStore = defineStore('player', () => {
     if (mult !== fadeMultiplier.value) {
       fadeMultiplier.value = mult
       applyVolumes()
+    }
+  }
+
+  /* ---------- cut (skip) regions ---------- */
+  function cutFadeSec(cut: CutRegion): number {
+    return Math.max(0, Math.min(MAX_CUT_FADE_MS, cut.fadeMs ?? DEFAULT_CUT_FADE_MS)) / 1000
+  }
+  function cutCurveOf(cut: CutRegion): CutCurve {
+    return cut.curve ?? DEFAULT_CUT_CURVE
+  }
+
+  /** Set the cut multiplier, applying volumes only when it actually changes. */
+  function setCutMult(v: number) {
+    if (cutMultiplier.value !== v) {
+      cutMultiplier.value = v
+      applyVolumes()
+    }
+  }
+
+  /**
+   * Cut-splice dip engine. Runs once per animation frame while playing and
+   * the current song has cut regions (tighter than the ~4Hz timeupdate, so
+   * the fade-out before the jump is actually audible). Each frame:
+   *  - finishing a fade-in after a splice → ramp the multiplier 0→1,
+   *  - landed inside a cut region → duck to 0, seek to its end, begin fade-in,
+   *  - approaching a cut start within its fade-out window → ramp 1→0,
+   *  - otherwise → multiplier stays at 1.
+   */
+  function cutFrame() {
+    if (cutRafId === null) return // stopped between scheduling and firing
+    cutRafId = requestAnimationFrame(cutFrame)
+    if (!isPlaying.value || !pianoEl) return
+    const cuts = currentCuts.value
+    if (cuts.length === 0) {
+      setCutMult(1)
+      return
+    }
+    const t = pianoEl.currentTime
+
+    // Fade-in after a splice: ramp from silence back to full.
+    const sp = spliceState
+    if (sp) {
+      const elapsed = (performance.now() - sp.startedWall) / 1000
+      if (sp.fadeSec <= 0 || elapsed >= sp.fadeSec) {
+        spliceState = null
+        setCutMult(1)
+      } else {
+        setCutMult(cutGain(sp.curve, elapsed / sp.fadeSec))
+      }
+      return
+    }
+
+    // Landed inside a cut region (overshot the start): duck now and jump.
+    const inside = cuts.find((c) => t >= c.start && t < c.end)
+    if (inside) {
+      const fadeSec = cutFadeSec(inside)
+      setCutMult(0)
+      spliceState = { startedWall: performance.now(), curve: cutCurveOf(inside), fadeSec }
+      void seek(inside.end)
+      return
+    }
+
+    // Approaching a cut start within its fade-out window: ramp down.
+    const approaching = cuts.find((c) => {
+      const fs = cutFadeSec(c)
+      return fs > 0 && t >= c.start - fs && t < c.start
+    })
+    if (approaching) {
+      const fs = cutFadeSec(approaching)
+      const q = (t - (approaching.start - fs)) / fs // 0 at window start → 1 at cut
+      setCutMult(cutGain(cutCurveOf(approaching), 1 - q))
+      return
+    }
+
+    setCutMult(1)
+  }
+
+  /** Start or stop the dip engine based on whether it's needed right now. */
+  function syncCutWatcher() {
+    const want = isPlaying.value && currentCuts.value.length > 0
+    if (want && cutRafId === null) {
+      cutRafId = requestAnimationFrame(cutFrame)
+    } else if (!want && cutRafId !== null) {
+      const id = cutRafId
+      cutRafId = null
+      cancelAnimationFrame(id)
+      spliceState = null
+      setCutMult(1)
     }
   }
 
@@ -550,11 +700,26 @@ export const usePlayerStore = defineStore('player', () => {
 
   async function seek(time: number) {
     if (!pianoEl) return
+    // Don't allow manual seeks to land inside a removed region — jump to its
+    // end. Also cancel any in-flight splice fade-in so we don't ramp on a
+    // position the user just abandoned.
+    spliceState = null
+    const target = resolveCutClamp(time)
     driftGuard = true
-    pianoEl.currentTime = time
-    if (choirEl && choirEl.src) choirEl.currentTime = time
-    currentTime.value = time
+    pianoEl.currentTime = target
+    if (choirEl && choirEl.src) choirEl.currentTime = target
+    currentTime.value = target
+    setCutMult(1)
     requestAnimationFrame(() => (driftGuard = false))
+  }
+
+  /** If `time` falls inside a cut region, snap it to that region's end. */
+  function resolveCutClamp(time: number): number {
+    const cuts = currentCuts.value
+    for (const c of cuts) {
+      if (time >= c.start && time < c.end) return c.end
+    }
+    return time
   }
 
   async function next(auto = false) {
@@ -746,6 +911,49 @@ export const usePlayerStore = defineStore('player', () => {
     refreshActiveSong()
   }
 
+  /* ---------- cut (skip) regions ---------- */
+  /**
+   * Drop a cut region starting at the playhead with the default length and
+   * the default smoothing. Drag the right edge on the waveform to set the
+   * real cut end. Persists to idb.
+   */
+  async function addCutHere(durationSeconds = DEFAULT_CUT_LEN_SEC) {
+    const song = currentSong.value
+    if (!song) return
+    const start = currentTime.value
+    const end = Math.min(
+      start + durationSeconds,
+      duration.value || start + durationSeconds,
+    )
+    const library = useLibraryStore()
+    await library.addCut(song.id, {
+      start,
+      end,
+      fadeMs: DEFAULT_CUT_FADE_MS,
+      curve: DEFAULT_CUT_CURVE,
+    })
+    refreshActiveSong()
+    syncCutWatcher()
+  }
+  async function updateCut(cutId: string, patch: Partial<CutRegion>) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.updateCut(song.id, cutId, patch)
+    refreshActiveSong()
+  }
+  async function removeCut(cutId: string) {
+    const song = currentSong.value
+    if (!song) return
+    const library = useLibraryStore()
+    await library.removeCut(song.id, cutId)
+    refreshActiveSong()
+    syncCutWatcher()
+  }
+
+  // Keep the dip engine running only while playing and cuts exist.
+  watch([isPlaying, currentCuts], () => syncCutWatcher())
+
   const currentTimeFormatted = computed(() => formatTime(currentTime.value))
   const durationFormatted = computed(() => formatTime(duration.value))
 
@@ -768,6 +976,7 @@ export const usePlayerStore = defineStore('player', () => {
     choirSolo,
     loop,
     fadeMultiplier,
+    cutMultiplier,
     error,
     resumePosition,
     pianoSinkId,
@@ -778,6 +987,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentSong,
     currentMarkers,
     currentFades,
+    currentCuts,
     hasNext,
     hasPrev,
     progress,
@@ -805,6 +1015,10 @@ export const usePlayerStore = defineStore('player', () => {
     addFadeHere,
     updateFade,
     removeFade,
+    /* cuts */
+    addCutHere,
+    updateCut,
+    removeCut,
     /* playlist */
     load,
     clear,
