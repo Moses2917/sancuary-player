@@ -140,6 +140,34 @@ so you can see at a glance where the audio tapers off. Multiple fades can
 coexist on a single song. They're saved per song, so they apply every time
 you play that song.
 
+### Cut (skip) regions
+
+A cut region removes a span of the timeline from playback — handy for
+dropping a verse, interlude, or repeat you don't sing anymore. When the
+playhead reaches the cut start, playback jumps instantly to the cut end on
+both stems at once (they stay sample-locked). It's the timeline equivalent
+of the A-B loop jumping forward instead of back.
+
+- Tap **Cut** (or press **X**) to drop a cut starting at the playhead.
+- Drag the body of the red hatched box to move the whole span.
+- Drag either solid edge to set where the cut starts and ends; the label
+  shows how much time is removed.
+- Click the **×** to remove the cut.
+
+The jump is smoothed with a short volume "dip" so the splice is inaudible
+during a service: volume fades out just before the cut, the jump happens at
+silence, then fades back in. Each cut remembers its own transition, set
+from the round button on the box:
+
+- **Curve** — Power (constant power, the smoothest default), Linear
+  (constant gain), Ease (S-curve), or Fast (exponential). These mirror the
+  standard crossfade options in NLEs like DaVinci Resolve.
+- **Fade** — per-side ramp length: Hard (no dip), 60 / 120 / 250 / 500 ms.
+
+Multiple cuts can coexist on a single song and are saved per song, so they
+apply every time you play that song. Seeks that land inside a removed span
+snap to its end, so you can never get stuck in the gap.
+
 ### Audio outputs
 
 The **Outputs** tool in the player pod lets you route piano and choir to
@@ -191,6 +219,7 @@ blank notes column. Choose "Save as PDF" as the destination to export.
 - **C** - toggle choir mute
 - **L** - toggle A-B loop
 - **F** - drop a fade region at the playhead
+- **X** - drop a cut (skip) region at the playhead
 - **1..9** - jump to the Nth cue marker
 - **Escape** - stop
 

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import * as idb from '@/db/idb'
 import type {
   BundledSongManifestEntry,
+  CutRegion,
   FadeRegion,
   SectionMarker,
   Song,
@@ -100,17 +101,25 @@ export const useLibraryStore = defineStore('library', () => {
 
   /**
    * Patch a song's mutable metadata (tag, markers, etc.) and persist it.
+   *
+   * The in-memory `songs` array is updated BEFORE awaiting the IndexedDB
+   * write. Because async functions run synchronously up to their first
+   * `await`, a caller that fires this without awaiting (e.g. an edit
+   * happening during a waveform drag) still sees the new value in memory
+   * immediately, so the UI can re-render instantly while the (potentially
+   * multi-MB, blob-carrying) record persists in the background.
+   *
    * Returns the updated song, or undefined if the song was not found.
    */
   async function updateSong(
     id: string,
-    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'title' | 'position'>>,
+    patch: Partial<Pick<Song, 'tag' | 'markers' | 'fades' | 'cuts' | 'title' | 'position'>>,
   ) {
     const song = getById(id)
     if (!song) return undefined
     const next: Song = { ...song, ...patch }
-    await idb.putSong(next)
     songs.value = songs.value.map((s) => (s.id === id ? next : s))
+    await idb.putSong(next)
     return next
   }
 
@@ -158,6 +167,33 @@ export const useLibraryStore = defineStore('library', () => {
     return updateSong(id, { fades: nextFades })
   }
 
+  /** Add a cut (skip) region to a song. */
+  async function addCut(id: string, cut: Omit<CutRegion, 'id'>) {
+    const song = getById(id)
+    if (!song) return undefined
+    const region: CutRegion = { id: uid('cut'), ...cut }
+    const cuts = [...(song.cuts ?? []), region].sort((a, b) => a.start - b.start)
+    const updated = await updateSong(id, { cuts })
+    return updated ? region : undefined
+  }
+
+  /** Remove a cut region by id. */
+  async function removeCut(id: string, cutId: string) {
+    const song = getById(id)
+    if (!song || !song.cuts) return undefined
+    const cuts = song.cuts.filter((c) => c.id !== cutId)
+    return updateSong(id, { cuts })
+  }
+
+  /** Patch a cut region's start/end/fadeMs/curve. */
+  async function updateCut(id: string, cutId: string, patch: Partial<CutRegion>) {
+    const song = getById(id)
+    if (!song || !song.cuts) return undefined
+    let nextCuts = song.cuts.map((c) => (c.id === cutId ? { ...c, ...patch } : c))
+    nextCuts = [...nextCuts].sort((a, b) => a.start - b.start)
+    return updateSong(id, { cuts: nextCuts })
+  }
+
   /** Fetch the manifest and report which entries aren't already imported. */
   async function fetchBundledManifest(): Promise<FetchedManifest> {
     const res = await fetch('/audio/manifest.json', { cache: 'no-cache' })
@@ -203,6 +239,9 @@ export const useLibraryStore = defineStore('library', () => {
     addFade,
     removeFade,
     updateFade,
+    addCut,
+    removeCut,
+    updateCut,
     fetchBundledManifest,
     importBundled,
   }

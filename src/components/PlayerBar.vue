@@ -10,6 +10,7 @@ import {
   Pause,
   Play,
   Repeat,
+  Scissors,
   ScissorsLineDashed,
   SkipBack,
   SkipForward,
@@ -88,6 +89,15 @@ function onFadeRemove(id: string) {
 }
 function addFadeHere() {
   void player.addFadeHere(8)
+}
+function onCutUpdate(id: string, patch: { start?: number; end?: number; fadeMs?: number; curve?: 'linear' | 'equalPower' | 'ease' | 'fast' }) {
+  void player.updateCut(id, patch)
+}
+function onCutRemove(id: string) {
+  void player.removeCut(id)
+}
+function addCutHere() {
+  void player.addCutHere()
 }
 
 function gotoService() {
@@ -198,6 +208,7 @@ const loopLabel = computed(() => {
           :markers="player.currentMarkers"
           :loop="player.loop"
           :fades="player.currentFades"
+          :cuts="player.currentCuts"
           :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
           :height="44"
@@ -208,6 +219,8 @@ const loopLabel = computed(() => {
           @add-cue-at="addMarkerAt"
           @update-fade="onFadeUpdate"
           @remove-fade="onFadeRemove"
+          @update-cut="onCutUpdate"
+          @remove-cut="onCutRemove"
         />
         <div v-if="peaksLoading" class="pod__hint">Analysing audio…</div>
         <div class="pod__times">
@@ -266,6 +279,14 @@ const loopLabel = computed(() => {
         @click="addFadeHere"
       >
         <ScissorsLineDashed :size="13" :stroke-width="2" /> <span>Fade</span>
+      </button>
+      <button
+        class="tool"
+        :disabled="!hasSong || player.duration <= 0"
+        title="Drop a cut (skip) region at the playhead (drag the red box to set the removed span)"
+        @click="addCutHere"
+      >
+        <Scissors :size="13" :stroke-width="2" /> <span>Cut</span>
       </button>
       <span class="tool__sep" aria-hidden="true" />
       <div class="pod__outputs-wrap">
