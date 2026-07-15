@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import SongImporter from '@/components/SongImporter.vue'
 import { useLibraryStore } from '@/stores/library'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 describe('SongImporter', () => {
   beforeEach(async () => {
@@ -67,7 +67,7 @@ describe('SongImporter', () => {
     await setFile(inputs[1]!, makeNoiseWavFile('holy-choir.mp3'))
 
     await wrapper.get('.btn--primary').trigger('click')
-    // addSong awaits an IndexedDB write that resolves over several microtask
+    // addSong awaits a SQLite bridge write that resolves over several microtask
     // hops; wait for the 'saved' event rather than a fixed flush count.
     await vi.waitFor(() => expect(wrapper.emitted('saved')).toBeTruthy())
 

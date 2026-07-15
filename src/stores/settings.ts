@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { getSettings, saveSettings } from '@/db/idb'
+import { getSettings, saveSettings } from '@/db/sqlite'
 import { usePlayerStore } from './player'
 
 export const useSettingsStore = defineStore('settings', () => {

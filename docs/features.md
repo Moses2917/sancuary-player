@@ -17,8 +17,8 @@ choir track badges, an optional New / Old tag, and a play / delete button.
    track**.
 5. Click **Save song**.
 
-Files are stored locally in your browser via IndexedDB. They never leave
-the device.
+Files are stored locally as BLOBs in the desktop app's SQLite database. They
+never leave the device.
 
 You can also drag-and-drop files onto the track slots.
 

@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
 import { resetFakeAudioInstances } from '@/__tests__/setup'
 import type { PlaylistItem, Service, Song } from '@/types'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 function makeSong(): Song {
   return {

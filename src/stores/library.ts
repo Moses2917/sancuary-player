@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as idb from '@/db/idb'
+import * as sqlite from '@/db/sqlite'
 import type {
   BundledSongManifestEntry,
   CutRegion,
@@ -25,14 +25,14 @@ export const useLibraryStore = defineStore('library', () => {
   async function init() {
     if (ready.value) return
     loading.value = true
-    songs.value = await idb.getAllSongs()
+    songs.value = await sqlite.getAllSongs()
     ready.value = true
     loading.value = false
   }
 
-  /** Force a re-read from idb — used after restoring a backup. */
+  /** Force a re-read from SQLite — used after restoring a backup. */
   async function reload() {
-    songs.value = await idb.getAllSongs()
+    songs.value = await sqlite.getAllSongs()
   }
 
   function getById(id: string): Song | undefined {
@@ -69,9 +69,10 @@ export const useLibraryStore = defineStore('library', () => {
       tag: input.tag,
       createdAt: Date.now(),
     }
-    await idb.putSong(song)
-    songs.value = [...songs.value, song]
-    return song
+    await sqlite.putSong(song)
+    const saved = (await sqlite.getSong(song.id)) ?? song
+    songs.value = [...songs.value, saved]
+    return saved
   }
 
   async function addBundledSongs(
@@ -87,7 +88,7 @@ export const useLibraryStore = defineStore('library', () => {
         bundled: true,
         createdAt: Date.now(),
       }
-      await idb.putSong(song)
+      await sqlite.putSong(song)
       created.push(song)
     }
     songs.value = [...songs.value, ...created]
@@ -95,14 +96,14 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function removeSong(id: string) {
-    await idb.deleteSong(id)
+    await sqlite.deleteSong(id)
     songs.value = songs.value.filter((s) => s.id !== id)
   }
 
   /**
    * Patch a song's mutable metadata (tag, markers, etc.) and persist it.
    *
-   * The in-memory `songs` array is updated BEFORE awaiting the IndexedDB
+     * The in-memory `songs` array is updated BEFORE awaiting the SQLite
    * write. Because async functions run synchronously up to their first
    * `await`, a caller that fires this without awaiting (e.g. an edit
    * happening during a waveform drag) still sees the new value in memory
@@ -119,7 +120,7 @@ export const useLibraryStore = defineStore('library', () => {
     if (!song) return undefined
     const next: Song = { ...song, ...patch }
     songs.value = songs.value.map((s) => (s.id === id ? next : s))
-    await idb.putSong(next)
+    await sqlite.putSong(next)
     return next
   }
 
@@ -218,7 +219,7 @@ export const useLibraryStore = defineStore('library', () => {
       bundled: true,
       createdAt: Date.now(),
     }))
-    for (const song of created) await idb.putSong(song)
+    for (const song of created) await sqlite.putSong(song)
     songs.value = [...songs.value, ...created]
     return created
   }

@@ -2,14 +2,10 @@ import { test, expect, type Page } from '@playwright/test'
 
 async function resetAppData(page: Page) {
   await page.goto('/')
-  await page.evaluate(async () => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase('sanctuary-player')
-      req.onsuccess = () => resolve()
-      req.onerror = () => resolve()
-      req.onblocked = () => resolve()
-    })
+  await page.evaluate(() => {
+    localStorage.removeItem('sanctuary-player-test-storage')
   })
+  await page.reload()
 }
 
 /** Import a single library song (used to seed data for service tests). */

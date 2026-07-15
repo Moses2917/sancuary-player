@@ -181,7 +181,7 @@ async function submit() {
 
           <p v-if="error" class="error">{{ error }}</p>
           <p class="hint">
-            Files are stored locally in your browser (IndexedDB). They never leave this device.
+            Files are stored locally in this app's SQLite library. They never leave this device.
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 async function seedSong(lib: ReturnType<typeof useLibraryStore>, title = 'Song') {
   return lib.addSong({

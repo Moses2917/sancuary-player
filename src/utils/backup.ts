@@ -1,4 +1,4 @@
-import * as idb from '@/db/idb'
+import * as sqlite from '@/db/sqlite'
 import type { AppSettings, Service, Song, TrackSource } from '@/types'
 
 /**
@@ -82,15 +82,17 @@ async function serializeTrack(track: TrackSource): Promise<SerializableTrack> {
 }
 
 function deserializeTrack(track: SerializableTrack): TrackSource {
-  const out: TrackSource = { name: track.name, type: track.type, url: track.url }
+  const out: TrackSource = { name: track.name, type: track.type }
   if (track.blobBase64) {
     out.blob = base64ToBlob(track.blobBase64, track.type || 'application/octet-stream')
+  } else {
+    out.url = track.url
   }
   return out
 }
 
 export async function buildBackup(): Promise<BackupFile> {
-  const { songs, services, settings } = await idb.dumpAll()
+  const { songs, services, settings } = await sqlite.dumpAll()
   const serialSongs: SerializableSong[] = []
   for (const song of songs) {
     serialSongs.push({
@@ -143,9 +145,9 @@ export async function restoreBackup(
   }))
   const payload = { songs, services: backup.services, settings: backup.settings }
   if (mode === 'replace') {
-    await idb.restoreAll(payload)
+    await sqlite.restoreAll(payload)
   } else {
-    await idb.mergeAll(payload)
+    await sqlite.mergeAll(payload)
   }
   return { songs: songs.length, services: backup.services.length }
 }

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as idb from '@/db/idb'
+import * as sqlite from '@/db/sqlite'
 import type { PlaylistItem, Service, Song } from '@/types'
 import { uid } from '@/utils'
 
@@ -12,14 +12,14 @@ export const useServicesStore = defineStore('services', () => {
   async function init() {
     if (ready.value) return
     loading.value = true
-    services.value = await idb.getAllServices()
+    services.value = await sqlite.getAllServices()
     ready.value = true
     loading.value = false
   }
 
-  /** Force a re-read from idb — used after restoring a backup. */
+  /** Force a re-read from SQLite — used after restoring a backup. */
   async function reload() {
-    services.value = await idb.getAllServices()
+    services.value = await sqlite.getAllServices()
   }
 
   function getById(id: string): Service | undefined {
@@ -34,7 +34,7 @@ export const useServicesStore = defineStore('services', () => {
       items: [],
       createdAt: Date.now(),
     }
-    await idb.putService(svc)
+    await sqlite.putService(svc)
     services.value = [...services.value, svc]
     return svc
   }
@@ -45,12 +45,12 @@ export const useServicesStore = defineStore('services', () => {
     const next: Service = { ...svc }
     if (patch.name !== undefined) next.name = patch.name.trim() || svc.name
     if (patch.date !== undefined) next.date = patch.date.trim() || undefined
-    await idb.putService(next)
+    await sqlite.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
 
   async function remove(id: string) {
-    await idb.deleteService(id)
+    await sqlite.deleteService(id)
     services.value = services.value.filter((s) => s.id !== id)
   }
 
@@ -66,7 +66,7 @@ export const useServicesStore = defineStore('services', () => {
       choirVolume: 0.5,
     }))
     const next: Service = { ...svc, items: [...svc.items, ...newItems] }
-    await idb.putService(next)
+    await sqlite.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
 
@@ -80,7 +80,7 @@ export const useServicesStore = defineStore('services', () => {
     if (!moved) return
     items.splice(to, 0, moved)
     const next: Service = { ...svc, items }
-    await idb.putService(next)
+    await sqlite.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
 
@@ -93,7 +93,7 @@ export const useServicesStore = defineStore('services', () => {
     if (!svc) return
     const items = svc.items.map((it) => (it.id === itemId ? { ...it, ...patch } : it))
     const next: Service = { ...svc, items }
-    await idb.putService(next)
+    await sqlite.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
 
@@ -102,7 +102,7 @@ export const useServicesStore = defineStore('services', () => {
     if (!svc) return
     const items = svc.items.filter((it) => it.id !== itemId)
     const next: Service = { ...svc, items }
-    await idb.putService(next)
+    await sqlite.putService(next)
     services.value = services.value.map((s) => (s.id === id ? next : s))
   }
 

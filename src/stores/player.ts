@@ -863,7 +863,7 @@ export const usePlayerStore = defineStore('player', () => {
     )
   }
 
-  /** Drop a named cue on the current song at the playhead. Persists to idb. */
+  /** Drop a named cue on the current song at the playhead. Persists to SQLite. */
   async function addMarkerHere(label?: string) {
     const song = currentSong.value
     if (!song) return
@@ -871,7 +871,7 @@ export const usePlayerStore = defineStore('player', () => {
     void library.addMarker(song.id, currentTime.value, label)
     refreshActiveSong()
   }
-  /** Drop a named cue on the current song at an arbitrary time. Persists to idb. */
+  /** Drop a named cue on the current song at an arbitrary time. Persists to SQLite. */
   async function addMarkerAt(time: number, label?: string) {
     const song = currentSong.value
     if (!song) return
@@ -920,7 +920,7 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * Drop a cut region starting at the playhead with the default length and
    * the default smoothing. Drag the right edge on the waveform to set the
-   * real cut end. Persists to idb.
+   * real cut end. Persists to SQLite.
    */
   async function addCutHere(durationSeconds = DEFAULT_CUT_LEN_SEC) {
     const song = currentSong.value

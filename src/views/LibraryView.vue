@@ -187,7 +187,7 @@ const counts = computed(() => {
       <h3>No songs yet</h3>
       <p>
         Add your first song by selecting a piano track and a choir track. They'll be stored locally
-        in your browser.
+        in this app's local SQLite library.
       </p>
       <button class="btn btn--primary" @click="importerOpen = true">
         <Plus :size="14" :stroke-width="2" /> Add your first song

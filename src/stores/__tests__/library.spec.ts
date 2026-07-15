@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 describe('library store', () => {
   beforeEach(async () => {
@@ -77,7 +77,7 @@ describe('library store', () => {
     expect(lib.getById(added.id)).toBeUndefined()
   })
 
-  it('persists across a fresh store instance (idb round-trip)', async () => {
+  it('persists across a fresh store instance (storage round-trip)', async () => {
     const lib1 = useLibraryStore()
     await lib1.init()
     await lib1.addSong({
@@ -86,7 +86,7 @@ describe('library store', () => {
       choir: makeNoiseWavFile('c.wav'),
     })
 
-    // Simulate a reload: new pinia, new store, init reads from idb.
+    // Simulate a reload: new pinia, new store, init reads from storage.
     setActivePinia(createPinia())
     const lib2 = useLibraryStore()
     await lib2.init()

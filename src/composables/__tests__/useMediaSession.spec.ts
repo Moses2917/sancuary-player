@@ -7,7 +7,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useLibraryStore } from '@/stores/library'
 import { resetFakeAudioInstances } from '@/__tests__/setup'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 interface StubMediaSession {
   metadata: MediaMetadata | null

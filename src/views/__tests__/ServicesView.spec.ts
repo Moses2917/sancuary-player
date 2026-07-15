@@ -5,7 +5,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import ServicesView from '@/views/ServicesView.vue'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
 
 describe('ServicesView', () => {

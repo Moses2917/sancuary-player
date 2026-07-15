@@ -343,7 +343,7 @@ let regionDrag: {
 /**
  * Live position of the region currently being dragged, rendered locally so
  * the box tracks the pointer smoothly WITHOUT round-tripping through the
- * store + IndexedDB on every move (that re-serialized the whole song —
+ * store + SQLite on every move (that re-serialized the whole song —
  * blobs included — per pixel and made dragging unusably slow). The final
  * position is emitted once, on pointer drop.
  */
@@ -410,7 +410,7 @@ function onRegionDragMove(e: PointerEvent) {
 
 function onRegionDragEnd() {
   // Commit the final position exactly once; the store updates memory
-  // synchronously (so the box doesn't snap back) and persists to idb async.
+  // synchronously (so the box doesn't snap back) and persists to SQLite async.
   const drag = regionDrag
   const live = liveRegion.value
   if (drag && live) {

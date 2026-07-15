@@ -1,9 +1,9 @@
 export interface TrackSource {
-  /** When imported via file picker, we store the File blob in IndexedDB. */
+  /** Present while importing or exporting; persistent imported audio lives in SQLite. */
   blob?: Blob
   /** Original file name, for display. */
   name: string
-  /** Object URL generated at runtime from the blob, or a bundled path. */
+  /** Runtime media URL, a bundled asset path, or an object URL during web tests. */
   url?: string
   /** MIME type hint if known. */
   type?: string
@@ -70,7 +70,7 @@ export interface Song {
   title: string
   piano: TrackSource
   choir: TrackSource
-  /** True when audio is served from public/audio rather than a stored blob. */
+  /** True when audio is served from bundled application assets rather than SQLite. */
   bundled: boolean
   /** Optional neutral tag rendered as a badge and used as a filter facet. */
   tag?: SongTag

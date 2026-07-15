@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import LibraryView from '@/views/LibraryView.vue'
 import { useLibraryStore } from '@/stores/library'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 describe('LibraryView', () => {
   beforeEach(async () => {

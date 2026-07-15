@@ -5,19 +5,36 @@ piano and choir stems that play in lockstep with independent volume control,
 so a music director can rehearse either part or balance them live during a
 service.
 
-Songs and services are stored entirely in the browser (IndexedDB). Nothing
-leaves the device. The app is installable as a PWA and works offline once
-loaded.
+Sanctuary Player is a Tauri 2 desktop application for Windows, macOS, and
+Linux. Songs, services, and settings live in a native SQLite database in the
+application data directory. Imported piano and choir tracks are SQLite BLOBs;
+they are never copied to a media-files directory and never leave the device.
+
+The bundled example pair under `public/audio/` is packaged as an application
+asset. The desktop app has no cloud, updater, or network dependency after it
+is installed.
 
 ## Quick start
 
 ```sh
 bun install
-bun dev
+bun run tauri:dev
 ```
 
-Open the printed URL, add a song (pick a piano file and a choir file), and
-press play.
+This launches the Vite frontend inside the native desktop shell. Add a song
+(pick a piano file and a choir file), then press play.
+
+## Desktop builds
+
+```sh
+bun run tauri:build
+```
+
+Build each platform on a matching host or native CI runner:
+
+- Windows: MSI or NSIS installer with an offline WebView2 installer included.
+- macOS: `.app` and DMG on macOS with Xcode installed.
+- Linux: Debian, RPM, and AppImage; the AppImage bundles the media framework.
 
 ## Highlights
 
@@ -37,20 +54,21 @@ press play.
 - Print-friendly setlist (saves cleanly as PDF)
 - Full-screen "Now Playing" view for projection
 - OS-level media controls (lock screen, Bluetooth, macOS Now Playing)
-- Installable PWA with offline support
+- Native SQLite storage with imported audio retained as BLOBs
+- Bundled demo audio packaged with the app
 
 ## Documentation
 
 - [docs/architecture.md](./docs/architecture.md) - data model, stores, components
 - [docs/features.md](./docs/features.md) - how to use each feature
-- [docs/deployment.md](./docs/deployment.md) - nginx, Let's Encrypt, deploy script
+- [docs/deployment.md](./docs/deployment.md) - legacy web deployment notes
 - [docs/development.md](./docs/development.md) - dev workflow, tests, lint
 
 ## Tech stack
 
-Vue 3 + Vite + TypeScript. State via Pinia. Storage via IndexedDB. Icons
-from [lucide](https://lucide.dev). Tests with Vitest (unit, including fuzz)
-and Playwright (e2e).
+Vue 3 + Vite + TypeScript frontend, Pinia state, and a Tauri 2/Rust backend
+using bundled SQLite. Icons from [lucide](https://lucide.dev). Tests use Vitest
+(unit, including fuzz) and Playwright (frontend e2e).
 
 ## License
 

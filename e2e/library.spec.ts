@@ -1,19 +1,14 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Drop any persisted data so each spec starts from a clean library/services
- * state. Runs inside the page before navigation.
+ * Drop browser test-adapter state so each spec starts with a clean library.
  */
 async function resetAppData(page: import('@playwright/test').Page) {
   await page.goto('/')
-  await page.evaluate(async () => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase('sanctuary-player')
-      req.onsuccess = () => resolve()
-      req.onerror = () => resolve()
-      req.onblocked = () => resolve()
-    })
+  await page.evaluate(() => {
+    localStorage.removeItem('sanctuary-player-test-storage')
   })
+  await page.reload()
 }
 
 test.describe('navigation', () => {

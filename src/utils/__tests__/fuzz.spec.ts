@@ -10,7 +10,7 @@ import {
 import { clearPeakCache, computePeaks } from '@/utils/waveform'
 import { formatDate, formatTime, uid } from '@/utils'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 import { createPinia, setActivePinia } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
 

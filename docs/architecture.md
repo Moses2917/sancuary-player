@@ -10,12 +10,13 @@ src/
   assets/        Theme tokens, base styles, print stylesheet, PWA bits
   components/    Reusable UI components
   composables/   useKeyboardShortcuts, useMediaSession
-  db/            IndexedDB wrapper (src/db/idb.ts)
+  db/            SQLite bridge and test adapter (src/db/sqlite.ts)
   router/        Vue Router config
   stores/        Pinia stores (player, library, services, settings)
   utils/         waveform peak extraction, backup serialize/restore, formatting
   views/         Routed top-level views
   types.ts       Shared TypeScript types (Song, Service, etc.)
+src-tauri/       Tauri 2 Rust shell, SQLite schema, media protocol, capabilities
 ```
 
 ## Data model
@@ -38,15 +39,19 @@ Defined in `src/types.ts`. The shape that matters most:
   (`'linear' | 'equalPower' | 'ease' | 'fast'`, default `equalPower`) over
   `fadeMs` per side (default 120; 0 = hard cut), masks the join.
 
-`TrackSource` is one of two shapes:
-- a stored `Blob` (when the user picked a file; lives in IndexedDB), or
-- a `url` string (for bundled demo tracks shipped under `public/audio/`).
+`TrackSource` is one of two shapes at runtime:
+- imported tracks use a local `sanctuary-media` URL backed by a SQLite BLOB;
+  `Blob` values only exist while importing or exporting a backup, or in tests.
+- bundled tracks use an application-asset path from `public/audio/`.
 
 ## Storage layer
 
-`src/db/idb.ts` opens a single database with three object stores: `songs`,
-`services`, `settings`. A `deepRaw` helper unwraps Vue reactive proxies
-before writing so IndexedDB's structured clone doesn't choke on them.
+`src/db/sqlite.ts` is the frontend boundary for the desktop SQLite database.
+The Rust implementation in `src-tauri/src/database.rs` persists song,
+service, and settings JSON plus separate piano/choir BLOB rows. Imports stage
+binary IPC payloads and commit both BLOBs with song metadata. The
+`sanctuary-media` URI protocol serves BLOBs with byte-range responses so media
+seeking and waveform decoding work without a media-files directory.
 
 Public helpers:
 - `putSong` / `getAllSongs` / `getSong` / `deleteSong`

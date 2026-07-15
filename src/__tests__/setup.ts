@@ -1,5 +1,3 @@
-import 'fake-indexeddb/auto'
-
 /**
  * jsdom's HTMLAudioElement.play() rejects ("Not supported") and there's no
  * real media pipeline, so the player store can't be exercised as-is. This

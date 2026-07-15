@@ -8,7 +8,7 @@ import {
   restoreBackup,
 } from '@/utils/backup'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 import { useLibraryStore } from '@/stores/library'
 import { createPinia, setActivePinia } from 'pinia'
 
@@ -55,7 +55,7 @@ describe('backup build / parse / restore', () => {
     )
   })
 
-  it('restoreBackup rebuilds blob tracks and writes them to idb', async () => {
+  it('restoreBackup rebuilds blob tracks and writes them to storage', async () => {
     const lib = useLibraryStore()
     await lib.init()
     await lib.addSong({

@@ -8,7 +8,7 @@ import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
 import { makeNoiseWavFile } from '@/__tests__/helpers/audio'
 import { resetFakeAudioInstances } from '@/__tests__/setup'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 async function seedSong(lib: ReturnType<typeof useLibraryStore>, title = 'Song') {
   return lib.addSong({

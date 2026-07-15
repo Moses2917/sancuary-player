@@ -1,0 +1,26 @@
+[package]
+name = "sanctuary-player"
+version = "0.1.0"
+description = "Offline dual-track playback for worship services"
+authors = ["Moses2917"]
+license = "Proprietary"
+repository = "https://github.com/Moses2917/sancuary-player"
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "sanctuary_player_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "2.11.5", features = [] }
+http = "1.3"
+percent-encoding = "2.3"
+rusqlite = { version = "0.40", features = ["bundled"] }

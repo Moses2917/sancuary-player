@@ -3,7 +3,7 @@ import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsStore } from '@/stores/settings'
 import { usePlayerStore } from '@/stores/player'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 
 describe('settings store', () => {
   beforeEach(async () => {

@@ -1,7 +1,7 @@
 # Bundled audio
 
-Drop your worship track pairs into this folder and they'll be available to import
-into the library via the **Load bundled songs** button on the Library page.
+Track pairs in this folder ship inside the desktop application and are available
+through the **Load bundled songs** button on the Library page.
 
 ## Layout
 
@@ -29,9 +29,9 @@ Each song needs two files — a piano track and a choir track — paired togethe
 
 3. Open the app, go to **Library**, click **Load bundled songs**, and confirm.
 
-The files are referenced by URL (not copied into IndexedDB), so they stay in this
-folder. Once imported they behave like any other library song and can be added to
-services.
+The files remain bundled application assets and are not copied into the SQLite
+database. User-imported tracks are stored as SQLite BLOBs instead. Once imported,
+bundled songs behave like any other library song and can be added to services.
 
 ## Format
 

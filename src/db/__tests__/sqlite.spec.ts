@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import * as idb from '@/db/idb'
+import * as idb from '@/db/sqlite'
 import type { Service, Song } from '@/types'
 
 function makeSong(overrides: Partial<Song> = {}): Song {
@@ -25,7 +25,7 @@ function makeService(overrides: Partial<Service> = {}): Service {
   }
 }
 
-describe('idb — songs', () => {
+describe('SQLite bridge test adapter — songs', () => {
   beforeEach(async () => {
     // Wipe the fake DB between tests for isolation.
     const db = await idb.getDB()
@@ -41,10 +41,8 @@ describe('idb — songs', () => {
     expect(fetched?.piano.name).toBe('piano.wav')
     expect(fetched?.choir.name).toBe('choir.wav')
     expect(fetched?.bundled).toBe(false)
-    // Blob preservation through IndexedDB is exercised end-to-end by the
-    // playwright specs in a real browser; fake-indexeddb doesn't round-trip
-    // Blobs (it returns a plain object), so we only assert the track entry
-    // is present here.
+    // Desktop BLOB persistence is covered by the Rust database implementation;
+    // the unit adapter only verifies the track entries are available.
     expect(fetched?.piano).toBeDefined()
     expect(fetched?.choir).toBeDefined()
   })
@@ -76,7 +74,7 @@ describe('idb — songs', () => {
   })
 })
 
-describe('idb — services', () => {
+describe('SQLite bridge test adapter — services', () => {
   beforeEach(async () => {
     const db = await idb.getDB()
     await db.clear('services')
@@ -109,7 +107,7 @@ describe('idb — services', () => {
   })
 })
 
-describe('idb — settings', () => {
+describe('SQLite bridge test adapter — settings', () => {
   beforeEach(async () => {
     const db = await idb.getDB()
     await db.clear('settings')
