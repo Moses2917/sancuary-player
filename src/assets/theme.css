@@ -22,6 +22,8 @@
   --c-accent-soft: #ff5870;
   --c-accent-deep: #d91d36;
   --c-accent-glow: rgba(250, 45, 72, 0.13);
+  --c-focus: #007aff;
+  --c-focus-glow: rgba(0, 122, 255, 0.22);
   --c-sidebar: rgba(239, 239, 243, 0.88);
   --c-sidebar-selected: rgba(255, 255, 255, 0.75);
 
