@@ -158,16 +158,19 @@ function resetToDefault() {
 <style scoped>
 .outputs {
   position: absolute;
-  top: calc(100% + 6px);
+  top: auto;
+  bottom: calc(100% + 8px);
   right: 0;
   z-index: 40;
   min-width: 300px;
   max-width: 360px;
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--c-surface-raised);
+  padding: 12px 14px;
+  background: rgba(250, 250, 252, 0.96);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
+  border-radius: 12px;
   box-shadow: var(--sh-lg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
@@ -182,7 +185,7 @@ function resetToDefault() {
   align-items: center;
   gap: 6px;
   font-weight: 650;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   letter-spacing: -0.01em;
 }
 .outputs__close {
@@ -197,7 +200,7 @@ function resetToDefault() {
 }
 .outputs__unsupported {
   color: var(--c-text-soft);
-  background: var(--c-bg-2);
+  background: rgba(118, 118, 128, .12);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
 }
@@ -230,10 +233,11 @@ function resetToDefault() {
 }
 .outputs__select {
   width: 100%;
-  padding: 6px 8px;
-  border-radius: var(--r-md);
+  min-height: 29px;
+  padding: 4px 8px;
+  border-radius: 7px;
   border: 1px solid var(--c-border);
-  background: var(--c-bg-1);
+  background: rgba(255, 255, 255, .7);
   color: var(--c-text);
   font-size: 0.8rem;
   font-family: inherit;
@@ -255,15 +259,13 @@ function resetToDefault() {
   padding: 0;
   font-size: 0.74rem;
   font-weight: 550;
-  color: var(--c-text-muted);
+  color: var(--c-accent);
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--c-border);
-  text-underline-offset: 2px;
+  text-decoration: none;
 }
 .outputs__reset:hover,
 .outputs__refresh:hover {
-  color: var(--c-text);
+  color: var(--c-accent-deep);
 }
 .outputs__advanced {
   border-top: 1px solid var(--c-border);
