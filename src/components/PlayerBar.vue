@@ -93,7 +93,15 @@ function onFadeRemove(id: string) {
 function addFadeHere() {
   void player.addFadeHere(8)
 }
-function onCutUpdate(id: string, patch: { start?: number; end?: number; fadeMs?: number; curve?: 'linear' | 'equalPower' | 'ease' | 'fast' }) {
+function onCutUpdate(
+  id: string,
+  patch: {
+    start?: number
+    end?: number
+    fadeMs?: number
+    curve?: 'linear' | 'equalPower' | 'ease' | 'fast'
+  },
+) {
   void player.updateCut(id, patch)
 }
 function onCutRemove(id: string) {
@@ -114,6 +122,17 @@ function openNowPlaying() {
   router.push({ name: 'now-playing' })
 }
 
+async function toggleOutputs() {
+  if (showOutputs.value) {
+    showOutputs.value = false
+    return
+  }
+  // Request media permission inside the button click so browsers and WebViews
+  // can reveal the full, labelled output-device list.
+  await player.requestOutputPermission()
+  showOutputs.value = true
+}
+
 const loopLabel = computed(() => {
   if (!player.loop) return 'Loop off'
   const { start, end } = player.loop
@@ -126,11 +145,7 @@ const loopLabel = computed(() => {
     <div v-if="player.error" class="pod__error" role="alert">
       <AlertTriangle :size="14" :stroke-width="2" />
       <span class="pod__error-text">{{ player.error }}</span>
-      <button
-        class="pod__error-close"
-        title="Dismiss"
-        @click="player.clearError()"
-      >
+      <button class="pod__error-close" title="Dismiss" @click="player.clearError()">
         <X :size="14" :stroke-width="2" />
       </button>
     </div>
@@ -192,12 +207,7 @@ const loopLabel = computed(() => {
         >
           <Pause :size="20" :stroke-width="2" />
         </button>
-        <button
-          class="icon-btn"
-          :disabled="!player.hasNext"
-          title="Next"
-          @click="player.next()"
-        >
+        <button class="icon-btn" :disabled="!player.hasNext" title="Next" @click="player.next()">
           <SkipForward :size="18" :stroke-width="1.75" />
         </button>
         <button
@@ -314,7 +324,7 @@ const loopLabel = computed(() => {
           class="tool"
           :class="{ 'tool--on': showOutputs }"
           title="Route piano and choir to separate audio outputs"
-          @click="showOutputs = !showOutputs"
+          @click="toggleOutputs"
         >
           <Headphones :size="13" :stroke-width="2" />
           <span>Outputs</span>
@@ -486,7 +496,13 @@ const loopLabel = computed(() => {
 .pod__art--playing {
   color: var(--c-accent);
 }
-.pod__art--playing::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(250, 45, 72, .42); border-radius: inherit; }
+.pod__art--playing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(250, 45, 72, 0.42);
+  border-radius: inherit;
+}
 .pod__meta {
   min-width: 0;
   cursor: pointer;
@@ -513,7 +529,9 @@ const loopLabel = computed(() => {
   width: 32px;
   height: 32px;
 }
-.pod__advanced { margin-left: -8px; }
+.pod__advanced {
+  margin-left: -8px;
+}
 
 /* MAIN: transport + waveform */
 .pod__main {
@@ -559,8 +577,16 @@ const loopLabel = computed(() => {
   letter-spacing: -0.005em;
   padding: 0 2px;
 }
-.pod__master { display: flex; align-items: center; gap: 9px; color: var(--c-text-muted); }
-.pod__master-slider { flex: 1; min-width: 0; }
+.pod__master {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--c-text-muted);
+}
+.pod__master-slider {
+  flex: 1;
+  min-width: 0;
+}
 
 /* TOOLS */
 .pod__tools {
@@ -599,11 +625,11 @@ const loopLabel = computed(() => {
   letter-spacing: 0;
 }
 .tool--on {
-  background: rgba(250, 45, 72, .13);
+  background: rgba(250, 45, 72, 0.13);
   color: var(--c-accent-deep);
 }
 .tool--on:hover {
-  background: rgba(250, 45, 72, .19);
+  background: rgba(250, 45, 72, 0.19);
   color: var(--c-accent-deep);
 }
 .tool:disabled {
@@ -627,10 +653,18 @@ const loopLabel = computed(() => {
   padding-top: 9px;
   border-top: 1px solid var(--c-border);
 }
-.pod--expanded .pod__tools { display: flex; }
-.pod--expanded .pod__mix { display: grid; }
-.pod--expanded .pod__master { display: none; }
-.pod:not(.pod--expanded) .pod__panic { display: none; }
+.pod--expanded .pod__tools {
+  display: flex;
+}
+.pod--expanded .pod__mix {
+  display: grid;
+}
+.pod--expanded .pod__master {
+  display: none;
+}
+.pod:not(.pod--expanded) .pod__panic {
+  display: none;
+}
 .mix {
   display: flex;
   flex-direction: column;
@@ -694,7 +728,9 @@ const loopLabel = computed(() => {
     grid-template-columns: 1fr;
     gap: 7px;
   }
-  .pod__head { display: none; }
+  .pod__head {
+    display: none;
+  }
   .pod__main {
     grid-template-columns: 1fr;
     gap: var(--sp-2);
@@ -705,7 +741,9 @@ const loopLabel = computed(() => {
   .pod__mix {
     display: none;
   }
-  .pod__tools { display: none; }
+  .pod__tools {
+    display: none;
+  }
   .pod__expand {
     display: none;
   }

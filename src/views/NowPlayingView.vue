@@ -91,12 +91,7 @@ function exit() {
       </div>
 
       <div class="np-transport">
-        <button
-          class="np-btn"
-          :disabled="!player.hasPrev"
-          title="Previous"
-          @click="player.prev()"
-        >
+        <button class="np-btn" :disabled="!player.hasPrev" title="Previous" @click="player.prev()">
           <SkipBack :size="26" :stroke-width="1.75" />
         </button>
         <button
@@ -111,12 +106,7 @@ function exit() {
             :style="!player.isPlaying ? 'margin-left: 4px' : ''"
           />
         </button>
-        <button
-          class="np-btn"
-          :disabled="!player.hasNext"
-          title="Next"
-          @click="player.next()"
-        >
+        <button class="np-btn" :disabled="!player.hasNext" title="Next" @click="player.next()">
           <SkipForward :size="26" :stroke-width="1.75" />
         </button>
       </div>
@@ -135,10 +125,9 @@ function exit() {
   inset: 0;
   z-index: 50;
   background:
-    radial-gradient(circle at 10% 0%, rgba(250, 45, 72, .3), transparent 34rem),
-    radial-gradient(circle at 96% 100%, rgba(72, 120, 188, .18), transparent 37rem),
-    #16151c;
-  color: #fff;
+    radial-gradient(circle at 8% 0%, rgba(250, 45, 72, 0.12), transparent 34rem),
+    radial-gradient(circle at 96% 100%, rgba(0, 122, 255, 0.08), transparent 37rem), #f5f5f7;
+  color: var(--c-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -153,9 +142,10 @@ function exit() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255,255,255,.13);
-  color: rgba(255,255,255,.86);
-  border: none;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--c-text-soft);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--sh-sm);
   padding: 7px 14px;
   border-radius: var(--r-pill);
   font-size: 0.82rem;
@@ -171,8 +161,8 @@ function exit() {
   line-height: 0.8;
 }
 .np-exit:hover {
-  background: rgba(255,255,255,.22);
-  color: #fff;
+  background: #fff;
+  color: var(--c-text);
 }
 
 .np-empty {
@@ -184,7 +174,7 @@ function exit() {
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #ff8e9e;
+  color: var(--c-accent);
   margin-bottom: var(--sp-3);
 }
 .np-empty h1 {
@@ -194,7 +184,7 @@ function exit() {
   letter-spacing: -0.035em;
 }
 .np-empty__hint {
-  color: rgba(255,255,255,.60);
+  color: var(--c-text-muted);
   font-size: 1.05rem;
 }
 
@@ -230,7 +220,7 @@ function exit() {
   display: flex;
   justify-content: space-between;
   font-variant-numeric: tabular-nums;
-  color: rgba(255,255,255,.62);
+  color: var(--c-text-muted);
   font-size: 1rem;
   font-weight: 550;
   letter-spacing: -0.005em;
@@ -248,7 +238,7 @@ function exit() {
   border-radius: var(--r-pill);
   border: none;
   background: transparent;
-  color: rgba(255,255,255,.82);
+  color: var(--c-text-soft);
   cursor: pointer;
   padding: var(--sp-3);
   transition:
@@ -257,8 +247,8 @@ function exit() {
     transform var(--dur-fast) var(--ease-out);
 }
 .np-btn:hover:not(:disabled) {
-  background: rgba(255,255,255,.12);
-  color: #fff;
+  background: rgba(60, 60, 67, 0.08);
+  color: var(--c-text);
 }
 .np-btn:active:not(:disabled) {
   transform: scale(0.94);
@@ -282,8 +272,8 @@ function exit() {
   bottom: var(--sp-5);
   right: var(--sp-5);
   text-align: right;
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--c-border);
   backdrop-filter: blur(18px);
   border-radius: var(--r-md);
   padding: var(--sp-3) var(--sp-4);
@@ -293,7 +283,7 @@ function exit() {
   font-size: 0.64rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.58);
+  color: var(--c-text-muted);
   margin-bottom: 4px;
   font-weight: 600;
 }
@@ -302,7 +292,7 @@ function exit() {
   font-weight: 650;
   font-size: 1.1rem;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--c-text);
 }
 
 @media (max-width: 600px) {

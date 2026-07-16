@@ -22,6 +22,7 @@ export const useSettingsStore = defineStore('settings', () => {
     player.setMaster(masterVolume.value)
     await player.setPianoSink(pianoSinkId.value)
     await player.setChoirSink(choirSinkId.value)
+    await player.reconcileOutputSinks()
     player.setResumePosition(resumePosition.value)
     loaded.value = true
   }

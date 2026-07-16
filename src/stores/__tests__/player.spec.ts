@@ -230,6 +230,28 @@ describe('player store', () => {
       expect(player.currentTime).toBeCloseTo(8.5, 1)
     })
 
+    it('uses the longest track for the visible timeline and timecode', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        true,
+      )
+      const { piano, choir } = grabElements()
+      piano.duration = 30
+      choir.duration = 90
+      piano.__dispatch('loadedmetadata')
+      choir.__dispatch('loadedmetadata')
+      piano.currentTime = 29
+      choir.currentTime = 29
+      choir.__dispatch('timeupdate')
+
+      expect(player.duration).toBe(90)
+      expect(player.currentTime).toBe(29)
+    })
+
     it('drift correction nudges choir back into sync with piano', async () => {
       const player = usePlayerStore()
       const a = makeSong('s1', 'A')
@@ -690,6 +712,37 @@ describe('player store', () => {
       expect(player.pianoSinkId).toBe('')
       expect(player.choirSinkId).toBe('')
     })
+
+    it('falls back to System default when a saved output is no longer available', async () => {
+      const player = usePlayerStore()
+      await player.setPianoSink('missing-piano')
+      await player.setChoirSink('missing-choir')
+
+      await player.reconcileOutputSinks([
+        { deviceId: 'available-output', kind: 'audiooutput' } as MediaDeviceInfo,
+      ])
+
+      expect(player.pianoSinkId).toBe('')
+      expect(player.choirSinkId).toBe('')
+    })
+
+    it('falls back to System default when routing to a selected output fails', async () => {
+      const player = usePlayerStore()
+      const a = makeSong('s1', 'A')
+      await player.load(
+        makeService([{ id: 'i1', songId: 's1', pianoVolume: 1, choirVolume: 1 }]),
+        [a],
+        0,
+        false,
+      )
+      const { piano } = grabElements()
+      piano.setSinkId = () => Promise.reject(new Error('Device disconnected'))
+
+      await player.setPianoSink('disconnected-output')
+
+      expect(player.pianoSinkId).toBe('')
+      expect(player.error).toContain('Falling back to default')
+    })
   })
 
   describe('resume position', () => {
@@ -825,7 +878,15 @@ describe('player store', () => {
       for (const cb of batch) cb(performance.now())
     }
 
-    async function loadWithCut(cut: { start: number; end: number; fadeMs?: number; curve?: 'linear' | 'equalPower' | 'ease' | 'fast' }, autoplay = false) {
+    async function loadWithCut(
+      cut: {
+        start: number
+        end: number
+        fadeMs?: number
+        curve?: 'linear' | 'equalPower' | 'ease' | 'fast'
+      },
+      autoplay = false,
+    ) {
       const player = usePlayerStore()
       const library = useLibraryStore()
       await library.init()

@@ -8,6 +8,9 @@
   margin-left: var(--sidebar-w);
   padding: 38px clamp(28px, 5vw, 72px) calc(var(--player-h) + 34px);
 }
+.app-shell--sidebar-collapsed {
+  --sidebar-w: 0px;
+}
 
 /* Shared utility primitives
    Solid white surfaces with hairline borders and whisper shadows.

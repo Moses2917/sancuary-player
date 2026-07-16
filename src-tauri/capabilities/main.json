@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
-  "description": "Allows the packaged Sanctuary Player frontend to use its local SQLite commands.",
+  "description": "Allows the packaged Sanctuary Player frontend to use its local SQLite commands and import audio files selected by the user.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:allow-open", "fs:allow-read-file"]
 }

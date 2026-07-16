@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Upload, X } from '@lucide/vue'
+import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useLibraryStore } from '@/stores/library'
 import type { SongTag } from '@/types'
 
@@ -19,8 +21,22 @@ const piano = ref<File | null>(null)
 const choir = ref<File | null>(null)
 const error = ref('')
 const saving = ref(false)
-const audioAccept = 'audio/*,.aac,.aif,.aiff,.flac,.m4a,.mp3,.ogg,.oga,.opus,.wav,.wave,.webm'
-const audioExtension = /\.(aac|aif|aiff|flac|m4a|mp3|ogg|oga|opus|wav|wave|webm)$/i
+const audioExtensions = [
+  'aac',
+  'aif',
+  'aiff',
+  'flac',
+  'm4a',
+  'mp3',
+  'ogg',
+  'oga',
+  'opus',
+  'wav',
+  'wave',
+  'webm',
+]
+const audioAccept = audioExtensions.map((extension) => `.${extension}`).join(',')
+const audioExtension = new RegExp(`\\.(${audioExtensions.join('|')})$`, 'i')
 
 // Persistent hidden file inputs attached to the DOM so the change event
 // fires reliably across browsers (detached inputs created via
@@ -48,11 +64,78 @@ function reset() {
 
 const canSubmit = computed(() => !!piano.value && !!choir.value && !saving.value)
 
+function isDesktopApp(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+}
+
+function fileNameFromPath(path: string): string {
+  return path.split(/[\\/]/).pop() || 'audio'
+}
+
+function audioMimeType(fileName: string): string {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+  const mimeTypes: Record<string, string> = {
+    aac: 'audio/aac',
+    aif: 'audio/aiff',
+    aiff: 'audio/aiff',
+    flac: 'audio/flac',
+    m4a: 'audio/mp4',
+    mp3: 'audio/mpeg',
+    ogg: 'audio/ogg',
+    oga: 'audio/ogg',
+    opus: 'audio/opus',
+    wav: 'audio/wav',
+    wave: 'audio/wav',
+    webm: 'audio/webm',
+  }
+  return mimeTypes[extension ?? ''] ?? 'application/octet-stream'
+}
+
+async function fileFromDesktopPath(path: string): Promise<File> {
+  const name = fileNameFromPath(path)
+  const data = await readFile(path)
+  return new File([data], name, { type: audioMimeType(name) })
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message
+  }
+  return typeof error === 'string' ? error : fallback
+}
+
+async function pickTrack(kind: 'piano' | 'choir') {
+  if (!isDesktopApp()) {
+    const input = kind === 'piano' ? pianoInput : choirInput
+    input.value?.click()
+    return
+  }
+
+  try {
+    const path = await openFileDialog({
+      title: `Choose ${kind} audio file`,
+      multiple: false,
+      directory: false,
+      filters: [{ name: 'Audio files', extensions: audioExtensions }],
+    })
+    if (!path) return
+    assignTrack(kind, await fileFromDesktopPath(path))
+  } catch (err) {
+    error.value = errorMessage(err, 'Could not read the selected audio file.')
+  }
+}
+
 function pickPiano() {
-  pianoInput.value?.click()
+  void pickTrack('piano')
 }
 function pickChoir() {
-  choirInput.value?.click()
+  void pickTrack('choir')
 }
 
 function isAudioFile(file: File) {
@@ -101,7 +184,7 @@ async function submit() {
     emit('saved-song', { id: song.id })
     emit('saved')
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Could not save song'
+    error.value = errorMessage(err, 'Could not save song')
     saving.value = false
   }
 }
@@ -288,7 +371,7 @@ async function submit() {
   padding: 13px 14px;
   border-radius: 9px;
   border: 1px solid var(--c-border);
-  background: rgba(255, 255, 255, .68);
+  background: rgba(255, 255, 255, 0.68);
   color: var(--c-text-soft);
   text-align: left;
   width: 100%;

@@ -1,6 +1,6 @@
 mod database;
 
-use std::thread;
+use std::{borrow::Cow, thread};
 
 use database::Database;
 use http::{
@@ -75,9 +75,7 @@ fn clear_all(database: State<'_, Database>) -> Result<(), String> {
 
 #[tauri::command]
 fn stage_audio(request: InvokeRequest, database: State<'_, Database>) -> Result<(), String> {
-    let InvokeBody::Raw(data) = request.body() else {
-        return Err("Audio upload must use a binary request body.".into());
-    };
+    let data = audio_bytes(request.body())?;
     let upload_id = request_header(&request, "x-sanctuary-upload-id")?;
     let kind = request_header(&request, "x-sanctuary-track")?;
     let mime = request
@@ -85,7 +83,27 @@ fn stage_audio(request: InvokeRequest, database: State<'_, Database>) -> Result<
         .get("x-sanctuary-mime")
         .and_then(|value| value.to_str().ok())
         .unwrap_or("application/octet-stream");
-    database.stage_audio(upload_id, kind, mime, data)
+    database.stage_audio(upload_id, kind, mime, &data)
+}
+
+/// Tauri normally sends a Uint8Array as raw IPC bytes. Some WebView transports
+/// fall back to a JSON number array, so accept both encodings when staging audio.
+fn audio_bytes(body: &InvokeBody) -> Result<Cow<'_, [u8]>, String> {
+    match body {
+        InvokeBody::Raw(data) => Ok(Cow::Borrowed(data)),
+        InvokeBody::Json(Value::Array(values)) => values
+            .iter()
+            .map(|value| {
+                value
+                    .as_u64()
+                    .filter(|byte| *byte <= u8::MAX.into())
+                    .map(|byte| byte as u8)
+                    .ok_or_else(|| "Audio upload contains invalid byte data.".to_owned())
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(Cow::Owned),
+        _ => Err("Audio upload must contain binary data.".into()),
+    }
 }
 
 #[tauri::command]
@@ -109,6 +127,8 @@ fn request_header<'a>(request: &'a InvokeRequest, name: &str) -> Result<&'a str,
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             let database = Database::new(app_data_dir).map_err(std::io::Error::other)?;
@@ -240,4 +260,31 @@ fn error_response(status: StatusCode, message: &str) -> Response<Vec<u8>> {
         .header("access-control-allow-origin", "*")
         .body(message.as_bytes().to_vec())
         .unwrap_or_else(|_| Response::new(Vec::new()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_upload_accepts_raw_and_json_bytes() {
+        assert_eq!(
+            audio_bytes(&InvokeBody::Raw(vec![0, 128, 255]))
+                .unwrap()
+                .as_ref(),
+            [0, 128, 255]
+        );
+        assert_eq!(
+            audio_bytes(&InvokeBody::Json(serde_json::json!([0, 128, 255])))
+                .unwrap()
+                .as_ref(),
+            [0, 128, 255]
+        );
+    }
+
+    #[test]
+    fn audio_upload_rejects_invalid_json_bytes() {
+        let error = audio_bytes(&InvokeBody::Json(serde_json::json!([256]))).unwrap_err();
+        assert_eq!(error, "Audio upload contains invalid byte data.");
+    }
 }

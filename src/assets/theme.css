@@ -68,7 +68,8 @@
   /* Layout */
   --player-h: 104px;
   --header-h: 70px;
-  --sidebar-w: 248px;
+  --sidebar-expanded-w: 248px;
+  --sidebar-w: var(--sidebar-expanded-w);
   --content-max: 1360px;
 
   /* Motion — quick and confident */

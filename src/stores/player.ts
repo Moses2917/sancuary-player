@@ -71,9 +71,7 @@ type SoloTarget = 'piano' | 'choir' | null
 /** True if this browser supports routing an <audio> element to a specific output device. */
 export function supportsAudioOutputRouting(): boolean {
   if (typeof HTMLMediaElement === 'undefined') return false
-  return (
-    typeof (HTMLMediaElement.prototype as { setSinkId?: unknown }).setSinkId === 'function'
-  )
+  return typeof (HTMLMediaElement.prototype as { setSinkId?: unknown }).setSinkId === 'function'
 }
 
 /**
@@ -254,21 +252,22 @@ export const usePlayerStore = defineStore('player', () => {
 
   /* ---------- audio output routing ---------- */
   async function applySink(el: HTMLAudioElement | null, sinkId: string | undefined) {
-    if (!el) return
-    if (!outputRoutingSupported.value) return
+    if (!el || !outputRoutingSupported.value) return true
     const target = sinkId ?? ''
     // Cast: TS lib targets older browsers; setSinkId exists at runtime when supported.
     type Sinked = { setSinkId: (id: string) => Promise<void> }
     const sinked = el as unknown as Sinked & HTMLAudioElement
-    if (typeof sinked.setSinkId !== 'function') return
+    if (typeof sinked.setSinkId !== 'function') return true
     try {
       await sinked.setSinkId(target)
+      return true
     } catch (err) {
       setError(
         `Couldn't route audio to the selected output${
           err instanceof Error ? `: ${err.message}` : ''
         }. Falling back to default.`,
       )
+      return false
     }
   }
 
@@ -276,13 +275,21 @@ export const usePlayerStore = defineStore('player', () => {
   async function setPianoSink(sinkId: string) {
     pianoSinkId.value = sinkId
     pendingPianoSink = sinkId
-    await applySink(pianoEl, sinkId)
+    if (!(await applySink(pianoEl, sinkId)) && sinkId) {
+      pianoSinkId.value = ''
+      pendingPianoSink = ''
+      await applySink(pianoEl, '')
+    }
   }
   /** Set the choir track's output device; persisted via settings. */
   async function setChoirSink(sinkId: string) {
     choirSinkId.value = sinkId
     pendingChoirSink = sinkId
-    await applySink(choirEl, sinkId)
+    if (!(await applySink(choirEl, sinkId)) && sinkId) {
+      choirSinkId.value = ''
+      pendingChoirSink = ''
+      await applySink(choirEl, '')
+    }
   }
 
   /**
@@ -298,6 +305,21 @@ export const usePlayerStore = defineStore('player', () => {
     } catch {
       return []
     }
+  }
+
+  /**
+   * Falls back to the system output if a stored device disappears. The dialog
+   * plugin/browser keeps the selected paths and device ids platform-specific,
+   * so validating against the current list is safer than trusting old ids.
+   */
+  async function reconcileOutputSinks(devices?: MediaDeviceInfo[]): Promise<void> {
+    const currentDevices = devices ?? (await enumerateOutputs())
+    // Don't erase a remembered device when the browser temporarily withholds
+    // device enumeration (for example before permission is granted).
+    if (currentDevices.length === 0) return
+    const available = new Set(currentDevices.map((device) => device.deviceId))
+    if (pianoSinkId.value && !available.has(pianoSinkId.value)) await setPianoSink('')
+    if (choirSinkId.value && !available.has(choirSinkId.value)) await setChoirSink('')
   }
 
   /**
@@ -368,6 +390,9 @@ export const usePlayerStore = defineStore('player', () => {
 
     pianoEl.src = pianoUrl ?? ''
     choirEl.src = choirUrl ?? ''
+    // The old song's duration must never be used to position this song's
+    // waveform while the replacement metadata is still loading.
+    duration.value = 0
     pianoEl.load()
     choirEl.load()
     applyVolumes()
@@ -405,9 +430,24 @@ export const usePlayerStore = defineStore('player', () => {
     ready.value = d > 0
   }
 
+  function timelineElement(): HTMLAudioElement | null {
+    const pianoDuration = pianoEl?.duration
+    const choirDuration = choirEl?.duration
+    if (
+      choirEl &&
+      Number.isFinite(choirDuration) &&
+      (choirDuration ?? 0) > 0 &&
+      (!Number.isFinite(pianoDuration) || (choirDuration ?? 0) > (pianoDuration ?? 0))
+    ) {
+      return choirEl
+    }
+    return pianoEl
+  }
+
   function onTimeUpdate() {
-    if (!pianoEl) return
-    const t = pianoEl.currentTime
+    const timeline = timelineElement()
+    if (!timeline || !pianoEl) return
+    const t = timeline.currentTime
     currentTime.value = t
 
     // Recompute the fade multiplier whenever playback crosses a fade region.
@@ -420,12 +460,13 @@ export const usePlayerStore = defineStore('player', () => {
       return
     }
 
-    if (!driftGuard && isPlaying.value && choirEl && choirEl.src) {
-      const drift = Math.abs(choirEl.currentTime - t)
+    const follower = timeline === pianoEl ? choirEl : pianoEl
+    if (!driftGuard && isPlaying.value && follower && follower.src) {
+      const drift = Math.abs(follower.currentTime - t)
       if (drift > DRIFT_THRESHOLD_SEC) {
         driftGuard = true
         try {
-          choirEl.currentTime = t
+          follower.currentTime = t
         } catch {
           /* ignore */
         }
@@ -893,10 +934,7 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song) return
     const start = currentTime.value
-    const end = Math.min(
-      start + durationSeconds,
-      duration.value || start + durationSeconds,
-    )
+    const end = Math.min(start + durationSeconds, duration.value || start + durationSeconds)
     const library = useLibraryStore()
     void library.addFade(song.id, { start, end, toVolume: 0 })
     refreshActiveSong()
@@ -926,10 +964,7 @@ export const usePlayerStore = defineStore('player', () => {
     const song = currentSong.value
     if (!song) return
     const start = currentTime.value
-    const end = Math.min(
-      start + durationSeconds,
-      duration.value || start + durationSeconds,
-    )
+    const end = Math.min(start + durationSeconds, duration.value || start + durationSeconds)
     const library = useLibraryStore()
     void library.addCut(song.id, {
       start,
@@ -1041,6 +1076,7 @@ export const usePlayerStore = defineStore('player', () => {
     setPianoSink,
     setChoirSink,
     enumerateOutputs,
+    reconcileOutputSinks,
     requestOutputPermission,
     /* resume position */
     setResumePosition,

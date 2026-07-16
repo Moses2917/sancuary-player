@@ -53,6 +53,9 @@
       "webviewInstallMode": {
         "type": "offlineInstaller"
       }
+    },
+    "macOS": {
+      "infoPlist": "Info.plist"
     }
   }
 }

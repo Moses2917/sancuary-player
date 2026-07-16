@@ -121,4 +121,27 @@ describe('settings store', () => {
     )
     saveSpy.mockRestore()
   })
+
+  it('persists the System default fallback after a saved output disappears', async () => {
+    const saveSpy = vi.spyOn(idb, 'saveSettings').mockResolvedValue({
+      id: 'app',
+      masterVolume: 0.9,
+    })
+    const settings = useSettingsStore()
+    const player = usePlayerStore()
+    await settings.init()
+    settings.watchPlayer(player)
+    await player.setPianoSink('missing-output')
+
+    vi.useFakeTimers()
+    await player.reconcileOutputSinks([
+      { deviceId: 'available-output', kind: 'audiooutput' } as MediaDeviceInfo,
+    ])
+    await nextTick()
+    vi.advanceTimersByTime(300)
+    vi.useRealTimers()
+
+    expect(saveSpy).toHaveBeenLastCalledWith(expect.objectContaining({ pianoSinkId: '' }))
+    saveSpy.mockRestore()
+  })
 })

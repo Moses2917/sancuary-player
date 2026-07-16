@@ -21,16 +21,10 @@ async function refresh() {
   loading.value = true
   try {
     devices.value = await player.enumerateOutputs()
+    await player.reconcileOutputSinks(devices.value)
   } finally {
     loading.value = false
   }
-}
-
-async function bootstrap() {
-  // Trigger the permission prompt from this user gesture so device
-  // labels are visible. The actual permission grant happens here.
-  await player.requestOutputPermission()
-  await refresh()
 }
 
 function labelFor(d: MediaDeviceInfo): string {
@@ -42,7 +36,7 @@ function onDeviceChange() {
 }
 
 onMounted(async () => {
-  await bootstrap()
+  await refresh()
   navigator.mediaDevices?.addEventListener?.('devicechange', onDeviceChange)
 })
 
@@ -79,8 +73,8 @@ function resetToDefault() {
     </header>
 
     <p v-if="!player.outputRoutingSupported" class="outputs__unsupported">
-      This browser doesn't support per-track output routing. Use Chrome, Edge, or Firefox 136+
-      to send piano and choir to separate devices.
+      This browser doesn't support per-track output routing. Use Chrome, Edge, or Firefox 136+ to
+      send piano and choir to separate devices.
     </p>
 
     <template v-else>
@@ -125,9 +119,7 @@ function resetToDefault() {
       </div>
 
       <div class="outputs__actions">
-        <button class="outputs__reset" @click="resetToDefault">
-          Reset both to default
-        </button>
+        <button class="outputs__reset" @click="resetToDefault">Reset both to default</button>
         <button class="outputs__refresh" title="Re-scan devices" @click="refresh">
           Refresh list
         </button>
@@ -139,11 +131,7 @@ function resetToDefault() {
           <input
             type="checkbox"
             :checked="player.resumePosition"
-            @change="
-              player.setResumePosition(
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            @change="player.setResumePosition(($event.target as HTMLInputElement).checked)"
           />
           <span>
             <strong>Remember playhead position</strong>
@@ -200,7 +188,7 @@ function resetToDefault() {
 }
 .outputs__unsupported {
   color: var(--c-text-soft);
-  background: rgba(118, 118, 128, .12);
+  background: rgba(118, 118, 128, 0.12);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
 }
@@ -237,7 +225,7 @@ function resetToDefault() {
   padding: 4px 8px;
   border-radius: 7px;
   border: 1px solid var(--c-border);
-  background: rgba(255, 255, 255, .7);
+  background: rgba(255, 255, 255, 0.7);
   color: var(--c-text);
   font-size: 0.8rem;
   font-family: inherit;
