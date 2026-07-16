@@ -241,9 +241,9 @@ async function submit() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -251,44 +251,44 @@ async function submit() {
 }
 .modal {
   width: 100%;
-  max-width: 520px;
+  max-width: 500px;
   max-height: 90vh;
   overflow: auto;
-  background: var(--c-surface-raised);
+  background: rgba(250, 250, 252, 0.96);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
+  border-radius: 13px;
   box-shadow: var(--sh-lg);
 }
 .modal__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-5) var(--sp-5) var(--sp-3);
+  padding: 18px 20px 12px;
 }
 .modal__head h2 {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 .modal__body {
-  padding: 0 var(--sp-5) var(--sp-4);
+  padding: 0 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
+  gap: 15px;
 }
 .drops {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: 8px;
 }
 .drop {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-4);
-  border-radius: var(--r-md);
-  border: 1.5px dashed var(--c-border-strong);
-  background: var(--c-bg-1);
+  padding: 13px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, .68);
   color: var(--c-text-soft);
   text-align: left;
   width: 100%;
@@ -297,13 +297,13 @@ async function submit() {
     background var(--dur-fast) var(--ease);
 }
 .drop:hover {
-  border-color: var(--c);
-  background: var(--c-bg-2);
+  border-color: color-mix(in srgb, var(--c) 44%, var(--c-border));
+  background: #fff;
 }
 .drop--filled {
   border-style: solid;
   border-color: var(--c);
-  background: color-mix(in srgb, var(--c) 7%, var(--c-bg-1));
+  background: color-mix(in srgb, var(--c) 7%, #fff);
   color: var(--c-text);
 }
 .drop__label {
@@ -338,8 +338,8 @@ async function submit() {
 .modal__foot {
   display: flex;
   justify-content: flex-end;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-5) var(--sp-5);
+  gap: 8px;
+  padding: 12px 20px 18px;
   border-top: 1px solid var(--c-border);
 }
 

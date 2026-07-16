@@ -96,9 +96,9 @@ function confirm() {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,13 +106,13 @@ function confirm() {
 }
 .modal {
   width: 100%;
-  max-width: 520px;
+  max-width: 500px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: var(--c-surface-raised);
+  background: rgba(250, 250, 252, 0.96);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
+  border-radius: 13px;
   box-shadow: var(--sh-lg);
   overflow: hidden;
 }
@@ -120,18 +120,18 @@ function confirm() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-5) var(--sp-5) var(--sp-3);
+  padding: 18px 20px 12px;
 }
 .modal__head h2 {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 .modal__body {
-  padding: 0 var(--sp-5) var(--sp-3);
+  padding: 0 20px 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: 10px;
   overflow: hidden;
 }
 .picker {
@@ -147,8 +147,8 @@ function confirm() {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
+  padding: 9px 10px;
+  border-radius: 7px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--c-text-soft);
@@ -159,18 +159,18 @@ function confirm() {
     color var(--dur-fast) var(--ease);
 }
 .pick:hover {
-  background: var(--c-bg-1);
+  background: rgba(0, 0, 0, .045);
 }
 .pick--on {
-  background: var(--c-accent-glow);
-  border-color: rgba(232, 71, 76, 0.22);
+  background: rgba(250, 45, 72, .09);
+  border-color: rgba(250, 45, 72, .18);
   color: var(--c-text);
 }
 .pick__check {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  border-radius: 5px;
+  border-radius: 50%;
   border: 1.5px solid var(--c-border-strong);
   display: inline-flex;
   align-items: center;
@@ -196,7 +196,7 @@ function confirm() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-3) var(--sp-5) var(--sp-5);
+  padding: 12px 20px 18px;
   border-top: 1px solid var(--c-border);
 }
 .count {
@@ -206,7 +206,7 @@ function confirm() {
 }
 .actions {
   display: flex;
-  gap: var(--sp-3);
+  gap: 8px;
 }
 
 .modal-enter-active,
