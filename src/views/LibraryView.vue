@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Database, Download, Music, Pause, Play, Plus, Search, Trash2, Upload } from '@lucide/vue'
+import { Database, Download, Ellipsis, Music, Pause, Play, Plus, Search, Trash2, Upload } from '@lucide/vue'
 import { useLibraryStore } from '@/stores/library'
 import { useServicesStore } from '@/stores/services'
 import { usePlayerStore } from '@/stores/player'
@@ -26,6 +26,7 @@ const query = ref('')
 const tagFilter = ref<SongTag | 'all'>('all')
 const backupBusy = ref(false)
 const backupMessage = ref('')
+const moreOpen = ref(false)
 
 onMounted(() => {
   void library.init()
@@ -33,11 +34,13 @@ onMounted(() => {
 
 function onSaved() {
   importerOpen.value = false
+  moreOpen.value = false
 }
 
 function importBundled(titles: string[]) {
   void library.importBundled(titles).then(() => {
     bundledOpen.value = false
+    moreOpen.value = false
   })
 }
 
@@ -53,6 +56,7 @@ function remove(song: Song) {
 
 async function exportBackup() {
   if (backupBusy.value) return
+  moreOpen.value = false
   backupBusy.value = true
   backupMessage.value = ''
   try {
@@ -68,6 +72,7 @@ async function exportBackup() {
 
 async function importBackup() {
   if (backupBusy.value) return
+  moreOpen.value = false
   const file = await pickBackupFile()
   if (!file) return
   backupBusy.value = true
@@ -119,15 +124,28 @@ const counts = computed(() => {
         <p class="page-intro">Your collection of accompaniment and choir tracks.</p>
       </div>
       <div class="section-title__actions">
-        <button class="btn" :disabled="backupBusy" @click="exportBackup" title="Download a backup">
-          <Download :size="14" :stroke-width="1.75" /> <span class="hide-sm">Export</span>
-        </button>
-        <button class="btn" :disabled="backupBusy" @click="importBackup" title="Restore a backup">
-          <Database :size="14" :stroke-width="1.75" /> <span class="hide-sm">Restore</span>
-        </button>
-        <button class="btn" @click="bundledOpen = true">
-          <Upload :size="14" :stroke-width="1.75" /> <span class="hide-sm">Bundled</span>
-        </button>
+        <div class="library-more">
+          <button
+            class="icon-btn"
+            :class="{ 'icon-btn--active': moreOpen }"
+            :aria-expanded="moreOpen"
+            title="Library actions"
+            @click="moreOpen = !moreOpen"
+          >
+            <Ellipsis :size="18" :stroke-width="2" />
+          </button>
+          <div v-if="moreOpen" class="library-menu" role="menu">
+            <button :disabled="backupBusy" role="menuitem" @click="exportBackup">
+              <Download :size="15" :stroke-width="1.75" /> Export backup
+            </button>
+            <button :disabled="backupBusy" role="menuitem" @click="importBackup">
+              <Database :size="15" :stroke-width="1.75" /> Restore backup
+            </button>
+            <button role="menuitem" @click="moreOpen = false; bundledOpen = true">
+              <Upload :size="15" :stroke-width="1.75" /> Load bundled songs
+            </button>
+          </div>
+        </div>
         <button class="btn btn--primary" @click="importerOpen = true">
           <Plus :size="14" :stroke-width="2" /> Add song
         </button>
@@ -473,6 +491,11 @@ const counts = computed(() => {
   padding: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-4);
 }
+.library-more { position: relative; }
+.library-menu { position: absolute; z-index: 20; top: calc(100% + 7px); right: 0; width: 205px; padding: 5px; border: 1px solid var(--c-border); border-radius: 10px; background: rgba(250,250,252,.97); box-shadow: var(--sh-lg); backdrop-filter: blur(18px) saturate(160%); }
+.library-menu button { display: flex; align-items: center; width: 100%; gap: 9px; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--c-text); font: inherit; font-size: .81rem; font-weight: 500; text-align: left; }
+.library-menu button:hover:not(:disabled) { background: rgba(0,0,0,.06); }
+.library-menu button:disabled { opacity: .45; cursor: not-allowed; }
 .hide-sm {
   /* visible by default; media query below collapses on small screens */
 }
