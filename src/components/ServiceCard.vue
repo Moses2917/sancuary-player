@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ChevronRight } from '@lucide/vue'
+import { CalendarDays } from '@lucide/vue'
 import type { Service } from '@/types'
 import { formatDate } from '@/utils'
 
@@ -15,32 +15,29 @@ function open() {
 
 <template>
   <article class="card" tabindex="0" @click="open" @keydown.enter="open">
-    <div class="card__head">
-      <span class="card__date">{{ formatDate(service.date) || 'No date' }}</span>
-      <span class="card__count">{{ service.items.length }} songs</span>
-    </div>
-    <h3 class="card__title" :title="service.name">{{ service.name }}</h3>
-    <div class="card__foot">
-      <span class="card__cta">
-        Open playlist
-        <ChevronRight :size="13" :stroke-width="2" />
-      </span>
+    <div class="card__art" aria-hidden="true"><CalendarDays :size="26" :stroke-width="1.5" /></div>
+    <div class="card__meta">
+      <h3 class="card__title" :title="service.name">{{ service.name }}</h3>
+      <p class="card__date">{{ formatDate(service.date) || 'No date' }}</p>
+      <p class="card__count">{{ service.items.length }} {{ service.items.length === 1 ? 'song' : 'songs' }}</p>
     </div>
   </article>
 </template>
 
 <style scoped>
 .card {
-  position: relative;
-  padding: var(--sp-5);
+  padding: 0;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  min-height: 168px;
-  background: var(--c-surface-raised);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--c-text);
+  box-shadow: none;
   transition:
     box-shadow var(--dur) var(--ease),
     transform var(--dur) var(--ease-out),
@@ -48,49 +45,29 @@ function open() {
 }
 .card:hover,
 .card:focus-visible {
-  border-color: var(--c-border-strong);
-  box-shadow: var(--sh-md);
-  transform: translateY(-2px);
+  box-shadow: none;
+  transform: none;
 }
-.card__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.74rem;
-  color: var(--c-text-muted);
-}
+.card__art { aspect-ratio: 1; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #8d99ae, #404b69); border-radius: 8px; box-shadow: 0 4px 12px rgba(29,29,31,.12); transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease-out); }
+.card:hover .card__art, .card:focus-visible .card__art { filter: brightness(1.07); transform: scale(1.015); }
+.card__meta { padding: 1px 2px; }
 .card__date {
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  font-size: 0.68rem;
+  margin-top: 3px;
+  color: var(--c-text-soft);
+  font-size: .78rem;
+  line-height: 1.2;
 }
 .card__count {
-  font-variant-numeric: tabular-nums;
-  color: var(--c-text-soft);
-  font-weight: 550;
+  margin-top: 2px;
+  color: var(--c-text-muted);
+  font-size: .72rem;
+  line-height: 1.2;
 }
 .card__title {
-  font-weight: 700;
-  font-size: 1.55rem;
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-  margin-top: auto;
-  color: var(--c-text);
-}
-.card__foot {
-  color: var(--c-accent);
-  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: -0.005em;
-}
-.card__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: gap var(--dur-fast) var(--ease-out);
-}
-.card:hover .card__cta {
-  gap: 8px;
+  font-size: .92rem;
+  line-height: 1.22;
+  letter-spacing: -.015em;
+  color: var(--c-text);
 }
 </style>

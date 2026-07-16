@@ -14,6 +14,7 @@ import {
   ScissorsLineDashed,
   SkipBack,
   SkipForward,
+  SlidersHorizontal,
   Volume2,
   X,
 } from '@lucide/vue'
@@ -35,6 +36,8 @@ const peaksLoading = ref(false)
 const placeCueMode = ref(false)
 /** When true, the audio outputs panel is shown. */
 const showOutputs = ref(false)
+/** Keeps production controls out of the everyday, compact player. */
+const advancedOpen = ref(false)
 
 async function refreshPeaks() {
   const song = player.currentSong
@@ -119,7 +122,7 @@ const loopLabel = computed(() => {
 </script>
 
 <template>
-  <section class="pod surface" :class="{ 'pod--empty': !hasSong }">
+  <section class="pod surface" :class="{ 'pod--empty': !hasSong, 'pod--expanded': advancedOpen }">
     <div v-if="player.error" class="pod__error" role="alert">
       <AlertTriangle :size="14" :stroke-width="2" />
       <span class="pod__error-text">{{ player.error }}</span>
@@ -151,6 +154,14 @@ const loopLabel = computed(() => {
         @click="openNowPlaying"
       >
         <Expand :size="16" :stroke-width="1.75" />
+      </button>
+      <button
+        class="icon-btn pod__advanced"
+        :class="{ 'icon-btn--active': advancedOpen }"
+        :title="advancedOpen ? 'Hide playback tools' : 'Show playback tools'"
+        @click="advancedOpen = !advancedOpen"
+      >
+        <SlidersHorizontal :size="16" :stroke-width="1.75" />
       </button>
     </header>
 
@@ -211,7 +222,7 @@ const loopLabel = computed(() => {
           :cuts="player.currentCuts"
           :place-cue-mode="placeCueMode"
           :disabled="!hasSong"
-          :height="44"
+          :height="advancedOpen ? 44 : 32"
           accent="var(--c-accent)"
           @seek="onSeek"
           @marker-seek="onMarkerSeek"
@@ -228,6 +239,15 @@ const loopLabel = computed(() => {
           <span>{{ player.durationFormatted }}</span>
         </div>
       </div>
+    </div>
+
+    <div class="pod__master">
+      <Volume2 :size="15" :stroke-width="1.8" />
+      <VolumeSlider
+        class="pod__master-slider"
+        :model-value="player.masterVolume"
+        @update:model-value="player.setMaster"
+      />
     </div>
 
     <div class="pod__tools">
@@ -361,24 +381,34 @@ const loopLabel = computed(() => {
 <style scoped>
 /* Solid white card with a soft shadow, hangs below the header. */
 .pod {
-  position: sticky;
-  top: calc(var(--header-h) + var(--sp-4));
-  z-index: 25;
-  width: 100%;
-  max-width: 920px;
-  margin: 0 auto var(--sp-6);
-  padding: var(--sp-4) var(--sp-5);
-  background: var(--c-surface-raised);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  box-shadow: var(--sh-md);
+  position: fixed;
+  z-index: 35;
+  inset: auto 0 0 var(--sidebar-w);
+  width: auto;
+  max-width: none;
+  min-height: var(--player-h);
+  margin: 0;
+  padding: 12px clamp(22px, 4vw, 44px);
+  display: grid;
+  grid-template-columns: minmax(200px, 245px) minmax(0, 1fr) minmax(140px, 180px);
+  gap: 0 30px;
+  background: rgba(250, 250, 252, 0.94);
+  border: 0;
+  border-top: 1px solid rgba(60, 60, 67, 0.15);
+  border-radius: 0;
+  box-shadow: 0 -1px 12px rgba(40, 40, 48, 0.04);
+  backdrop-filter: saturate(180%) blur(22px);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+}
+.pod--expanded {
+  min-height: 210px;
+  grid-template-columns: minmax(200px, 245px) minmax(0, 1fr) minmax(140px, 180px);
+  gap: 10px 30px;
 }
 
 /* Error banner */
 .pod__error {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -441,29 +471,22 @@ const loopLabel = computed(() => {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
-  border-radius: var(--r-md);
+  width: 48px;
+  height: 48px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
-  color: var(--c-text-muted);
+  background: #e8e8ed;
+  color: var(--c-accent);
+  box-shadow: none;
   position: relative;
   transition: color var(--dur) var(--ease);
 }
 .pod__art--playing {
   color: var(--c-accent);
 }
-.pod__art--playing::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--c-accent);
-  border: 2px solid var(--c-surface-raised);
-}
+.pod__art--playing::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(250, 45, 72, .42); border-radius: inherit; }
 .pod__meta {
   min-width: 0;
   cursor: pointer;
@@ -490,13 +513,14 @@ const loopLabel = computed(() => {
   width: 32px;
   height: 32px;
 }
+.pod__advanced { margin-left: -8px; }
 
 /* MAIN: transport + waveform */
 .pod__main {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: var(--sp-4);
+  gap: 18px;
 }
 .pod__transport {
   display: flex;
@@ -504,7 +528,10 @@ const loopLabel = computed(() => {
   gap: var(--sp-1);
 }
 .pod__play {
-  margin: 0 6px;
+  width: 38px;
+  height: 38px;
+  margin: 0 4px;
+  box-shadow: none;
 }
 .pod__seek {
   position: relative;
@@ -532,14 +559,17 @@ const loopLabel = computed(() => {
   letter-spacing: -0.005em;
   padding: 0 2px;
 }
+.pod__master { display: flex; align-items: center; gap: 9px; color: var(--c-text-muted); }
+.pod__master-slider { flex: 1; min-width: 0; }
 
 /* TOOLS */
 .pod__tools {
-  display: flex;
+  grid-column: 1 / -1;
+  display: none;
   flex-wrap: wrap;
   gap: 2px;
   align-items: center;
-  padding-top: var(--sp-3);
+  padding-top: 9px;
   border-top: 1px solid var(--c-border);
 }
 .tool {
@@ -569,12 +599,12 @@ const loopLabel = computed(() => {
   letter-spacing: 0;
 }
 .tool--on {
-  background: var(--c-accent);
-  color: #fff;
+  background: rgba(250, 45, 72, .13);
+  color: var(--c-accent-deep);
 }
 .tool--on:hover {
-  background: var(--c-accent-deep);
-  color: #fff;
+  background: rgba(250, 45, 72, .19);
+  color: var(--c-accent-deep);
 }
 .tool:disabled {
   opacity: 0.32;
@@ -589,13 +619,18 @@ const loopLabel = computed(() => {
 
 /* MIXERS */
 .pod__mix {
-  display: grid;
+  grid-column: 1 / -1;
+  display: none;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-5);
+  gap: 30px;
   align-items: center;
-  padding-top: var(--sp-3);
+  padding-top: 9px;
   border-top: 1px solid var(--c-border);
 }
+.pod--expanded .pod__tools { display: flex; }
+.pod--expanded .pod__mix { display: grid; }
+.pod--expanded .pod__master { display: none; }
+.pod:not(.pod--expanded) .pod__panic { display: none; }
 .mix {
   display: flex;
   flex-direction: column;
@@ -653,10 +688,13 @@ const loopLabel = computed(() => {
 /* Responsive */
 @media (max-width: 720px) {
   .pod {
-    top: var(--header-h);
-    padding: var(--sp-3) var(--sp-4);
-    border-radius: var(--r-lg);
+    inset: auto 0 0;
+    min-height: 0;
+    padding: 10px var(--sp-4) 11px;
+    grid-template-columns: 1fr;
+    gap: 7px;
   }
+  .pod__head { display: none; }
   .pod__main {
     grid-template-columns: 1fr;
     gap: var(--sp-2);
@@ -665,9 +703,9 @@ const loopLabel = computed(() => {
     justify-content: center;
   }
   .pod__mix {
-    grid-template-columns: 1fr;
-    gap: var(--sp-2);
+    display: none;
   }
+  .pod__tools { display: none; }
   .pod__expand {
     display: none;
   }

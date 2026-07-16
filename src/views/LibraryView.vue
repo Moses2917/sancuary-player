@@ -114,7 +114,10 @@ const counts = computed(() => {
 <template>
   <section>
     <div class="section-title">
-      <h1>Library</h1>
+      <div>
+        <h1>Library</h1>
+        <p class="page-intro">Your collection of accompaniment and choir tracks.</p>
+      </div>
       <div class="section-title__actions">
         <button class="btn" :disabled="backupBusy" @click="exportBackup" title="Download a backup">
           <Download :size="14" :stroke-width="1.75" /> <span class="hide-sm">Export</span>
@@ -261,17 +264,20 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-md);
-  background: var(--c-bg-2);
-  color: var(--c-text-muted);
+  border-radius: 16px;
+  background: #e9e9ed;
+  color: var(--c-accent);
+  box-shadow: none;
 }
+.page-intro { margin-top: 5px; color: var(--c-text-muted); font-size: .95rem; font-weight: 480; letter-spacing: -.01em; }
 
 .songs {
   display: flex;
   flex-direction: column;
   background: var(--c-surface-raised);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-sm);
   overflow: hidden;
 }
 .song {
@@ -279,7 +285,7 @@ const counts = computed(() => {
   grid-template-columns: 44px 1fr auto auto;
   align-items: center;
   gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
+  padding: 13px 16px;
   border-bottom: 1px solid var(--c-border);
   transition: background var(--dur-fast) var(--ease);
 }
@@ -287,7 +293,7 @@ const counts = computed(() => {
   border-bottom: none;
 }
 .song:hover {
-  background: var(--c-bg-1);
+  background: #fafafd;
 }
 .song__art {
   position: relative;
@@ -297,9 +303,10 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-md);
-  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
-  color: var(--c-text-muted);
+  border-radius: 6px;
+  background: #e7e7ec;
+  color: var(--c-accent);
+  box-shadow: none;
   border: none;
   transition: color var(--dur-fast) var(--ease);
 }
@@ -389,9 +396,9 @@ const counts = computed(() => {
   align-items: center;
   gap: var(--sp-2);
   padding: 0 14px;
-  background: var(--c-bg-2);
+  background: rgba(118, 118, 128, .12);
   border: 1px solid transparent;
-  border-radius: var(--r-pill);
+  border-radius: 8px;
   color: var(--c-text-muted);
   min-width: 220px;
   flex: 1;
@@ -423,8 +430,8 @@ const counts = computed(() => {
   gap: 2px;
   flex-wrap: wrap;
   padding: 3px;
-  background: var(--c-bg-2);
-  border-radius: var(--r-pill);
+  background: rgba(118, 118, 128, .10);
+  border-radius: 9px;
 }
 .chip {
   display: inline-flex;
@@ -448,7 +455,7 @@ const counts = computed(() => {
 .chip--on {
   background: var(--c-surface-raised);
   color: var(--c-text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.09);
 }
 .chip__count {
   font-variant-numeric: tabular-nums;

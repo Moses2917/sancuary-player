@@ -107,19 +107,20 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-md);
+  border-radius: 10px;
   border: 1px solid transparent;
-  background: transparent;
+  background: rgba(255,255,255,.54);
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
 }
 .row:hover {
-  background: var(--c-bg-1);
+  background: #fff;
+  box-shadow: var(--sh-sm);
 }
 .row--current {
-  background: var(--c-accent-glow);
-  border-color: rgba(232, 71, 76, 0.22);
+  background: rgba(250, 45, 72, .09);
+  border-color: rgba(250, 45, 72, 0.20);
 }
 .row--current:hover {
   background: var(--c-accent-glow);

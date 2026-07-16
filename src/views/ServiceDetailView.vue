@@ -309,7 +309,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   gap: 6px;
   background: transparent;
   border: none;
-  color: var(--c-accent);
+  color: var(--c-text-soft);
   font-size: 0.84rem;
   font-weight: 550;
   letter-spacing: -0.005em;
@@ -326,9 +326,12 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--sp-5);
-  margin-bottom: var(--sp-6);
-  padding-bottom: var(--sp-5);
-  border-bottom: 1px solid var(--c-border);
+  margin-bottom: 26px;
+  padding: 0 0 28px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   flex-wrap: wrap;
 }
 .head__main {
@@ -339,7 +342,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-accent);
+  color: var(--c-text-muted);
   font-size: 0.74rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -362,13 +365,14 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   transition: color var(--dur-fast) var(--ease);
 }
 .head__edit:hover {
-  color: var(--c-accent);
+  color: var(--c-text);
 }
 .head__title {
   font-size: clamp(2.1rem, 5.4vw, 3.6rem);
   line-height: 1.04;
-  font-weight: 700;
+  font-weight: 720;
   letter-spacing: -0.035em;
+  color: #fff;
 }
 .head__edit-form {
   display: flex;
@@ -395,9 +399,9 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-md);
-  background: var(--c-bg-2);
-  color: var(--c-text-muted);
+  border-radius: 16px;
+  background: #e9e9ed;
+  color: var(--c-accent);
 }
 
 .list {

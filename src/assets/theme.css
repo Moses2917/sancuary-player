@@ -1,31 +1,29 @@
-/* Sanctuary Player — design tokens
- * Crisp white canvas, generous negative space, single confident red.
- * Inspired by the restraint of modern media apps — every element earns
- * its place; nothing decorates for its own sake.
- */
+/* Sanctuary Player — macOS-inspired music workspace tokens. */
 :root {
   /* Palette — pure white surfaces, whisper-gray sectioning */
-  --c-bg-0: #ffffff;
-  --c-bg-1: #fbfbfd;
-  --c-bg-2: #f5f5f7;
-  --c-bg-3: #ececef;
+  --c-bg-0: #f5f5f7;
+  --c-bg-1: #ffffff;
+  --c-bg-2: #e9e9ed;
+  --c-bg-3: #dcdce1;
 
-  --c-surface: #ffffff;
+  --c-surface: rgba(255, 255, 255, 0.72);
   --c-surface-raised: #ffffff;
-  --c-surface-glass: rgba(255, 255, 255, 0.82);
+  --c-surface-glass: rgba(250, 250, 252, 0.78);
 
-  --c-border: rgba(0, 0, 0, 0.07);
-  --c-border-strong: rgba(0, 0, 0, 0.14);
+  --c-border: rgba(60, 60, 67, 0.13);
+  --c-border-strong: rgba(60, 60, 67, 0.22);
 
-  --c-text: #050505;
-  --c-text-soft: #4a4a4f;
-  --c-text-muted: #86868b;
+  --c-text: #1d1d1f;
+  --c-text-soft: #515159;
+  --c-text-muted: #898990;
 
   /* Single confident accent — a refined crimson */
-  --c-accent: #e8474c;
-  --c-accent-soft: #f1676b;
-  --c-accent-deep: #c62f34;
-  --c-accent-glow: rgba(232, 71, 76, 0.12);
+  --c-accent: #fa2d48;
+  --c-accent-soft: #ff5870;
+  --c-accent-deep: #d91d36;
+  --c-accent-glow: rgba(250, 45, 72, 0.13);
+  --c-sidebar: rgba(239, 239, 243, 0.88);
+  --c-sidebar-selected: rgba(255, 255, 255, 0.75);
 
   /* Track colors — desaturated, calm */
   --c-piano: #2e6cb6;
@@ -37,10 +35,10 @@
      Heavy weights for display, regular for body, all with negative
      tracking so headlines feel set rather than typed. */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto,
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto,
     'Helvetica Neue', sans-serif;
   --font-display:
-    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* Spacing scale */
@@ -54,21 +52,22 @@
   --sp-8: 4rem;
 
   /* Radii — soft but not bubbly */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 22px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
   --r-pill: 980px;
 
   /* Shadows — barely-there, soft and long */
-  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --sh-md: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.06);
-  --sh-lg: 0 2px 8px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.12);
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 7px rgba(0, 0, 0, 0.04);
+  --sh-md: 0 8px 30px rgba(38, 38, 45, 0.09);
+  --sh-lg: 0 24px 70px rgba(38, 38, 45, 0.16);
 
   /* Layout */
-  --player-h: 92px;
-  --header-h: 60px;
-  --content-max: 1120px;
+  --player-h: 104px;
+  --header-h: 70px;
+  --sidebar-w: 248px;
+  --content-max: 1360px;
 
   /* Motion — quick and confident */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);

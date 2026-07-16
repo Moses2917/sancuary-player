@@ -44,7 +44,10 @@ const filtered = computed(() => {
 <template>
   <section>
     <div class="section-title">
-      <h1>Services</h1>
+      <div>
+        <h1>Services</h1>
+        <p class="page-intro">Set lists, ready when the room is.</p>
+      </div>
       <div class="section-title__actions">
         <button class="btn btn--primary" @click="editorOpen = true">
           <Plus :size="16" /> New service
@@ -101,23 +104,25 @@ const filtered = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-md);
-  background: var(--c-bg-2);
-  color: var(--c-text-muted);
+  border-radius: 16px;
+  background: #e9e9ed;
+  color: var(--c-accent);
+  box-shadow: none;
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 24px 18px;
 }
+.page-intro { margin-top: 5px; color: var(--c-text-muted); font-size: .92rem; font-weight: 450; letter-spacing: -.01em; }
 .search {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
   padding: 0 14px;
-  background: var(--c-bg-2);
+  background: rgba(118, 118, 128, .12);
   border: 1px solid transparent;
-  border-radius: var(--r-pill);
+  border-radius: 8px;
   color: var(--c-text-muted);
   max-width: 480px;
   margin-bottom: var(--sp-5);
