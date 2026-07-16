@@ -56,6 +56,17 @@ describe('SongImporter', () => {
     expect(saveDisabled(wrapper)).toBe(false)
   })
 
+  it('rejects a non-audio file selected through the file input', async () => {
+    const wrapper = mountImporter()
+    const input = wrapper.findAll('input[type=file]')[0]!
+    const json = new File(['{}'], 'app.json', { type: 'application/json' })
+
+    await setFile(input, json)
+
+    expect(saveDisabled(wrapper)).toBe(true)
+    expect(wrapper.text()).toContain('Choose an audio file')
+  })
+
   it('saves the song via the library store and emits saved', async () => {
     const lib = useLibraryStore()
     await lib.init()

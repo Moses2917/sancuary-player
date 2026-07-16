@@ -19,6 +19,8 @@ const piano = ref<File | null>(null)
 const choir = ref<File | null>(null)
 const error = ref('')
 const saving = ref(false)
+const audioAccept = 'audio/*,.aac,.aif,.aiff,.flac,.m4a,.mp3,.ogg,.oga,.opus,.wav,.wave,.webm'
+const audioExtension = /\.(aac|aif|aiff|flac|m4a|mp3|ogg|oga|opus|wav|wave|webm)$/i
 
 // Persistent hidden file inputs attached to the DOM so the change event
 // fires reliably across browsers (detached inputs created via
@@ -53,22 +55,36 @@ function pickChoir() {
   choirInput.value?.click()
 }
 
+function isAudioFile(file: File) {
+  return file.type.startsWith('audio/') || audioExtension.test(file.name)
+}
+
+function assignTrack(kind: 'piano' | 'choir', file: File) {
+  if (!isAudioFile(file)) {
+    error.value = 'Choose an audio file (for example WAV, MP3, M4A, FLAC, or OGG).'
+    return
+  }
+  error.value = ''
+  if (kind === 'piano') piano.value = file
+  else choir.value = file
+}
+
 function onPianoChange(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
-  if (f) piano.value = f
+  if (f) assignTrack('piano', f)
 }
 function onChoirChange(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
-  if (f) choir.value = f
+  if (f) assignTrack('choir', f)
 }
 
 function dropPiano(e: DragEvent) {
   const f = e.dataTransfer?.files?.[0]
-  if (f && f.type.startsWith('audio')) piano.value = f
+  if (f) assignTrack('piano', f)
 }
 function dropChoir(e: DragEvent) {
   const f = e.dataTransfer?.files?.[0]
-  if (f && f.type.startsWith('audio')) choir.value = f
+  if (f) assignTrack('choir', f)
 }
 
 async function submit() {
@@ -197,14 +213,14 @@ async function submit() {
       <input
         ref="pianoInput"
         type="file"
-        accept="audio/*"
+        :accept="audioAccept"
         class="hidden-input"
         @change="onPianoChange"
       />
       <input
         ref="choirInput"
         type="file"
-        accept="audio/*"
+        :accept="audioAccept"
         class="hidden-input"
         @change="onChoirChange"
       />
@@ -329,15 +345,17 @@ async function submit() {
 
 .tag-pick {
   display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
   gap: 2px;
   flex-wrap: wrap;
   padding: 3px;
   background: var(--c-bg-2);
-  border-radius: var(--r-pill);
+  border-radius: 7px;
 }
 .tag-pick__opt {
   padding: 5px 14px;
-  border-radius: var(--r-pill);
+  border-radius: 5px;
   border: none;
   background: transparent;
   color: var(--c-text-muted);

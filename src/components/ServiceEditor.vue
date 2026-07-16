@@ -54,11 +54,9 @@ function submit() {
             <input
               v-model="date"
               class="input"
-              type="text"
-              placeholder="e.g. June 22, or pick a date below"
-              @keydown.enter="submit"
+              type="date"
+              aria-label="Service date"
             />
-            <input v-model="date" class="input" type="date" style="margin-top: 8px" />
           </div>
         </div>
         <footer class="modal__foot">
