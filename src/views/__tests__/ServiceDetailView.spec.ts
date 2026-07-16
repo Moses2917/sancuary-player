@@ -110,12 +110,9 @@ describe('ServiceDetailView', () => {
 
     const { wrapper } = await mountView(svc.id)
 
-    // Find the Print button by its icon — it's the first non-primary .btn in the head actions.
-    const buttons = wrapper.findAll('.head__actions .btn')
-    const printBtn = buttons.find((b) => b.attributes('title') === 'Print or save as PDF')
-    expect(printBtn).toBeTruthy()
-
-    await printBtn!.trigger('click')
+    await wrapper.get('[title="Service actions"]').trigger('click')
+    const printBtn = wrapper.get('.service-menu button:last-child')
+    await printBtn.trigger('click')
     expect(document.body.getAttribute('data-print')).toBe('setlist')
     expect(window.print).toHaveBeenCalled()
 

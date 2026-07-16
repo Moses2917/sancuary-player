@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useServicesStore } from '@/stores/services'
 import { useLibraryStore } from '@/stores/library'
 import { usePlayerStore } from '@/stores/player'
-import { ArrowLeft, Calendar, Music, Pencil, Play, Plus, Printer, Upload } from '@lucide/vue'
+import { ArrowLeft, Calendar, Ellipsis, Music, Pencil, Play, Plus, Printer, Upload } from '@lucide/vue'
 import SongPicker from '@/components/SongPicker.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
@@ -21,6 +21,7 @@ const player = usePlayerStore()
 const pickerOpen = ref(false)
 const creatorOpen = ref(false)
 const editingMeta = ref(false)
+const moreActionsOpen = ref(false)
 const metaName = ref('')
 const metaDate = ref('')
 
@@ -85,6 +86,7 @@ function addSongs(songs: Song[]) {
 function onSongCreated(payload: { id: string }) {
   if (!current.value) return
   creatorOpen.value = false
+  moreActionsOpen.value = false
   const song = library.getById(payload.id)
   if (!song) return
   void services.addItems(current.value.id, [song])
@@ -119,6 +121,7 @@ function saveMeta() {
 function printSetlist() {
   const svc = current.value
   if (!svc) return
+  moreActionsOpen.value = false
   const prevFlag = document.body.getAttribute('data-print')
   document.body.setAttribute('data-print', 'setlist')
   // Restore the flag after the print dialog closes regardless of outcome.
@@ -186,7 +189,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         </template>
         <div v-else class="head__edit-form">
           <input v-model="metaName" class="input" placeholder="Service name" />
-          <input v-model="metaDate" class="input" placeholder="Date (free-form)" />
+          <input v-model="metaDate" class="input" type="date" aria-label="Service date" />
           <div class="head__edit-actions">
             <button
               class="btn btn--ghost btn--sm"
@@ -199,20 +202,32 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         </div>
       </div>
       <div class="head__actions">
-        <button
-          class="btn"
-          :disabled="resolved.length === 0"
-          title="Print or save as PDF"
-          @click="printSetlist"
-        >
-          <Printer :size="14" :stroke-width="1.6" /> <span class="hide-sm">Print</span>
-        </button>
         <button class="btn" @click="pickerOpen = true">
           <Plus :size="14" :stroke-width="2" /> Add songs
         </button>
-        <button class="btn" @click="creatorOpen = true">
-          <Upload :size="14" :stroke-width="1.6" /> <span class="hide-sm">Create</span>
-        </button>
+        <div class="service-more">
+          <button
+            class="icon-btn"
+            :class="{ 'icon-btn--active': moreActionsOpen }"
+            :aria-expanded="moreActionsOpen"
+            title="Service actions"
+            @click="moreActionsOpen = !moreActionsOpen"
+          >
+            <Ellipsis :size="18" :stroke-width="2" />
+          </button>
+          <div v-if="moreActionsOpen" class="service-menu" role="menu">
+            <button role="menuitem" @click="moreActionsOpen = false; creatorOpen = true">
+              <Upload :size="15" :stroke-width="1.75" /> Create a new song
+            </button>
+            <button
+              :disabled="resolved.length === 0"
+              role="menuitem"
+              @click="printSetlist"
+            >
+              <Printer :size="15" :stroke-width="1.75" /> Print set list
+            </button>
+          </div>
+        </div>
         <button
           class="btn btn--primary"
           :disabled="resolved.length === 0"
@@ -277,7 +292,6 @@ const serviceNotFound = computed(() => services.ready && !current.value)
     <div class="print-region" aria-hidden="true">
       <div class="print-setlist">
         <h1 class="print-setlist__title">{{ current.name }}</h1>
-        <div class="print-setlist__date">{{ formatDate(current.date) || 'No date set' }}</div>
         <div class="print-setlist__count">{{ resolved.length }} songs</div>
         <ol class="print-setlist__rows">
           <li
@@ -372,7 +386,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   line-height: 1.04;
   font-weight: 720;
   letter-spacing: -0.035em;
-  color: #fff;
+  color: var(--c-text);
 }
 .head__edit-form {
   display: flex;
@@ -391,6 +405,11 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+.service-more { position: relative; }
+.service-menu { position: absolute; z-index: 20; top: calc(100% + 7px); right: 0; width: 195px; padding: 5px; border: 1px solid var(--c-border); border-radius: 10px; background: rgba(250,250,252,.97); box-shadow: var(--sh-lg); backdrop-filter: blur(18px) saturate(160%); }
+.service-menu button { display: flex; align-items: center; width: 100%; gap: 9px; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--c-text); font: inherit; font-size: .81rem; font-weight: 500; text-align: left; }
+.service-menu button:hover:not(:disabled) { background: rgba(0,0,0,.06); }
+.service-menu button:disabled { opacity: .45; cursor: not-allowed; }
 
 .empty__icon {
   width: 68px;
