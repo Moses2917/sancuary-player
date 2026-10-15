@@ -1,22 +1,25 @@
 import { test, expect, type Page } from '@playwright/test'
 
 async function resetAppData(page: Page) {
-  await page.goto('/')
-  await page.evaluate(() => {
+  await page.goto('/remote')
+  await page.evaluate(async () => {
     localStorage.removeItem('sanctuary-player-test-storage')
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase('sanctuary-player')
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
   })
-  await page.reload()
+  await page.goto('/')
 }
 
 /** Import a single library song (used to seed data for service tests). */
-async function importSong(
-  page: Page,
-  title: string,
-  piano: string,
-  choir: string,
-) {
+async function importSong(page: Page, title: string, piano: string, choir: string) {
   await page.goto('/library')
-  await page.getByRole('button', { name: /add (your first )?song/i }).first().click()
+  await page
+    .getByRole('button', { name: /add (your first )?song/i })
+    .first()
+    .click()
   const inputs = page.locator('input[type=file]')
   await inputs.nth(0).setInputFiles(piano)
   await inputs.nth(1).setInputFiles(choir)
@@ -60,7 +63,10 @@ test.describe('services', () => {
     await page.getByRole('button', { name: /^create$/i }).click()
 
     // Add the song from the library picker.
-    await page.getByRole('button', { name: /add songs/i }).first().click()
+    await page
+      .getByRole('button', { name: /add songs/i })
+      .first()
+      .click()
     await page.getByText('Amazing Grace').click()
     await page.getByRole('button', { name: /^add \d+$/i }).click()
 
@@ -87,7 +93,10 @@ test.describe('services', () => {
     await page.getByRole('button', { name: /new service/i }).click()
     await page.getByPlaceholder(/sunday morning/i).fill('Mute Service')
     await page.getByRole('button', { name: /^create$/i }).click()
-    await page.getByRole('button', { name: /add songs/i }).first().click()
+    await page
+      .getByRole('button', { name: /add songs/i })
+      .first()
+      .click()
     await page.getByText('Mute Test').click()
     await page.getByRole('button', { name: /^add \d+$/i }).click()
     await page.getByRole('button', { name: /play service/i }).click()
@@ -113,7 +122,10 @@ test.describe('services', () => {
     await page.getByRole('button', { name: /new service/i }).click()
     await page.getByPlaceholder(/sunday morning/i).fill('Persisted Service')
     await page.getByRole('button', { name: /^create$/i }).click()
-    await page.getByRole('button', { name: /add songs/i }).first().click()
+    await page
+      .getByRole('button', { name: /add songs/i })
+      .first()
+      .click()
     await page.getByText('Persist Song').click()
     await page.getByRole('button', { name: /^add \d+$/i }).click()
 

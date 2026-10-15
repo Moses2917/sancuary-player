@@ -11,4 +11,5 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
-app.mount('#app')
+// Resolve mode before mounting: a direct /remote visit must not mount the local player.
+void router.isReady().then(() => app.mount('#app'))

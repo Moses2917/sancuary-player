@@ -1,33 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import PlayerBar from '@/components/PlayerBar.vue'
-import { useSettingsStore } from '@/stores/settings'
-import { usePlayerStore } from '@/stores/player'
-import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
-import { useMediaSession } from '@/composables/useMediaSession'
+import PlayerSession from '@/components/PlayerSession.vue'
+import RemoteHost from '@/components/RemoteHost.vue'
 
-const settings = useSettingsStore()
-const player = usePlayerStore()
 const route = useRoute()
 
 // "Bare" routes (e.g. the Now Playing projection view) hide app chrome.
 const isBare = computed(() => !!route.meta.bare)
 
-onMounted(async () => {
-  await settings.init()
-  settings.watchPlayer(player)
-})
-
-useKeyboardShortcuts()
-useMediaSession()
+const isRemote = computed(() => !!route.meta.remote)
 </script>
 
 <template>
   <AppHeader v-if="!isBare" />
   <main class="app-main">
-    <PlayerBar v-if="!isBare" />
+    <PlayerSession v-if="!isRemote">
+      <PlayerBar v-if="!isBare" />
+      <RemoteHost :compact="isBare" />
+    </PlayerSession>
     <RouterView v-slot="{ Component }">
       <transition name="fade" mode="out-in">
         <component :is="Component" />

@@ -25,7 +25,7 @@ function makeService(overrides: Partial<Service> = {}): Service {
   }
 }
 
-describe('SQLite bridge test adapter — songs', () => {
+describe('Browser IndexedDB adapter — songs', () => {
   beforeEach(async () => {
     // Wipe the fake DB between tests for isolation.
     const db = await idb.getDB()
@@ -41,10 +41,9 @@ describe('SQLite bridge test adapter — songs', () => {
     expect(fetched?.piano.name).toBe('piano.wav')
     expect(fetched?.choir.name).toBe('choir.wav')
     expect(fetched?.bundled).toBe(false)
-    // Desktop BLOB persistence is covered by the Rust database implementation;
-    // the unit adapter only verifies the track entries are available.
-    expect(fetched?.piano).toBeDefined()
-    expect(fetched?.choir).toBeDefined()
+    expect(fetched?.piano.blob).toBeInstanceOf(Blob)
+    expect([...new Uint8Array(await fetched!.piano.blob!.arrayBuffer())]).toEqual([1, 2, 3])
+    expect([...new Uint8Array(await fetched!.choir.blob!.arrayBuffer())]).toEqual([4, 5, 6])
   })
 
   it('returns all songs sorted by createdAt ascending', async () => {
@@ -72,9 +71,17 @@ describe('SQLite bridge test adapter — songs', () => {
   it('returns undefined for a missing id', async () => {
     expect(await idb.getSong('nope')).toBeUndefined()
   })
+
+  it('retains existing songs if a browser restore cannot store an incoming row', async () => {
+    await idb.putSong(makeSong())
+    await expect(
+      idb.restoreAll({ songs: [{ title: 'missing id' } as Song], services: [] }),
+    ).rejects.toThrow()
+    expect((await idb.getSong('song_1'))?.title).toBe('Test Hymn')
+  })
 })
 
-describe('SQLite bridge test adapter — services', () => {
+describe('Browser IndexedDB adapter — services', () => {
   beforeEach(async () => {
     const db = await idb.getDB()
     await db.clear('services')
@@ -107,7 +114,7 @@ describe('SQLite bridge test adapter — services', () => {
   })
 })
 
-describe('SQLite bridge test adapter — settings', () => {
+describe('Browser IndexedDB adapter — settings', () => {
   beforeEach(async () => {
     const db = await idb.getDB()
     await db.clear('settings')

@@ -42,35 +42,38 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /** Bind persistence watchers to a player instance. Call after init(). */
   function watchPlayer(player: ReturnType<typeof usePlayerStore>) {
-    watch(
-      () => player.masterVolume,
-      (v) => {
-        masterVolume.value = v
-        scheduleSave()
-      },
-    )
-    watch(
-      () => player.pianoSinkId,
-      (v) => {
-        pianoSinkId.value = v
-        scheduleSave()
-      },
-    )
-    watch(
-      () => player.choirSinkId,
-      (v) => {
-        choirSinkId.value = v
-        scheduleSave()
-      },
-    )
-    watch(
-      () => player.resumePosition,
-      (v) => {
-        resumePosition.value = v
-        player.setResumePosition(v)
-        scheduleSave()
-      },
-    )
+    const stops = [
+      watch(
+        () => player.masterVolume,
+        (v) => {
+          masterVolume.value = v
+          scheduleSave()
+        },
+      ),
+      watch(
+        () => player.pianoSinkId,
+        (v) => {
+          pianoSinkId.value = v
+          scheduleSave()
+        },
+      ),
+      watch(
+        () => player.choirSinkId,
+        (v) => {
+          choirSinkId.value = v
+          scheduleSave()
+        },
+      ),
+      watch(
+        () => player.resumePosition,
+        (v) => {
+          resumePosition.value = v
+          player.setResumePosition(v)
+          scheduleSave()
+        },
+      ),
+    ]
+    return () => stops.forEach((stop) => stop())
   }
 
   return {

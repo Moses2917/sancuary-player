@@ -15,8 +15,11 @@ import { Calendar, Church, Music } from '@lucide/vue'
       <nav class="nav">
         <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
           <Calendar :size="14" :stroke-width="1.75" />
-          <span>Services</span>
+          <span>Player</span>
         </RouterLink>
+        <RouterLink to="/remote" class="nav__link" active-class="nav__link--active"
+          >Remote Control</RouterLink
+        >
         <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
           <Music :size="14" :stroke-width="1.75" />
           <span>Library</span>
@@ -35,11 +38,13 @@ import { Calendar, Church, Music } from '@lucide/vue'
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--c-border);
+  padding-top: env(safe-area-inset-top);
 }
 .app-header__inner {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: 0 var(--sp-5);
+  padding: 0 max(var(--sp-5), env(safe-area-inset-right)) 0
+    max(var(--sp-5), env(safe-area-inset-left));
   height: var(--header-h);
   display: flex;
   align-items: center;
@@ -84,6 +89,7 @@ import { Calendar, Church, Music } from '@lucide/vue'
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
+  min-height: 44px;
   border-radius: var(--r-pill);
   color: var(--c-text-muted);
   font-size: 0.82rem;
@@ -99,15 +105,18 @@ import { Calendar, Church, Music } from '@lucide/vue'
 .nav__link--active {
   background: var(--c-surface-raised);
   color: var(--c-text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 560px) {
   .app-header__inner {
     gap: var(--sp-3);
-    padding: 0 var(--sp-4);
+    padding: 0 max(var(--sp-4), env(safe-area-inset-right)) 0
+      max(var(--sp-4), env(safe-area-inset-left));
   }
-  .nav__link span {
+  .brand__text {
     display: none;
   }
   .nav__link {

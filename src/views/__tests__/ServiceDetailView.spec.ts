@@ -48,6 +48,7 @@ describe('ServiceDetailView', () => {
       props: { id },
       global: { plugins: [router] },
     })
+    await expect.poll(() => useServicesStore().ready && useLibraryStore().ready).toBe(true)
     await flushPromises()
     return { wrapper, router }
   }

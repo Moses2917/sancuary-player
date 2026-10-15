@@ -10,13 +10,16 @@ src/
   assets/        Theme tokens, base styles, print stylesheet, PWA bits
   components/    Reusable UI components
   composables/   useKeyboardShortcuts, useMediaSession
-  db/            SQLite bridge and test adapter (src/db/sqlite.ts)
+  db/            Platform storage boundary: native SQLite or browser IndexedDB
+  remote/        Shared protocol, playback bridge, WebSocket transport and tests
   router/        Vue Router config
-  stores/        Pinia stores (player, library, services, settings)
+  stores/        Pinia stores (player, library, services, settings, remote host/controller)
   utils/         waveform peak extraction, backup serialize/restore, formatting
   views/         Routed top-level views
   types.ts       Shared TypeScript types (Song, Service, etc.)
 src-tauri/       Tauri 2 Rust shell, SQLite schema, media protocol, capabilities
+relay/           Bun WebSocket backend for approval, sessions and message exchange
+deploy/          nginx proxy and hardened systemd relay service
 ```
 
 ## Data model
@@ -39,14 +42,19 @@ Defined in `src/types.ts`. The shape that matters most:
   (`'linear' | 'equalPower' | 'ease' | 'fast'`, default `equalPower`) over
   `fadeMs` per side (default 120; 0 = hard cut), masks the join.
 
-`TrackSource` is one of two shapes at runtime:
-- imported tracks use a local `sanctuary-media` URL backed by a SQLite BLOB;
-  `Blob` values only exist while importing or exporting a backup, or in tests.
+`TrackSource` uses platform-specific local audio sources:
+
+- native imported tracks use a `sanctuary-media` URL backed by a SQLite BLOB;
+  `Blob` values also exist while importing or exporting a backup.
+- browser imported tracks retain their Blob in IndexedDB and use an object URL
+  during playback, revoked when switching songs or disposing the player.
 - bundled tracks use an application-asset path from `public/audio/`.
 
 ## Storage layer
 
-`src/db/sqlite.ts` is the frontend boundary for the desktop SQLite database.
+`src/db/sqlite.ts` is the frontend platform-storage boundary. Browser calls use
+`src/db/browser.ts` for durable IndexedDB records including imported audio Blobs;
+replace restores are atomic. Native calls use the desktop SQLite database.
 The Rust implementation in `src-tauri/src/database.rs` persists song,
 service, and settings JSON plus separate piano/choir BLOB rows. Imports stage
 binary IPC payloads and commit both BLOBs with song metadata. The
@@ -54,6 +62,7 @@ binary IPC payloads and commit both BLOBs with song metadata. The
 seeking and waveform decoding work without a media-files directory.
 
 Public helpers:
+
 - `putSong` / `getAllSongs` / `getSong` / `deleteSong`
 - `putService` / `getAllServices` / `getService` / `deleteService`
 - `getSettings` / `saveSettings`
@@ -78,6 +87,7 @@ choir) and drives them together so they stay sample-locked. Key state:
 - derived `currentSong`, `currentMarkers`, `currentFades`, `currentCuts`
 
 Notable behaviours:
+
 - `onTimeUpdate` enforces drift correction (nudges the choir element back
   into sync with piano if drift exceeds 80ms), applies the active loop, and
   recomputes the fade multiplier.
@@ -152,9 +162,31 @@ Defined in `src/router/index.ts`:
 - `/services/:id` - setlist editor + playback entry point
 - `/library` - song library with tag filter, search, and backup tools
 - `/now-playing` - bare full-screen projection view (no app chrome)
+- `/remote` - same-site phone controller showing only the paired host's metadata
 
 The Now Playing route sets `meta.bare: true`, which `App.vue` uses to hide
 the header and player pod.
+
+The router resolves the initial mode before mounting. `PlayerSession.vue` owns
+settings, keyboard and OS media-control initialization and is not mounted in Remote
+Control mode. `RemoteHost.vue` exposes opt-in pairing and keeps approval requests
+visible even over the bare projection view.
+
+## Remote playback
+
+`src/remote/protocol.ts` is shared with the Bun backend. The host bridge in
+`src/remote/bridge.ts` validates and serializes commands against `usePlayerStore`,
+deduplicates request IDs, checks song/queue context and publishes metadata-only
+snapshots. It has no Tauri-only command handling or second audio engine.
+
+`remoteHost` and `remoteController` stores use the shared outbound WebSocket
+transport. The host is authoritative; the controller waits for acknowledgment and
+fresh state after reconnecting. Both connect to the hosted relay across networks.
+`relay/session.ts` owns pairing codes, approval, separate host/controller credentials,
+isolation, expiration and revocation; `relay/server.ts` supplies the Bun transport.
+Sessions are process-local and a backend restart invalidates all credentials.
+
+See [remote-control.md](./remote-control.md) for security limits and deployment.
 
 ## Composables
 

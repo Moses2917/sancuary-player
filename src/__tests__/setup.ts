@@ -4,6 +4,13 @@
  * stub mirrors the surface the store touches: listeners, play/pause state,
  * currentTime/duration/volume, and event dispatching for testing sync logic.
  */
+import 'fake-indexeddb/auto'
+import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
+
+// fake-indexeddb uses Node structuredClone; jsdom's Blob loses its bytes there.
+globalThis.Blob = NodeBlob as unknown as typeof Blob
+globalThis.File = NodeFile as unknown as typeof File
+
 type Listener = (e: Event) => void
 
 class FakeAudioElement {

@@ -4,11 +4,16 @@ import { test, expect } from '@playwright/test'
  * Drop browser test-adapter state so each spec starts with a clean library.
  */
 async function resetAppData(page: import('@playwright/test').Page) {
-  await page.goto('/')
-  await page.evaluate(() => {
+  await page.goto('/remote')
+  await page.evaluate(async () => {
     localStorage.removeItem('sanctuary-player-test-storage')
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase('sanctuary-player')
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
   })
-  await page.reload()
+  await page.goto('/')
 }
 
 test.describe('navigation', () => {
@@ -16,7 +21,7 @@ test.describe('navigation', () => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/services$/)
     await expect(page.getByText('Sanctuary')).toBeVisible()
-    await expect(page.getByRole('link', { name: /services/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /^player$/i })).toBeVisible()
     await expect(page.getByRole('link', { name: /library/i })).toBeVisible()
   })
 
@@ -24,7 +29,7 @@ test.describe('navigation', () => {
     await resetAppData(page)
     await page.getByRole('link', { name: /library/i }).click()
     await expect(page).toHaveURL(/\/library$/)
-    await page.getByRole('link', { name: /services/i }).click()
+    await page.getByRole('link', { name: /^player$/i }).click()
     await expect(page).toHaveURL(/\/services$/)
   })
 })
@@ -42,7 +47,10 @@ test.describe('library', () => {
   test('adds a song from two audio files and lists it', async ({ page }) => {
     await page.goto('/library')
 
-    await page.getByRole('button', { name: /add (your first )?song/i }).first().click()
+    await page
+      .getByRole('button', { name: /add (your first )?song/i })
+      .first()
+      .click()
     await expect(page.getByRole('heading', { name: /add song/i })).toBeVisible()
 
     // Two DOM-attached file inputs (piano first, choir second).
@@ -63,7 +71,10 @@ test.describe('library', () => {
 
   test('derives the title from the filename when left blank', async ({ page }) => {
     await page.goto('/library')
-    await page.getByRole('button', { name: /add (your first )?song/i }).first().click()
+    await page
+      .getByRole('button', { name: /add (your first )?song/i })
+      .first()
+      .click()
 
     const inputs = page.locator('input[type=file]')
     await inputs.nth(0).setInputFiles('e2e/fixtures/piano-2.wav')
@@ -76,7 +87,10 @@ test.describe('library', () => {
 
   test('persists the song across a page reload', async ({ page }) => {
     await page.goto('/library')
-    await page.getByRole('button', { name: /add (your first )?song/i }).first().click()
+    await page
+      .getByRole('button', { name: /add (your first )?song/i })
+      .first()
+      .click()
     const inputs = page.locator('input[type=file]')
     await inputs.nth(0).setInputFiles('e2e/fixtures/piano-noise.wav')
     await inputs.nth(1).setInputFiles('e2e/fixtures/choir-noise.wav')
@@ -90,7 +104,10 @@ test.describe('library', () => {
 
   test('removes a song after confirming', async ({ page }) => {
     await page.goto('/library')
-    await page.getByRole('button', { name: /add (your first )?song/i }).first().click()
+    await page
+      .getByRole('button', { name: /add (your first )?song/i })
+      .first()
+      .click()
     const inputs = page.locator('input[type=file]')
     await inputs.nth(0).setInputFiles('e2e/fixtures/piano-noise.wav')
     await inputs.nth(1).setInputFiles('e2e/fixtures/choir-noise.wav')

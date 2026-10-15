@@ -32,6 +32,7 @@ describe('ServicesView', () => {
     await router.push('/')
     await router.isReady()
     const wrapper = mount(ServicesView, { global: { plugins: [router] } })
+    await expect.poll(() => useServicesStore().ready && useLibraryStore().ready).toBe(true)
     await flushPromises()
     return { wrapper, router }
   }

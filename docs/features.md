@@ -2,6 +2,19 @@
 
 How to use each feature of Sanctuary Player.
 
+## Player and Remote Control modes
+
+**Player** manages and plays audio on this computer. **Remote Control** opens the
+phone-friendly `/remote` mode on the same site without loading local songs or audio.
+On a host, choose **Enable Remote Control**, enter its code on the phone (or scan
+the QR), then approve the request on the host. No account, shared Wi-Fi, or incoming
+network ports are required. Loading a service or selecting a queue item remotely
+loads it paused; audio remains on the host's configured outputs.
+
+See [Remote Control](./remote-control.md) for all controls, reconnect behavior and
+setup. A hosted HTTPS/WSS relay is required; local native playback works offline
+with remote access disabled.
+
 ## Library
 
 The Library view lists every song. Each row shows the title, the piano and
@@ -17,8 +30,8 @@ choir track badges, an optional New / Old tag, and a play / delete button.
    track**.
 5. Click **Save song**.
 
-Files are stored locally as BLOBs in the desktop app's SQLite database. They
-never leave the device.
+Files are stored locally as BLOBs in the desktop app's SQLite database or Blobs in
+the website's IndexedDB. Audio is not sent to the remote controller or relay.
 
 You can also drag-and-drop files onto the track slots.
 

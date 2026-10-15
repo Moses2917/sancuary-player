@@ -1,9 +1,9 @@
 export interface TrackSource {
-  /** Present while importing or exporting; persistent imported audio lives in SQLite. */
+  /** Imported audio: persisted in browser IndexedDB, or staged into native SQLite. */
   blob?: Blob
   /** Original file name, for display. */
   name: string
-  /** Runtime media URL, a bundled asset path, or an object URL during web tests. */
+  /** Native runtime media URL or bundled asset path; Blob tracks use object URLs. */
   url?: string
   /** MIME type hint if known. */
   type?: string

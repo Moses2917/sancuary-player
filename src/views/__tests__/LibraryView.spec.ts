@@ -15,6 +15,7 @@ describe('LibraryView', () => {
 
   async function mountView() {
     const wrapper = mount(LibraryView, { global: { plugins: [] } })
+    await expect.poll(() => useLibraryStore().ready).toBe(true)
     await flushPromises()
     return wrapper
   }

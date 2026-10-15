@@ -25,7 +25,7 @@
     "security": {
       "csp": {
         "default-src": "'self'",
-        "connect-src": "'self' sanctuary-media: http://sanctuary-media.localhost",
+        "connect-src": "'self' sanctuary-media: http://sanctuary-media.localhost wss://player.armsongs.com ws://localhost:8787 ws://127.0.0.1:8787",
         "img-src": "'self' data: blob:",
         "media-src": "'self' blob: sanctuary-media: http://sanctuary-media.localhost",
         "style-src": "'self' 'unsafe-inline'",

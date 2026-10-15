@@ -1,0 +1,25 @@
+[Unit]
+Description=Sanctuary Player WebSocket relay
+After=network.target
+
+[Service]
+Type=simple
+User=sanctuary-relay
+Group=sanctuary-relay
+WorkingDirectory=/opt/sanctuary-player
+ExecStart=/usr/local/bin/bun relay/server.ts
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+Environment=TRUST_PROXY=1
+Environment=ALLOWED_ORIGINS=https://player.armsongs.com,tauri://localhost,http://tauri.localhost,https://tauri.localhost
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+MemoryMax=512M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

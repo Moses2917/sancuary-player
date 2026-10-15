@@ -353,6 +353,7 @@ export const usePlayerStore = defineStore('player', () => {
       currentTime.value = 0
       duration.value = 0
       ready.value = false
+      isLoading.value = false
       return
     }
 
@@ -361,6 +362,8 @@ export const usePlayerStore = defineStore('player', () => {
     choirVolume.value = active.item.choirVolume
 
     isLoading.value = true
+    clearError()
+    duration.value = 0
     const pianoUrl = sourceFor(active.song.piano)
     const choirUrl = sourceFor(active.song.choir)
     currentPianoUrl = pianoUrl
@@ -393,7 +396,6 @@ export const usePlayerStore = defineStore('player', () => {
     if (wasPlaying) {
       await play()
     }
-    isLoading.value = false
   }
 
   /* ---------- events ---------- */
@@ -403,6 +405,7 @@ export const usePlayerStore = defineStore('player', () => {
     const d = Math.max(Number.isFinite(pd) ? pd : 0, Number.isFinite(cd) ? cd : 0)
     if (d > 0) duration.value = d
     ready.value = d > 0
+    if (ready.value) isLoading.value = false
   }
 
   function onTimeUpdate() {
@@ -565,6 +568,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function onError(e: Event) {
+    isLoading.value = false
     const el = e.target as HTMLAudioElement
     const mediaErr = el?.error
     setError(
@@ -752,6 +756,8 @@ export const usePlayerStore = defineStore('player', () => {
    * Resolves songs from the provided map (caller has already fetched them).
    */
   async function load(svc: Service, songs: Song[], startIndex = 0, autoplay = true) {
+    // Explicit paused loads must not inherit playback from the previous song.
+    if (!autoplay) pause()
     ensureElements()
     const map = new Map(songs.map((s) => [s.id, s]))
     const items: ActiveItem[] = svc.items

@@ -4,6 +4,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/remote',
+      name: 'remote',
+      component: () => import('@/views/RemoteView.vue'),
+      meta: { remote: true },
+    },
+    {
       path: '/',
       redirect: { name: 'services' },
     },

@@ -11,6 +11,7 @@ import { usePlayerStore } from '@/stores/player'
 export function useMediaSession() {
   const player = usePlayerStore()
   const ms = typeof navigator !== 'undefined' ? navigator.mediaSession : undefined
+  const actions: MediaSessionAction[] = []
 
   function setMetadata() {
     if (!ms) return
@@ -55,6 +56,7 @@ export function useMediaSession() {
     const trySet = (handler: MediaSessionActionHandler | null, action: MediaSessionAction) => {
       try {
         ms.setActionHandler(action, handler)
+        actions.push(action)
       } catch {
         // Action unsupported on this platform — ignore.
       }
@@ -107,6 +109,7 @@ export function useMediaSession() {
     stopWatchPlaying()
     stopWatchPosition()
     if (ms) {
+      for (const action of actions) ms.setActionHandler(action, null)
       ms.metadata = null
       ms.playbackState = 'none'
     }

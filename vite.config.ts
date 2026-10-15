@@ -49,7 +49,8 @@ export default defineConfig({
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}', 'audio/**/*'],
+          // Remote mode must never download audio through service-worker precaching.
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
         },
@@ -67,6 +68,9 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     host: host || false,
+    proxy: {
+      '/relay': { target: 'ws://127.0.0.1:8787', ws: true },
+    },
     hmr: host
       ? {
           protocol: 'ws',

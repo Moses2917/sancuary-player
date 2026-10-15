@@ -11,8 +11,10 @@ application data directory. Imported piano and choir tracks are SQLite BLOBs;
 they are never copied to a media-files directory and never leave the device.
 
 The bundled example pair under `public/audio/` is packaged as an application
-asset. The desktop app has no cloud, updater, or network dependency after it
-is installed.
+asset. Local desktop playback has no network dependency after installation.
+Optional code-paired Remote Control uses a hosted WSS relay; audio stays on the
+host. The same website supports browser playback (IndexedDB storage) and a
+phone-friendly `/remote` mode, without another app or an account.
 
 ## Quick start
 
@@ -61,8 +63,9 @@ Build each platform on a matching host or native CI runner:
 
 - [docs/architecture.md](./docs/architecture.md) - data model, stores, components
 - [docs/features.md](./docs/features.md) - how to use each feature
-- [docs/deployment.md](./docs/deployment.md) - legacy web deployment notes
+- [docs/deployment.md](./docs/deployment.md) - HTTPS frontend and relay deployment
 - [docs/development.md](./docs/development.md) - dev workflow, tests, lint
+- [docs/remote-control.md](./docs/remote-control.md) - pairing, relay setup, recovery and validation
 
 ## Tech stack
 

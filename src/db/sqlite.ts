@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import type { AppSettings, Service, Song, TrackSource } from '@/types'
 import { uid } from '@/utils'
+import { browserRequest, replaceBrowserData } from './browser'
 
 type StoreName = 'songs' | 'services' | 'settings'
 
@@ -9,42 +10,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   masterVolume: 0.9,
 }
 
-const memory = {
-  songs: new Map<string, Song>(),
-  services: new Map<string, Service>(),
-  settings: new Map<string, AppSettings>(),
-}
-const MEMORY_KEY = 'sanctuary-player-test-storage'
-let memoryLoaded = false
-
-function isDesktopApp(): boolean {
+export function isDesktopApp(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-}
-
-function loadMemory(): void {
-  if (memoryLoaded || typeof localStorage === 'undefined') return
-  memoryLoaded = true
-  try {
-    const saved = JSON.parse(localStorage.getItem(MEMORY_KEY) ?? '{}') as {
-      songs?: Song[]
-      services?: Service[]
-      settings?: AppSettings
-    }
-    for (const song of saved.songs ?? []) memory.songs.set(song.id, song)
-    for (const service of saved.services ?? []) memory.services.set(service.id, service)
-    if (saved.settings) memory.settings.set('app', saved.settings)
-  } catch {
-    localStorage.removeItem(MEMORY_KEY)
-  }
-}
-
-function saveMemory(): void {
-  if (typeof localStorage === 'undefined') return
-  const songs = [...memory.songs.values()].map(songForStorage)
-  localStorage.setItem(
-    MEMORY_KEY,
-    JSON.stringify({ songs, services: [...memory.services.values()], settings: memory.settings.get('app') }),
-  )
 }
 
 function requireDesktop(): void {
@@ -98,7 +65,11 @@ async function stageAudio(uploadId: string, kind: 'piano' | 'choir', track: Trac
   })
 }
 
-async function readAudioBlob(songId: string, track: 'piano' | 'choir', type?: string): Promise<Blob> {
+async function readAudioBlob(
+  songId: string,
+  track: 'piano' | 'choir',
+  type?: string,
+): Promise<Blob> {
   const data = await invoke<ArrayBuffer | Uint8Array>('read_audio_blob', { songId, track })
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
   return new Blob([bytes as unknown as BlobPart], { type: type || 'application/octet-stream' })
@@ -110,21 +81,18 @@ export async function getDB(): Promise<{ clear: (store: StoreName) => Promise<vo
   }
   return {
     async clear(store) {
-      loadMemory()
-      memory[store].clear()
-      saveMemory()
+      await browserRequest(store, 'readwrite', (s) => s.clear())
     },
   }
 }
 
 export async function putSong(song: Song): Promise<void> {
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.songs.set(song.id, clone(song))
-    saveMemory()
+    await browserRequest('songs', 'readwrite', (s) => s.put(clone(song)))
     return
   }
-  const uploadId = song.bundled || (!song.piano.blob && !song.choir.blob) ? undefined : uid('upload')
+  const uploadId =
+    song.bundled || (!song.piano.blob && !song.choir.blob) ? undefined : uid('upload')
   if (uploadId) {
     if (!song.piano.blob || !song.choir.blob) {
       throw new Error('Both piano and choir tracks are required.')
@@ -137,10 +105,9 @@ export async function putSong(song: Song): Promise<void> {
 
 export async function getAllSongs(): Promise<Song[]> {
   if (!isDesktopApp()) {
-    loadMemory()
-    return [...memory.songs.values()]
-      .map((song) => clone(song))
-      .sort((a, b) => a.createdAt - b.createdAt)
+    return (await browserRequest<Song[]>('songs', 'readonly', (s) => s.getAll())).sort(
+      (a, b) => a.createdAt - b.createdAt,
+    )
   }
   requireDesktop()
   const songs = await invoke<Song[]>('get_all_songs')
@@ -149,8 +116,7 @@ export async function getAllSongs(): Promise<Song[]> {
 
 export async function getSong(id: string): Promise<Song | undefined> {
   if (!isDesktopApp()) {
-    loadMemory()
-    return clone(memory.songs.get(id))
+    return browserRequest('songs', 'readonly', (s) => s.get(id))
   }
   requireDesktop()
   const song = await invoke<Song | null>('get_song', { id })
@@ -159,9 +125,7 @@ export async function getSong(id: string): Promise<Song | undefined> {
 
 export async function deleteSong(id: string): Promise<void> {
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.songs.delete(id)
-    saveMemory()
+    await browserRequest('songs', 'readwrite', (s) => s.delete(id))
     return
   }
   requireDesktop()
@@ -170,9 +134,7 @@ export async function deleteSong(id: string): Promise<void> {
 
 export async function putService(service: Service): Promise<void> {
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.services.set(service.id, clone(service))
-    saveMemory()
+    await browserRequest('services', 'readwrite', (s) => s.put(clone(service)))
     return
   }
   requireDesktop()
@@ -181,10 +143,9 @@ export async function putService(service: Service): Promise<void> {
 
 export async function getAllServices(): Promise<Service[]> {
   if (!isDesktopApp()) {
-    loadMemory()
-    return [...memory.services.values()]
-      .map((service) => clone(service))
-      .sort((a, b) => a.createdAt - b.createdAt)
+    return (await browserRequest<Service[]>('services', 'readonly', (s) => s.getAll())).sort(
+      (a, b) => a.createdAt - b.createdAt,
+    )
   }
   requireDesktop()
   return invoke<Service[]>('get_all_services')
@@ -192,8 +153,7 @@ export async function getAllServices(): Promise<Service[]> {
 
 export async function getService(id: string): Promise<Service | undefined> {
   if (!isDesktopApp()) {
-    loadMemory()
-    return clone(memory.services.get(id))
+    return browserRequest('services', 'readonly', (s) => s.get(id))
   }
   requireDesktop()
   return (await invoke<Service | null>('get_service', { id })) ?? undefined
@@ -201,9 +161,7 @@ export async function getService(id: string): Promise<Service | undefined> {
 
 export async function deleteService(id: string): Promise<void> {
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.services.delete(id)
-    saveMemory()
+    await browserRequest('services', 'readwrite', (s) => s.delete(id))
     return
   }
   requireDesktop()
@@ -212,8 +170,11 @@ export async function deleteService(id: string): Promise<void> {
 
 export async function getSettings(): Promise<AppSettings> {
   if (!isDesktopApp()) {
-    loadMemory()
-    return clone(memory.settings.get('app') ?? DEFAULT_SETTINGS)
+    return (
+      (await browserRequest<AppSettings | undefined>('settings', 'readonly', (s) =>
+        s.get('app'),
+      )) ?? clone(DEFAULT_SETTINGS)
+    )
   }
   requireDesktop()
   return (await invoke<AppSettings | null>('get_settings')) ?? clone(DEFAULT_SETTINGS)
@@ -222,9 +183,7 @@ export async function getSettings(): Promise<AppSettings> {
 export async function saveSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
   const next: AppSettings = { ...(await getSettings()), ...clone(patch), id: 'app' }
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.settings.set('app', next)
-    saveMemory()
+    await browserRequest('settings', 'readwrite', (s) => s.put(next))
     return clone(next)
   }
   requireDesktop()
@@ -268,14 +227,7 @@ export async function restoreAll(input: {
   settings?: AppSettings
 }): Promise<void> {
   if (!isDesktopApp()) {
-    loadMemory()
-    memory.songs.clear()
-    memory.services.clear()
-    memory.settings.clear()
-    for (const song of input.songs) memory.songs.set(song.id, clone(song))
-    for (const service of input.services) memory.services.set(service.id, clone(service))
-    if (input.settings) memory.settings.set('app', clone(input.settings))
-    saveMemory()
+    await replaceBrowserData(clone(input))
     return
   }
   requireDesktop()
