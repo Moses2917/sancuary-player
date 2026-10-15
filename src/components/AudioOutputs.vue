@@ -6,8 +6,7 @@ import { usePlayerStore } from '@/stores/player'
 /**
  * Output routing panel: choose which audio output device each track
  * (piano / choir) is sent to. Uses HTMLMediaElement.setSinkId under the
- * hood; gracefully hides itself on Safari and other browsers that lack
- * the API.
+ * hood; keeps rehearsal tools available when the webview lacks that API.
  */
 const player = usePlayerStore()
 
@@ -27,6 +26,7 @@ async function refresh() {
 }
 
 async function bootstrap() {
+  if (!player.outputRoutingSupported) return
   // Trigger the permission prompt from this user gesture so device
   // labels are visible. The actual permission grant happens here.
   await player.requestOutputPermission()
@@ -79,8 +79,8 @@ function resetToDefault() {
     </header>
 
     <p v-if="!player.outputRoutingSupported" class="outputs__unsupported">
-      This browser doesn't support per-track output routing. Use Chrome, Edge, or Firefox 136+
-      to send piano and choir to separate devices.
+      Per-track output routing isn't available in this environment. Both tracks use the system
+      default output; you can still balance them with the mixer.
     </p>
 
     <template v-else>
@@ -132,26 +132,22 @@ function resetToDefault() {
           Refresh list
         </button>
       </div>
-
-      <details class="outputs__advanced">
-        <summary>Rehearsal tools</summary>
-        <label class="outputs__toggle">
-          <input
-            type="checkbox"
-            :checked="player.resumePosition"
-            @change="
-              player.setResumePosition(
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
-          />
-          <span>
-            <strong>Remember playhead position</strong>
-            <small>Saves where you left off in each song, so you can resume a rehearsal.</small>
-          </span>
-        </label>
-      </details>
     </template>
+
+    <details class="outputs__advanced">
+      <summary>Rehearsal tools</summary>
+      <label class="outputs__toggle">
+        <input
+          type="checkbox"
+          :checked="player.resumePosition"
+          @change="player.setResumePosition(($event.target as HTMLInputElement).checked)"
+        />
+        <span>
+          <strong>Remember playhead position</strong>
+          <small>Saves where you left off in each song, so you can resume a rehearsal.</small>
+        </span>
+      </label>
+    </details>
   </div>
 </template>
 
