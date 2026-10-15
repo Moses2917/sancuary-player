@@ -17,6 +17,8 @@ const props = withDefaults(
     peaks: number[]
     duration: number
     current: number
+    /** Read the live media clock between timeupdate events. */
+    getCurrentTime?: () => number
     isPlaying?: boolean
     markers?: WaveformMarker[]
     loop?: { start: number; end: number } | null
@@ -57,7 +59,7 @@ const emit = defineEmits<{
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
-const playhead = ref(props.current)
+const playhead = ref(props.getCurrentTime?.() ?? props.current)
 
 // Drag state. Pointer events are bound to window during a drag so the user
 // can scrub outside the canvas without losing the gesture (HTML pointer
@@ -66,12 +68,9 @@ let dragging = false
 let dpr = 1
 let cssWidth = 0
 
-// RAF state. <audio> timeupdate fires ~4x/sec, which looks choppy. While
-// playing, we run a RAF loop that interpolates the playhead from the last
-// known time, so the visual scrub is smooth at 60fps.
+// Read the audio clock each frame. Extrapolating from timeupdate snapshots can
+// run ahead of WebKit's media clock and snap backwards when the next event arrives.
 let rafId: number | null = null
-let lastAnchorTime = 0
-let lastAnchorWall = 0
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
@@ -135,22 +134,17 @@ function onDragEnd() {
 
 function setPlayhead(t: number) {
   playhead.value = t
-  lastAnchorTime = t
-  lastAnchorWall = performance.now()
   draw()
 }
 
 function startRaf() {
   if (rafId !== null) return
-  // The interpolation loop is a real-browser optimisation; in vitest the
+  // The animation loop is a real-browser optimisation; in vitest the
   // microtask-based rAF shim would spin forever, so we skip it there.
   if (import.meta.env?.MODE === 'test') return
   const loop = () => {
     if (props.isPlaying && !dragging) {
-      const elapsed = (performance.now() - lastAnchorWall) / 1000
-      const next = clamp(lastAnchorTime + elapsed, 0, props.duration)
-      playhead.value = next
-      draw()
+      setPlayhead(clamp(props.getCurrentTime?.() ?? props.current, 0, props.duration))
     }
     rafId = requestAnimationFrame(loop)
   }
@@ -279,7 +273,7 @@ onMounted(() => {
   // Defer one frame so layout has settled before measuring.
   requestAnimationFrame(() => {
     resize()
-    // Only run the interpolation loop while actually playing — otherwise
+    // Only run the animation loop while actually playing — otherwise
     // we'd churn microtasks forever in test environments.
     if (props.isPlaying) startRaf()
   })
@@ -298,15 +292,12 @@ onBeforeUnmount(() => {
   window.removeEventListener('devicepixelratiochange', resize)
 })
 
-// Anchor the RAF interpolator whenever the player reports a new time.
+// Prefer the live clock to a potentially delayed reactive time snapshot.
 watch(
   () => props.current,
   (v) => {
     if (!dragging) {
-      lastAnchorTime = v
-      lastAnchorWall = performance.now()
-      playhead.value = v
-      draw()
+      setPlayhead(props.getCurrentTime?.() ?? v)
     }
   },
 )
@@ -320,7 +311,7 @@ watch(
 watch(
   () => props.isPlaying,
   (playing) => {
-    lastAnchorWall = performance.now()
+    if (!dragging) setPlayhead(props.getCurrentTime?.() ?? props.current)
     if (playing) startRaf()
     else stopRaf()
   },

@@ -608,6 +608,11 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /* ---------- transport ---------- */
+  /** Live media time for waveform animation, independent of timeupdate frequency. */
+  function getCurrentTime(): number {
+    return pianoEl?.currentTime ?? currentTime.value
+  }
+
   async function play() {
     ensureElements()
     if (!pianoEl || !choirEl) return
@@ -999,6 +1004,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentTimeFormatted,
     durationFormatted,
     /* transport */
+    getCurrentTime,
     play,
     pause,
     toggle,

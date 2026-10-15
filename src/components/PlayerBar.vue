@@ -204,6 +204,7 @@ const loopLabel = computed(() => {
           :peaks="peaks"
           :duration="player.duration || 0"
           :current="player.currentTime"
+          :get-current-time="player.getCurrentTime"
           :is-playing="player.isPlaying"
           :markers="player.currentMarkers"
           :loop="player.loop"
