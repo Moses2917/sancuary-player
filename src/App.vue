@@ -16,7 +16,7 @@ const isRemote = computed(() => !!route.meta.remote)
 
 <template>
   <AppHeader v-if="!isBare" />
-  <main class="app-main">
+  <main id="main-content" class="app-main" :class="{ 'app-main--shell': !isBare }" tabindex="-1">
     <PlayerSession v-if="!isRemote">
       <PlayerBar v-if="!isBare" />
       <RemoteHost :compact="isBare" />

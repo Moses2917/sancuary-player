@@ -103,11 +103,11 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
 <style scoped>
 .row {
   display: grid;
-  grid-template-columns: 24px 28px 36px 1fr 1.4fr 32px;
+  grid-template-columns: 24px 28px 36px minmax(0, 1fr) minmax(0, 1.4fr) 34px;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-md);
+  border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
   transition:
@@ -115,14 +115,21 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
     border-color var(--dur-fast) var(--ease);
 }
 .row:hover {
+  background: var(--c-bg-2);
+}
+.row:nth-child(even) {
   background: var(--c-bg-1);
 }
-.row--current {
+.row--current,
+.row--current:nth-child(even) {
   background: var(--c-accent-glow);
   border-color: rgba(232, 71, 76, 0.22);
 }
 .row--current:hover {
   background: var(--c-accent-glow);
+}
+.row--current .row__title {
+  color: var(--c-accent);
 }
 .row--dragging {
   opacity: 0.4;
@@ -147,7 +154,8 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
     opacity var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease);
 }
-.row:hover .row__grip {
+.row:hover .row__grip,
+.row:focus-within .row__grip {
   opacity: 0.7;
 }
 .row__grip:hover {
@@ -188,8 +196,8 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   color: #fff;
 }
 .row__title {
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 500;
+  font-size: 0.94rem;
   letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
@@ -232,9 +240,9 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   min-width: 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .row {
-    grid-template-columns: 24px 28px 32px 1fr 32px;
+    grid-template-columns: 24px 24px 44px minmax(0, 1fr) 44px;
     grid-template-areas:
       'grip idx art title remove'
       'mix  mix mix mix mix';
@@ -242,12 +250,15 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   }
   .row__grip {
     grid-area: grip;
+    opacity: 0.7;
   }
   .row__index {
     grid-area: idx;
   }
   .row__art {
     grid-area: art;
+    width: 44px;
+    height: 44px;
   }
   .row__title {
     grid-area: title;
@@ -258,6 +269,21 @@ const isCurrentPlaying = computed(() => props.isCurrent && props.isPlaying)
   }
   .row__mix .mix__tag {
     min-width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .row {
+    padding: 12px 6px;
+    column-gap: 6px;
+  }
+  .row__mix {
+    gap: 16px;
+  }
+  .mix {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
 }
 </style>

@@ -36,7 +36,7 @@ watch(
   <section
     v-if="!compact || approvalLive"
     class="remote-host surface"
-    :class="{ 'remote-host--compact': compact }"
+    :class="{ 'remote-host--compact': compact, 'remote-host--idle': !host.enabled }"
     aria-label="Remote access"
   >
     <button v-if="!host.enabled" class="btn" @click="host.enable()">Enable Remote Control</button>
@@ -104,6 +104,23 @@ watch(
 .remote-host {
   padding: var(--sp-4);
   margin-bottom: var(--sp-4);
+}
+.remote-host--idle:not(.remote-host--compact) {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+  margin-bottom: var(--sp-6);
+  border: 0;
+  background: transparent;
+}
+.remote-host--idle > .btn {
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 500;
+  min-height: 36px;
+}
+.remote-host--idle > .btn:hover {
+  background: var(--c-bg-2);
 }
 .remote-host--compact {
   position: fixed;

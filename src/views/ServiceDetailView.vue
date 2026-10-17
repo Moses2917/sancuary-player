@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, Music, Pencil, Play, Plus, Printer, Upload } from 
 import SongPicker from '@/components/SongPicker.vue'
 import SongImporter from '@/components/SongImporter.vue'
 import PlaylistRow from '@/components/PlaylistRow.vue'
+import ServiceArtwork from '@/components/ServiceArtwork.vue'
 import { formatDate } from '@/utils'
 import type { Song } from '@/types'
 
@@ -171,6 +172,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
     </button>
 
     <header class="head">
+      <ServiceArtwork class="head__art" :seed="current.id" />
       <div class="head__main">
         <template v-if="!editingMeta">
           <div class="head__meta">
@@ -183,6 +185,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
             </button>
           </div>
           <h1 class="head__title">{{ current.name }}</h1>
+          <p class="head__summary">{{ resolved.length }} songs · Piano &amp; choir</p>
         </template>
         <div v-else class="head__edit-form">
           <input v-model="metaName" class="input" placeholder="Service name" />
@@ -213,11 +216,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         <button class="btn" @click="creatorOpen = true">
           <Upload :size="14" :stroke-width="1.6" /> <span class="hide-sm">Create</span>
         </button>
-        <button
-          class="btn btn--primary"
-          :disabled="resolved.length === 0"
-          @click="playAll(0)"
-        >
+        <button class="btn btn--primary" :disabled="resolved.length === 0" @click="playAll(0)">
           <Play :size="14" :stroke-width="2" />
           {{ isThisServiceLoaded && player.isPlaying ? 'Playing…' : 'Play service' }}
         </button>
@@ -267,11 +266,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
       @close="pickerOpen = false"
       @add="addSongs"
     />
-    <SongImporter
-      :open="creatorOpen"
-      @close="creatorOpen = false"
-      @saved-song="onSongCreated"
-    />
+    <SongImporter :open="creatorOpen" @close="creatorOpen = false" @saved-song="onSongCreated" />
 
     <!-- Hidden on screen; revealed only when body[data-print="setlist"]. -->
     <div class="print-region" aria-hidden="true">
@@ -280,11 +275,7 @@ const serviceNotFound = computed(() => services.ready && !current.value)
         <div class="print-setlist__date">{{ formatDate(current.date) || 'No date set' }}</div>
         <div class="print-setlist__count">{{ resolved.length }} songs</div>
         <ol class="print-setlist__rows">
-          <li
-            v-for="(entry, idx) in resolved"
-            :key="entry.item.id"
-            class="print-setlist__row"
-          >
+          <li v-for="(entry, idx) in resolved" :key="entry.item.id" class="print-setlist__row">
             <span class="print-setlist__num">{{ idx + 1 }}.</span>
             <span class="print-setlist__title-cell">{{ entry.song.title }}</span>
             <span
@@ -331,6 +322,15 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   border-bottom: 1px solid var(--c-border);
   flex-wrap: wrap;
 }
+.head__art {
+  width: 116px;
+  flex-shrink: 0;
+}
+.head__summary {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+}
 .head__main {
   min-width: 0;
   flex: 1;
@@ -365,8 +365,9 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   color: var(--c-accent);
 }
 .head__title {
-  font-size: clamp(2.1rem, 5.4vw, 3.6rem);
-  line-height: 1.04;
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
@@ -385,7 +386,8 @@ const serviceNotFound = computed(() => services.ready && !current.value)
   gap: var(--sp-2);
   flex-shrink: 0;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .empty__icon {
@@ -433,6 +435,9 @@ const serviceNotFound = computed(() => services.ready && !current.value)
 }
 
 @media (max-width: 600px) {
+  .head__art {
+    width: 76px;
+  }
   .head__title {
     font-size: 1.9rem;
   }

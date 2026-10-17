@@ -127,6 +127,7 @@ const styleObj = computed(() => ({
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
+  min-width: 0;
   cursor: pointer;
 }
 .slider--horizontal .slider__input {
@@ -219,5 +220,11 @@ const styleObj = computed(() => ({
 }
 .slider--disabled .slider__input {
   cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .slider--horizontal .slider__input {
+    height: 32px;
+  }
 }
 </style>

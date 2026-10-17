@@ -40,13 +40,20 @@ DEPLOY_DIR=/srv/foo WEB_USER=http bun run deploy
 
 ## nginx config
 
-A reference HTTP config lives at `deploy/nginx.conf`. For a **new** site only,
-install it like this before enabling HTTPS:
+A reference HTTP config lives at `deploy/player.armsongs.conf`. For a **new** site
+only, install it like this before enabling HTTPS:
 
 ```sh
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/player.armsongs.com
-sudo ln -sf /etc/nginx/sites-available/player.armsongs.com /etc/nginx/sites-enabled/
+sudo cp deploy/player.armsongs.conf /etc/nginx/sites-available/player.armsongs.conf
+sudo ln -sf /etc/nginx/sites-available/player.armsongs.conf /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
+```
+
+All of the above (frontend publish, relay service, nginx site) is also bundled
+into one idempotent command:
+
+```sh
+bun run setup:server
 ```
 
 For an existing HTTPS/Certbot installation, edit the active site configuration

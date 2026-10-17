@@ -1,126 +1,183 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import { Calendar, Church, Music } from '@lucide/vue'
+import { RouterLink, useRoute } from 'vue-router'
+import { Calendar, Church, Music, Smartphone } from '@lucide/vue'
+
+const route = useRoute()
 </script>
 
 <template>
   <header class="app-header">
-    <div class="app-header__inner">
-      <RouterLink to="/" class="brand">
-        <span class="brand__mark" aria-hidden="true">
-          <Church :size="16" :stroke-width="1.75" />
-        </span>
-        <span class="brand__text">Sanctuary</span>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <RouterLink to="/" class="brand" aria-label="Sanctuary home">
+      <span class="brand__mark" aria-hidden="true"><Church :size="22" :stroke-width="1.75" /></span>
+      <span class="brand__text">Sanctuary<span class="brand__sub">Music for worship</span></span>
+    </RouterLink>
+    <p class="nav-label">Your workspace</p>
+    <nav class="nav" aria-label="Main navigation">
+      <RouterLink
+        to="/services"
+        class="nav__link"
+        :class="{ 'nav__link--active': route.name === 'service-detail' }"
+        :aria-current="route.name === 'service-detail' ? 'page' : undefined"
+        active-class="nav__link--active"
+      >
+        <Calendar :size="19" :stroke-width="1.75" aria-hidden="true" />
+        <span>Player</span>
       </RouterLink>
-      <nav class="nav">
-        <RouterLink to="/services" class="nav__link" active-class="nav__link--active">
-          <Calendar :size="14" :stroke-width="1.75" />
-          <span>Player</span>
-        </RouterLink>
-        <RouterLink to="/remote" class="nav__link" active-class="nav__link--active"
-          >Remote Control</RouterLink
-        >
-        <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
-          <Music :size="14" :stroke-width="1.75" />
-          <span>Library</span>
-        </RouterLink>
-      </nav>
+      <RouterLink to="/library" class="nav__link" active-class="nav__link--active">
+        <Music :size="19" :stroke-width="1.75" aria-hidden="true" />
+        <span>Library</span>
+      </RouterLink>
+      <RouterLink to="/remote" class="nav__link" active-class="nav__link--active">
+        <Smartphone :size="19" :stroke-width="1.75" aria-hidden="true" />
+        <span>Remote Control</span>
+      </RouterLink>
+    </nav>
+    <div class="sidebar-note">
+      <Music :size="20" :stroke-width="1.25" aria-hidden="true" />
+      <p>A little preparation.<br />Room for worship.</p>
     </div>
   </header>
 </template>
 
 <style scoped>
 .app-header {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  inset: 0 auto 0 0;
   z-index: 30;
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--c-border);
-  padding-top: env(safe-area-inset-top);
-}
-.app-header__inner {
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 0 max(var(--sp-5), env(safe-area-inset-right)) 0
-    max(var(--sp-5), env(safe-area-inset-left));
-  height: var(--header-h);
+  width: var(--sidebar-w);
   display: flex;
-  align-items: center;
-  gap: var(--sp-5);
+  flex-direction: column;
+  padding: max(32px, env(safe-area-inset-top)) 16px 24px;
+  background: #f5f5f7;
+  border-right: 1px solid var(--c-border);
 }
 .brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  color: var(--c-text);
-}
-.brand:hover {
+  gap: 10px;
+  padding: 0 8px;
   color: var(--c-text);
 }
 .brand__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: var(--c-accent);
-  color: #fff;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #fb6480, #d92f4f);
+  box-shadow: 0 3px 8px #d92f4f20;
+  color: white;
 }
 .brand__text {
+  font-size: 1.2rem;
   font-weight: 650;
-  font-size: 1.04rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
-
+.brand__sub {
+  display: block;
+  color: var(--c-text-muted);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.nav-label {
+  margin: 44px 12px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
 .nav {
-  margin-left: auto;
   display: flex;
-  gap: 2px;
-  background: var(--c-bg-2);
-  padding: 3px;
-  border-radius: var(--r-pill);
+  flex-direction: column;
+  gap: 4px;
 }
 .nav__link {
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  min-height: 44px;
-  border-radius: var(--r-pill);
-  color: var(--c-text-muted);
-  font-size: 0.82rem;
-  font-weight: 550;
-  letter-spacing: -0.005em;
-  transition:
-    color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
+  gap: 11px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  color: var(--c-text-soft);
+  font-size: 0.9rem;
+  transition: background var(--dur-fast) var(--ease);
+}
+.nav__link svg {
+  color: var(--c-accent);
+  flex-shrink: 0;
 }
 .nav__link:hover {
-  color: var(--c-text);
+  background: #eaeaec;
 }
 .nav__link--active {
-  background: var(--c-surface-raised);
-  color: var(--c-text);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.06),
-    0 1px 1px rgba(0, 0, 0, 0.04);
+  background: var(--c-accent-glow);
+  color: var(--c-accent);
+  font-weight: 600;
 }
-
-@media (max-width: 560px) {
-  .app-header__inner {
-    gap: var(--sp-3);
-    padding: 0 max(var(--sp-4), env(safe-area-inset-right)) 0
-      max(var(--sp-4), env(safe-area-inset-left));
+.sidebar-note {
+  margin-top: auto;
+  padding: 20px 12px 0;
+  color: var(--c-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+.sidebar-note svg {
+  margin-bottom: 8px;
+  color: var(--c-accent);
+}
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  transform: translateY(-200%);
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  transform: none;
+}
+@media (max-width: 900px) {
+  .app-header {
+    position: sticky;
+    inset: 0 0 auto;
+    width: 100%;
+    padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) 0
+      max(16px, env(safe-area-inset-left));
+    background: rgba(248, 248, 250, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: none;
+    border-bottom: 1px solid var(--c-border);
   }
-  .brand__text {
+  .brand {
+    height: 60px;
+    padding: 0;
+  }
+  .brand__mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+  .brand__sub,
+  .nav-label,
+  .sidebar-note {
     display: none;
   }
+  .nav {
+    flex-direction: row;
+    height: 52px;
+    padding-bottom: 8px;
+  }
   .nav__link {
-    padding: 6px 10px;
+    flex: 1;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px;
+    font-size: 0.8rem;
+    min-height: 44px;
+    white-space: nowrap;
   }
 }
 </style>

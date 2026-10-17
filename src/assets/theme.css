@@ -6,9 +6,9 @@
 :root {
   /* Palette — pure white surfaces, whisper-gray sectioning */
   --c-bg-0: #ffffff;
-  --c-bg-1: #fbfbfd;
-  --c-bg-2: #f5f5f7;
-  --c-bg-3: #ececef;
+  --c-bg-1: #fafafa;
+  --c-bg-2: #f2f2f5;
+  --c-bg-3: #e7e7ec;
 
   --c-surface: #ffffff;
   --c-surface-raised: #ffffff;
@@ -17,15 +17,15 @@
   --c-border: rgba(0, 0, 0, 0.07);
   --c-border-strong: rgba(0, 0, 0, 0.14);
 
-  --c-text: #050505;
+  --c-text: #1d1d1f;
   --c-text-soft: #4a4a4f;
-  --c-text-muted: #86868b;
+  --c-text-muted: #6e6e73;
 
   /* Single confident accent — a refined crimson */
-  --c-accent: #e8474c;
-  --c-accent-soft: #f1676b;
-  --c-accent-deep: #c62f34;
-  --c-accent-glow: rgba(232, 71, 76, 0.12);
+  --c-accent: #d92f4f;
+  --c-accent-soft: #fa5773;
+  --c-accent-deep: #bd2441;
+  --c-accent-glow: rgba(217, 47, 79, 0.1);
 
   /* Track colors — desaturated, calm */
   --c-piano: #2e6cb6;
@@ -33,14 +33,12 @@
   --c-danger: #d6364c;
   --c-success: #2e9e5b;
 
-  /* Typography — Inter tight for everything.
-     Heavy weights for display, regular for body, all with negative
-     tracking so headlines feel set rather than typed. */
+  /* Native system typography also works on an offline installation. */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto,
-    'Helvetica Neue', sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue',
+    sans-serif;
   --font-display:
-    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 
   /* Spacing scale */
@@ -67,8 +65,9 @@
 
   /* Layout */
   --player-h: 92px;
-  --header-h: 60px;
-  --content-max: 1120px;
+  --header-h: 0px;
+  --sidebar-w: 216px;
+  --content-max: 1240px;
 
   /* Motion — quick and confident */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,4 +76,10 @@
   --dur-fast: 110ms;
   --dur: 180ms;
   --dur-slow: 320ms;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --header-h: 112px;
+  }
 }

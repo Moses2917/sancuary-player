@@ -56,6 +56,10 @@ there is no relay connection; native SQLite/offline playback remains available.
 The relay is a Bun + TypeScript backend separate from the static frontend. Use Bun
 1.3.10 or later. Its WebSockets/cryptography are built-in, with no runtime packages.
 
+`bun run setup:server` performs the whole initial provisioning (relay account,
+files, unit, nginx site, frontend publish) and is safe to re-run. The steps below
+describe what it does; run them manually if you need finer control.
+
 There are two deployments: `bun run build` creates only the website in `dist/`;
 `bun run deploy` publishes that website to the local nginx web root. Neither command
 installs the relay, creates its service account, or installs the nginx proxy.

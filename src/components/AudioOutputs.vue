@@ -125,9 +125,7 @@ function resetToDefault() {
       </div>
 
       <div class="outputs__actions">
-        <button class="outputs__reset" @click="resetToDefault">
-          Reset both to default
-        </button>
+        <button class="outputs__reset" @click="resetToDefault">Reset both to default</button>
         <button class="outputs__refresh" title="Re-scan devices" @click="refresh">
           Refresh list
         </button>
@@ -157,8 +155,7 @@ function resetToDefault() {
   top: calc(100% + 6px);
   right: 0;
   z-index: 40;
-  min-width: 300px;
-  max-width: 360px;
+  width: min(340px, calc(100vw - 72px));
   padding: var(--sp-3) var(--sp-4);
   background: var(--c-surface-raised);
   border: 1px solid var(--c-border);

@@ -20,6 +20,7 @@
   }
   body[data-print='setlist'] .app-main {
     display: block !important;
+    width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;

@@ -90,7 +90,15 @@ function onFadeRemove(id: string) {
 function addFadeHere() {
   void player.addFadeHere(8)
 }
-function onCutUpdate(id: string, patch: { start?: number; end?: number; fadeMs?: number; curve?: 'linear' | 'equalPower' | 'ease' | 'fast' }) {
+function onCutUpdate(
+  id: string,
+  patch: {
+    start?: number
+    end?: number
+    fadeMs?: number
+    curve?: 'linear' | 'equalPower' | 'ease' | 'fast'
+  },
+) {
   void player.updateCut(id, patch)
 }
 function onCutRemove(id: string) {
@@ -119,15 +127,11 @@ const loopLabel = computed(() => {
 </script>
 
 <template>
-  <section class="pod surface" :class="{ 'pod--empty': !hasSong }">
+  <section class="pod surface" :class="{ 'pod--empty': !hasSong }" aria-label="Player">
     <div v-if="player.error" class="pod__error" role="alert">
       <AlertTriangle :size="14" :stroke-width="2" />
       <span class="pod__error-text">{{ player.error }}</span>
-      <button
-        class="pod__error-close"
-        title="Dismiss"
-        @click="player.clearError()"
-      >
+      <button class="pod__error-close" title="Dismiss" @click="player.clearError()">
         <X :size="14" :stroke-width="2" />
       </button>
     </div>
@@ -136,14 +140,19 @@ const loopLabel = computed(() => {
       <div class="pod__art" :class="{ 'pod__art--playing': player.isPlaying }">
         <Music :size="20" :stroke-width="1.5" />
       </div>
-      <div class="pod__meta" @click="gotoService">
+      <button
+        class="pod__meta"
+        :disabled="!player.service || player.service.id === 'preview'"
+        title="Open current service"
+        @click="gotoService"
+      >
         <div class="pod__title" :title="player.currentSong?.title">
           {{ player.currentSong?.title ?? 'Nothing playing' }}
         </div>
         <div class="pod__service" :title="player.service?.name">
           {{ player.service?.name ?? 'Select a song to begin' }}
         </div>
-      </div>
+      </button>
       <button
         v-if="hasSong"
         class="icon-btn pod__expand"
@@ -181,12 +190,7 @@ const loopLabel = computed(() => {
         >
           <Pause :size="20" :stroke-width="2" />
         </button>
-        <button
-          class="icon-btn"
-          :disabled="!player.hasNext"
-          title="Next"
-          @click="player.next()"
-        >
+        <button class="icon-btn" :disabled="!player.hasNext" title="Next" @click="player.next()">
           <SkipForward :size="18" :stroke-width="1.75" />
         </button>
         <button
@@ -360,26 +364,29 @@ const loopLabel = computed(() => {
 </template>
 
 <style scoped>
-/* Solid white card with a soft shadow, hangs below the header. */
+/* Keep live controls within reach while leaving room for the setlist. */
 .pod {
   position: sticky;
-  top: calc(var(--header-h) + var(--sp-4));
+  top: calc(var(--header-h) + env(safe-area-inset-top) + var(--sp-4));
   z-index: 25;
   width: 100%;
-  max-width: 920px;
-  margin: 0 auto var(--sp-6);
+  margin: 0 auto var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  background: var(--c-surface-raised);
+  background: rgba(250, 250, 252, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  box-shadow: var(--sh-md);
+  border-radius: var(--r-lg);
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: var(--sp-3) var(--sp-5);
+  box-shadow: 0 4px 20px #00000006;
 }
 
 /* Error banner */
 .pod__error {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -428,6 +435,7 @@ const loopLabel = computed(() => {
 /* Outputs panel wrapper (anchors the floating panel) */
 .pod__outputs-wrap {
   position: relative;
+  margin-left: auto;
 }
 
 /* HEAD */
@@ -446,13 +454,13 @@ const loopLabel = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
-  color: var(--c-text-muted);
+  background: linear-gradient(145deg, #fa7187, #c82d50);
+  color: white;
   position: relative;
   transition: color var(--dur) var(--ease);
 }
 .pod__art--playing {
-  color: var(--c-accent);
+  box-shadow: 0 3px 12px #d92f4f26;
 }
 .pod__art--playing::after {
   content: '';
@@ -468,6 +476,13 @@ const loopLabel = computed(() => {
 .pod__meta {
   min-width: 0;
   cursor: pointer;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+.pod__meta:disabled {
+  cursor: default;
 }
 .pod__title {
   font-weight: 650;
@@ -506,6 +521,14 @@ const loopLabel = computed(() => {
 }
 .pod__play {
   margin: 0 6px;
+  background: var(--c-text);
+  color: white;
+}
+.pod__play:hover:not(:disabled) {
+  background: var(--c-accent);
+}
+.pod__transport svg {
+  fill: currentColor;
 }
 .pod__seek {
   position: relative;
@@ -536,6 +559,7 @@ const loopLabel = computed(() => {
 
 /* TOOLS */
 .pod__tools {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
@@ -548,7 +572,8 @@ const loopLabel = computed(() => {
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  border-radius: var(--r-pill);
+  min-height: 32px;
+  border-radius: 6px;
   border: none;
   background: transparent;
   color: var(--c-text-muted);
@@ -590,6 +615,7 @@ const loopLabel = computed(() => {
 
 /* MIXERS */
 .pod__mix {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-5);
@@ -611,14 +637,13 @@ const loopLabel = computed(() => {
   align-items: center;
   gap: 6px;
   align-self: flex-start;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   color: var(--c-text-muted);
   background: transparent;
   border: none;
   padding: 0;
-  text-transform: uppercase;
   transition: color var(--dur-fast) var(--ease);
 }
 .mix__tag:hover {
@@ -643,34 +668,49 @@ const loopLabel = computed(() => {
 
 /* Empty (no song) state */
 .pod--empty {
-  opacity: 0.96;
+  box-shadow: none;
 }
-.pod--empty .pod__transport .icon-btn,
-.pod--empty .pod__tools,
-.pod--empty .pod__mix {
-  opacity: 0.4;
+.pod--empty .pod__art {
+  background: var(--c-bg-3);
+  color: var(--c-text-muted);
 }
 
 /* Responsive */
-@media (max-width: 720px) {
+@media (max-width: 1100px) {
   .pod {
-    top: var(--header-h);
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .pod {
+    top: calc(var(--header-h) + env(safe-area-inset-top));
     padding: var(--sp-3) var(--sp-4);
     border-radius: var(--r-lg);
+    gap: 8px;
   }
   .pod__main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-2);
   }
   .pod__transport {
+    gap: 0;
     justify-content: center;
   }
+  .pod__play {
+    margin: 0;
+  }
   .pod__mix {
-    grid-template-columns: 1fr;
     gap: var(--sp-2);
   }
-  .pod__expand {
-    display: none;
+  .tool {
+    min-height: 40px;
+    padding: 5px 8px;
+  }
+}
+@media (max-height: 650px) {
+  .pod {
+    position: relative;
+    top: auto;
   }
 }
 </style>

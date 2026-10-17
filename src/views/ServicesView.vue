@@ -44,7 +44,10 @@ const filtered = computed(() => {
 <template>
   <section>
     <div class="section-title">
-      <h1>Services</h1>
+      <div>
+        <h1>Services</h1>
+        <p class="section-subtitle">Your setlists, ready for rehearsal and worship.</p>
+      </div>
       <div class="section-title__actions">
         <button class="btn btn--primary" @click="editorOpen = true">
           <Plus :size="16" /> New service
@@ -85,8 +88,14 @@ const filtered = computed(() => {
       <button class="btn btn--ghost btn--sm" @click="query = ''">Clear search</button>
     </div>
 
-    <div v-else class="grid">
-      <ServiceCard v-for="svc in filtered" :key="svc.id" :service="svc" />
+    <div v-else>
+      <div class="collection-heading">
+        <h2>{{ query ? 'Search results' : 'Your services' }}</h2>
+        <span>{{ filtered.length }} {{ filtered.length === 1 ? 'service' : 'services' }}</span>
+      </div>
+      <div class="grid">
+        <ServiceCard v-for="svc in filtered" :key="svc.id" :service="svc" />
+      </div>
     </div>
 
     <ServiceEditor :open="editorOpen" @close="editorOpen = false" @submit="submit" />
@@ -94,6 +103,20 @@ const filtered = computed(() => {
 </template>
 
 <style scoped>
+.collection-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 32px 0 14px;
+}
+.collection-heading h2 {
+  font-size: 1.1rem;
+}
+.collection-heading > span {
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+}
 .empty__icon {
   width: 68px;
   height: 68px;
@@ -107,7 +130,7 @@ const filtered = computed(() => {
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: var(--sp-4);
 }
 .search {
@@ -117,11 +140,11 @@ const filtered = computed(() => {
   padding: 0 14px;
   background: var(--c-bg-2);
   border: 1px solid transparent;
-  border-radius: var(--r-pill);
+  border-radius: 8px;
   color: var(--c-text-muted);
   max-width: 480px;
   margin-bottom: var(--sp-5);
-  height: 36px;
+  height: 40px;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
@@ -134,6 +157,7 @@ const filtered = computed(() => {
 }
 .search__input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;

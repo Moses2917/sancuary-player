@@ -6,12 +6,16 @@
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--sp-6) var(--sp-5) var(--sp-8);
+  padding: var(--sp-6) clamp(20px, 3.5vw, 56px) var(--sp-8);
 }
 
-/* Shared utility primitives
-   Solid white surfaces with hairline borders and whisper shadows.
-   No glass, no gradient, no decoration. */
+.app-main--shell {
+  width: calc(100% - var(--sidebar-w));
+  margin-left: var(--sidebar-w);
+  margin-right: auto;
+}
+
+/* Shared surfaces */
 .surface {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -21,18 +25,18 @@
     box-shadow var(--dur) var(--ease);
 }
 
-/* Buttons — pill, confident, secondary outlined */
+/* Compact native-style controls */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  height: 34px;
+  min-height: 36px;
   padding: 0 16px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--c-border-strong);
-  background: var(--c-surface-raised);
-  color: var(--c-text);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--c-bg-2);
+  color: var(--c-accent);
   font-size: 0.86rem;
   font-weight: 500;
   letter-spacing: -0.005em;
@@ -45,7 +49,7 @@
 }
 .btn:hover {
   background: var(--c-bg-2);
-  border-color: rgba(0, 0, 0, 0.22);
+  border-color: var(--c-border);
 }
 .btn:active {
   background: var(--c-bg-3);
@@ -176,15 +180,23 @@
 /* Section titles — editorial Apple-Music scale */
 .section-title {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--sp-4);
   margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--c-border);
 }
 .section-title h1,
 .section-title h2 {
-  font-size: clamp(1.85rem, 3.4vw, 2.4rem);
+  font-size: clamp(1.85rem, 3.4vw, 2.2rem);
   font-weight: 700;
   letter-spacing: -0.03em;
+}
+.section-subtitle {
+  margin-top: 4px;
+  color: var(--c-text-muted);
+  font-size: 0.88rem;
 }
 .section-title__actions {
   margin-left: auto;
@@ -202,10 +214,37 @@
   padding: var(--sp-8) var(--sp-5);
   color: var(--c-text-muted);
 }
+.empty p {
+  max-width: 440px;
+  margin: 0 auto var(--sp-5);
+}
 .empty h3 {
   color: var(--c-text);
   margin-bottom: var(--sp-2);
   font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+@media (max-width: 900px) {
+  .app-main--shell {
+    width: 100%;
+    margin: 0 auto;
+  }
+  .app-main {
+    padding-top: var(--sp-4);
+  }
+}
+
+@media (max-width: 600px) {
+  .btn,
+  .icon-btn {
+    min-height: 44px;
+  }
+  .icon-btn {
+    min-width: 44px;
+  }
+  .section-title__actions {
+    margin-left: 0;
+  }
 }

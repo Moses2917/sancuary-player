@@ -16,6 +16,7 @@
     "test:remote": "playwright test -c playwright.remote.config.ts",
     "build-only": "vite build",
     "deploy": "bash scripts/deploy.sh",
+    "setup:server": "bash scripts/setup-server.sh",
     "type-check": "vue-tsc --build",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

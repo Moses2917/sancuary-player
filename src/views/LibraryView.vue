@@ -114,7 +114,10 @@ const counts = computed(() => {
 <template>
   <section>
     <div class="section-title">
-      <h1>Library</h1>
+      <div>
+        <h1>Library</h1>
+        <p class="section-subtitle">Your music. Every part in its place.</p>
+      </div>
       <div class="section-title__actions">
         <button class="btn" :disabled="backupBusy" @click="exportBackup" title="Download a backup">
           <Download :size="14" :stroke-width="1.75" /> <span class="hide-sm">Export</span>
@@ -122,7 +125,7 @@ const counts = computed(() => {
         <button class="btn" :disabled="backupBusy" @click="importBackup" title="Restore a backup">
           <Database :size="14" :stroke-width="1.75" /> <span class="hide-sm">Restore</span>
         </button>
-        <button class="btn" @click="bundledOpen = true">
+        <button class="btn" title="Load bundled demo songs" @click="bundledOpen = true">
           <Upload :size="14" :stroke-width="1.75" /> <span class="hide-sm">Bundled</span>
         </button>
         <button class="btn btn--primary" @click="importerOpen = true">
@@ -186,8 +189,8 @@ const counts = computed(() => {
       <div class="empty__icon"><Music :size="32" :stroke-width="1.25" /></div>
       <h3>No songs yet</h3>
       <p>
-        Add your first song by selecting a piano track and a choir track. They'll be stored locally
-        in this app's local SQLite library.
+        Add a piano track and a choir track to get started. Your music is saved on this device,
+        ready for your next rehearsal or service.
       </p>
       <button class="btn btn--primary" @click="importerOpen = true">
         <Plus :size="14" :stroke-width="2" /> Add your first song
@@ -196,16 +199,23 @@ const counts = computed(() => {
 
     <div v-else-if="filtered.length === 0" class="empty">
       <p>No songs match your filter.</p>
-      <button class="btn btn--ghost btn--sm" @click="(query = ''), (tagFilter = 'all')">
+      <button class="btn btn--ghost btn--sm" @click="((query = ''), (tagFilter = 'all'))">
         Clear filters
       </button>
     </div>
 
     <ul v-else class="songs">
-      <li v-for="song in filtered" :key="song.id" class="song">
+      <li
+        v-for="song in filtered"
+        :key="song.id"
+        class="song"
+        :class="{ 'song--current': player.currentSong?.id === song.id }"
+      >
         <button class="song__art" :title="`Play ${song.title}`" @click="preview(song)">
           <Music :size="18" :stroke-width="1.5" />
-          <span class="song__play"><Play :size="16" :stroke-width="2" style="margin-left: 2px" /></span>
+          <span class="song__play"
+            ><Play :size="16" :stroke-width="2" style="margin-left: 2px"
+          /></span>
         </button>
         <div class="song__meta">
           <div class="song__title" :title="song.title">{{ song.title }}</div>
@@ -270,13 +280,12 @@ const counts = computed(() => {
   display: flex;
   flex-direction: column;
   background: var(--c-surface-raised);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
+  border-top: 1px solid var(--c-border);
   overflow: hidden;
 }
 .song {
   display: grid;
-  grid-template-columns: 44px 1fr auto auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);
@@ -287,7 +296,17 @@ const counts = computed(() => {
   border-bottom: none;
 }
 .song:hover {
+  background: var(--c-bg-2);
+}
+.song:nth-child(even) {
   background: var(--c-bg-1);
+}
+.song--current,
+.song--current:nth-child(even) {
+  background: var(--c-accent-glow);
+}
+.song--current .song__title {
+  color: var(--c-accent);
 }
 .song__art {
   position: relative;
@@ -297,9 +316,9 @@ const counts = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-md);
-  background: linear-gradient(135deg, #f0f0f3, #e3e3e8);
-  color: var(--c-text-muted);
+  border-radius: 6px;
+  background: linear-gradient(145deg, #f6e5e9, #efd2da);
+  color: var(--c-accent);
   border: none;
   transition: color var(--dur-fast) var(--ease);
 }
@@ -315,15 +334,16 @@ const counts = computed(() => {
   border-radius: inherit;
   transition: opacity var(--dur-fast) var(--ease);
 }
-.song__art:hover .song__play {
+.song__art:hover .song__play,
+.song__art:focus-visible .song__play {
   opacity: 1;
 }
 .song__meta {
   min-width: 0;
 }
 .song__title {
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 500;
+  font-size: 0.94rem;
   letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
@@ -364,7 +384,7 @@ const counts = computed(() => {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 3px 9px;
-  border-radius: var(--r-pill);
+  border-radius: 6px;
   color: var(--c-text-muted);
   background: var(--c-bg-2);
 }
@@ -391,12 +411,12 @@ const counts = computed(() => {
   padding: 0 14px;
   background: var(--c-bg-2);
   border: 1px solid transparent;
-  border-radius: var(--r-pill);
+  border-radius: 8px;
   color: var(--c-text-muted);
   min-width: 220px;
   flex: 1;
   max-width: 360px;
-  height: 36px;
+  height: 40px;
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
@@ -409,6 +429,7 @@ const counts = computed(() => {
 }
 .search__input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -424,14 +445,14 @@ const counts = computed(() => {
   flex-wrap: wrap;
   padding: 3px;
   background: var(--c-bg-2);
-  border-radius: var(--r-pill);
+  border-radius: 8px;
 }
 .chip {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
   padding: 5px 12px;
-  border-radius: var(--r-pill);
+  border-radius: 6px;
   border: none;
   background: transparent;
   color: var(--c-text-muted);
@@ -481,10 +502,15 @@ const counts = computed(() => {
     max-width: none;
   }
   .song {
-    grid-template-columns: 42px 1fr auto;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 4px;
   }
   .tag {
     display: none;
+  }
+  .chip {
+    min-height: 40px;
   }
 }
 </style>

@@ -60,6 +60,8 @@ Keep an export somewhere safe. Browser storage can be cleared by accident.
 ## Services
 
 A service is a named occasion with an ordered setlist of songs.
+Each service gets a small, locally generated cover that stays the same when you
+rename or reorder it. No artwork upload or network access is needed.
 
 ### Creating a service
 
@@ -100,8 +102,9 @@ hand if you need a template workflow.
 Press **Play service** to start from the top, or click any row's play
 button to start from that song.
 
-The floating player pod at the top of the page stays visible while you
-scroll. It shows:
+The compact player at the top of the page stays visible while you scroll.
+On short screens (such as a phone in landscape), it scrolls with the page to
+leave room for the setlist. It shows:
 
 - The song title and service name
 - Transport (previous, play / pause, next, panic stop)

@@ -170,14 +170,12 @@ function draw() {
   const ratio = dpr
   cv.width = Math.floor(w * ratio)
   cv.height = Math.floor(h * ratio)
-  cv.style.width = `${w}px`
   cv.style.height = `${h}px`
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
   ctx.clearRect(0, 0, w, h)
 
   const baseline = h / 2
-  const playedRatio =
-    props.duration > 0 ? clamp(playhead.value / props.duration, 0, 1) : 0
+  const playedRatio = props.duration > 0 ? clamp(playhead.value / props.duration, 0, 1) : 0
   const playedX = playedRatio * w
 
   // Fade regions are rendered as draggable HTML overlays (see template),
@@ -303,7 +301,16 @@ watch(
 )
 
 watch(
-  () => [props.peaks, props.duration, props.markers, props.loop, props.fades, props.cuts, props.height, props.accent],
+  () => [
+    props.peaks,
+    props.duration,
+    props.markers,
+    props.loop,
+    props.fades,
+    props.cuts,
+    props.height,
+    props.accent,
+  ],
   () => draw(),
   { deep: true },
 )
@@ -476,8 +483,7 @@ defineExpose({ redraw: draw })
       class="fade"
       :style="{
         left: duration > 0 ? `${(regionStart(fade) / duration) * 100}%` : '0%',
-        width:
-          duration > 0 ? `${((regionEnd(fade) - regionStart(fade)) / duration) * 100}%` : '0%',
+        width: duration > 0 ? `${((regionEnd(fade) - regionStart(fade)) / duration) * 100}%` : '0%',
         '--fade-target': fadeTargetPercent(fade),
       }"
     >
@@ -521,8 +527,7 @@ defineExpose({ redraw: draw })
       class="cut"
       :style="{
         left: duration > 0 ? `${(regionStart(cut) / duration) * 100}%` : '0%',
-        width:
-          duration > 0 ? `${((regionEnd(cut) - regionStart(cut)) / duration) * 100}%` : '0%',
+        width: duration > 0 ? `${((regionEnd(cut) - regionStart(cut)) / duration) * 100}%` : '0%',
       }"
     >
       <div class="cut__hatch" />
@@ -537,9 +542,9 @@ defineExpose({ redraw: draw })
         title="Removed span · drag to move · drag edges to resize"
         @pointerdown="startRegionDrag($event, 'cut', cut, 'move')"
       >
-        <span class="cut__label">−{{
-          formatCutDuration({ start: regionStart(cut), end: regionEnd(cut) })
-        }}</span>
+        <span class="cut__label"
+          >−{{ formatCutDuration({ start: regionStart(cut), end: regionEnd(cut) }) }}</span
+        >
         <button
           class="cut__transition"
           :title="`Transition: ${curveLabel(cut)} · ${fadeLabel(cut)}`"
@@ -663,6 +668,7 @@ export { formatMarkerTime, formatFadeDuration, fadeTargetPercent, formatCutDurat
 .waveform__canvas {
   display: block;
   width: 100%;
+  max-width: 100%;
   cursor: pointer;
   border-radius: var(--r-sm);
 }

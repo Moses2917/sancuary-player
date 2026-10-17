@@ -75,10 +75,52 @@ test.describe('services', () => {
 
     // Play the service — the player bar should reflect the current song.
     await page.getByRole('button', { name: /play service/i }).click()
-    await expect(page.locator('.np__title')).toContainText('Amazing Grace')
-    await expect(page.locator('.np__sub')).toContainText('Service One')
+    await expect(page.locator('.pod__title')).toContainText('Amazing Grace')
+    await expect(page.locator('.pod__service')).toContainText('Service One')
     // The transport shows a pause glyph while playing (data via .icon-btn--lg).
     await expect(page.locator('.icon-btn--lg')).toBeVisible()
+
+    // The waveform and live controls must fit after resizing, including landscape.
+    for (const viewport of [
+      { width: 1440, height: 1000 },
+      { width: 900, height: 1000 },
+      { width: 390, height: 844 },
+      { width: 320, height: 740 },
+      { width: 844, height: 390 },
+      { width: 1440, height: 1000 },
+    ]) {
+      await page.setViewportSize(viewport)
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+        .toBe(viewport.width)
+      await expect(page.locator('.pod__mix')).toBeVisible()
+      await expect(page.getByTitle('Panic: fade out and stop (Esc twice)')).toBeEnabled()
+      await expect
+        .poll(() =>
+          page
+            .locator('.waveform__canvas')
+            .evaluate((canvas) =>
+              Math.abs(
+                canvas.getBoundingClientRect().width -
+                  canvas.parentElement!.getBoundingClientRect().width,
+              ),
+            ),
+        )
+        .toBeLessThan(1)
+    }
+
+    await expect(page.getByRole('link', { name: 'Player', exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.getByTitle('Route piano and choir to separate audio outputs').click()
+    const outputs = page.locator('.outputs')
+    await expect(outputs).toBeVisible()
+    const bounds = await outputs.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390)
   })
 
   test('independent piano/choir mute toggles in the player bar', async ({ page }) => {
@@ -103,11 +145,11 @@ test.describe('services', () => {
 
     // Click the PlayerBar's Piano mix tag (PlaylistRow also has .mix__tag
     // spans that aren't buttons, so scope to the player bar).
-    const pianoTag = page.locator('.player-bar .mix__tag').first()
+    const pianoTag = page.locator('.pod .mix__tag').first()
     await pianoTag.click()
     await expect(pianoTag).toHaveClass(/mix__tag--muted/)
     // The choir tag is unaffected.
-    const choirTag = page.locator('.player-bar .mix__tag').nth(1)
+    const choirTag = page.locator('.pod .mix__tag').nth(1)
     await expect(choirTag).not.toHaveClass(/mix__tag--muted/)
   })
 
@@ -134,7 +176,7 @@ test.describe('services', () => {
 
     await page.reload()
 
-    await expect(page.getByText('Persisted Service')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Persisted Service' })).toBeVisible()
     await expect(page.locator('.row__title').getByText('Persist Song')).toBeVisible()
   })
 })
